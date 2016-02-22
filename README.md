@@ -23,11 +23,11 @@ API
 * page.location  
   current location object, should be the same as document.location.
 
-* page.query.parse  
-  Parse a string; without arguments, parses document.location.search.
+* page.parse  
+  Parse a query string; without arguments, parses document.location.search.
 
-* page.query.stringify  
-  Stringify to query string.
+* page.stringify  
+  Stringify object to query string.
 
 * page.build(fn)  
   Queue a build function (can be a thenable)  

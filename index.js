@@ -8,14 +8,13 @@ function Page(inst) {
 	var QueryString = require('query-string');
 
 	this.location = new URL("", document.location);
-	this.query = {
-		parse: function(str) {
-			if (!str) str = document.location.search:
-			return QueryString.parse(str);
-		},
-		stringify: function(obj) {
-			return QueryString.stringify(obj);
-		}
+
+	this.parse = function(str) {
+		if (!str) str = document.location.search:
+		return QueryString.parse(str);
+	};
+	this.stringify = function(obj) {
+		return QueryString.stringify(obj);
 	};
 
 	this.builds = [];
