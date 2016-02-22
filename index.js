@@ -1,6 +1,6 @@
-function Page(inst) {
+function WindowPage(inst) {
 	if (inst) {
-		if (inst instanceof Page) return inst;
+		if (inst instanceof WindowPage) return inst;
 		else if (inst.state) this.state = inst.state;
 	}
 
@@ -31,7 +31,7 @@ function Page(inst) {
 	}
 }
 
-Page.prototype.build = function(fn) {
+WindowPage.prototype.build = function(fn) {
 	if (!fn) {
 		this.builder = this.all("building", this.builds);
 	} else {
@@ -41,7 +41,7 @@ Page.prototype.build = function(fn) {
 	return this;
 };
 
-Page.prototype.handle = function(fn) {
+WindowPage.prototype.handle = function(fn) {
 	if (!fn) {
 		this.handler = this.all("handling", this.handles);
 	} else {
@@ -51,7 +51,7 @@ Page.prototype.handle = function(fn) {
 	return this;
 };
 
-Page.prototype.all = function(phase, list) {
+WindowPage.prototype.all = function(phase, list) {
 	var p = Promise.resolve();
 	list.forEach(function(fn) {
 		p = p.then(fn);
@@ -66,7 +66,7 @@ Page.prototype.all = function(phase, list) {
 	return p;
 };
 
-Page.prototype.readyListener = function(e) {
+WindowPage.prototype.readyListener = function(e) {
 	document.removeEventListener('DOMContentLoaded', this.readyListener);
 	var root = document.documentElement;
 	var stage = root.getAttribute('stage');
@@ -105,7 +105,7 @@ Page.prototype.readyListener = function(e) {
  * changing path should trigger a destroy/creation phase
  * changing domain should allow dialog, target blank
  */
-Page.prototype.historyListener = function(e) {
+WindowPage.prototype.historyListener = function(e) {
 	// would not make sense but happens on some browsers
 	var nloc = new URL("", document.location);
 	var tloc = this.location;
@@ -119,10 +119,10 @@ Page.prototype.historyListener = function(e) {
 /*
  * useless for now, will be called when changing path in location is handled
  */
-Page.prototype.destroy = function() {
+WindowPage.prototype.destroy = function() {
 	window.removeEventListener('popstate', this.historyListener);
 	this.off();
 };
 
-window.page = new Page(window.page);
+window.Page = new WindowPage(window.Page);
 

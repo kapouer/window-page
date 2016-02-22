@@ -1,15 +1,15 @@
 {
-  "name": "window.page",
+  "name": "window-page",
   "version": "0.0.1",
-  "description": "Common tools for isomorphic page management",
+  "description": "Isomorphic client routing and building tools exposed through window.Page",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "prepublish": "browserify-lite $PWD/index.js --outfile $PWD/window.page.js"
+    "prepublish": "browserify-lite $PWD/index.js --outfile $PWD/window-page.js"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/kapouer/window.page.git"
+    "url": "https://github.com/kapouer/window-page.git"
   },
   "keywords": [
     "window",
@@ -25,7 +25,7 @@
     "query-string": "^3.0.0"
   },
   "bugs": {
-    "url": "https://github.com/kapouer/window.page/issues"
+    "url": "https://github.com/kapouer/window-page/issues"
   },
   "devDependencies": {
     "browserify-lite": "^0.5.0"
