@@ -112,7 +112,7 @@ WindowPage.prototype.historyListener = function(e) {
 	if (nloc.href == tloc.href) return;
 	this.location = nloc;
 	if (nloc.host == tloc.host && nloc.pathname == tloc.pathname && nloc.search != tloc.search) {
-		this.emit('query', this.query.parse(nloc.search));
+		this.emit('query', this.parse(nloc.search));
 	}
 };
 
