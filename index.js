@@ -10,7 +10,7 @@ function WindowPage(inst) {
 	this.location = new URL("", document.location);
 
 	this.parse = function(str) {
-		if (!str) str = document.location.search:
+		if (!str) str = document.location.search;
 		return QueryString.parse(str);
 	};
 	this.stringify = function(obj) {
