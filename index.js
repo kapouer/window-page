@@ -1,11 +1,3 @@
-/* Page
- * page.build(fn) or without argument to run all builders
- * page.handle(fn) or without argument to run all handlers
- * page.on, once, off, emit
- * page.on('query', fn)
- * page.on('error', fn)
- */
-
 function Page(inst) {
 	if (inst) {
 		if (inst instanceof Page) return inst;
@@ -67,11 +59,9 @@ Page.prototype.all = function(phase, list) {
 	});
 	p.catch(function(err) {
 		if (this.listeners('error').length) {
-			this.emit('error', err);
+			this.emit('error', err, phase);
 		} else {
-			console.error(phase, "error");
-			console.error(err);
-			console.error("Missing page error listener");
+			console.error(phase, "error (default listener)", err);
 		}
 	}.bind(this));
 	return p;
@@ -123,7 +113,7 @@ Page.prototype.historyListener = function(e) {
 	if (nloc.href == tloc.href) return;
 	this.location = nloc;
 	if (nloc.host == tloc.host && nloc.pathname == tloc.pathname && nloc.search != tloc.search) {
-		this.emit('query');
+		this.emit('query', this.query.parse(nloc.search));
 	}
 };
 
