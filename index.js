@@ -32,37 +32,46 @@ function WindowPage(inst) {
 }
 
 WindowPage.prototype.build = function(fn) {
+	var phase = "building";
 	if (!fn) {
-		this.builder = this.all("building", this.builds);
+		this.builder = this.allFn(this.builds, phase);
 	} else {
 		this.builds.push(fn);
-		if (this.builder) this.builder = this.builder.then(fn);
+		if (this.builder) this.builder = this.oneFn(this.builder, fn, phase);
 	}
 	return this;
 };
+
 
 WindowPage.prototype.handle = function(fn) {
+	var phase = "handling";
 	if (!fn) {
-		this.handler = this.all("handling", this.handles);
+		this.handler = this.allFn(this.handles, phase);
 	} else {
 		this.handles.push(fn);
-		if (this.handler) this.handler = this.handler.then(fn);
+		if (this.handler) this.handler = this.oneFn(this.handler, fn, phase);
 	}
 	return this;
 };
 
-WindowPage.prototype.all = function(phase, list) {
+WindowPage.prototype.catcher = function(phase, err) {
+	if (this.listeners('error').length) {
+		this.emit('error', err, phase);
+	} else {
+		console.error("Uncaught error during", phase, err);
+	}
+};
+
+WindowPage.prototype.oneFn = function(p, fn, phase) {
+	return p.then(fn).catch(this.catcher.bind(this, phase));
+};
+
+WindowPage.prototype.allFn = function(list, phase) {
 	var p = Promise.resolve();
+	var self = this;
 	list.forEach(function(fn) {
-		p = p.then(fn);
+		p = self.oneFn(p, fn, phase);
 	});
-	p.catch(function(err) {
-		if (this.listeners('error').length) {
-			this.emit('error', err, phase);
-		} else {
-			console.error(phase, "error (default listener)", err);
-		}
-	}.bind(this));
 	return p;
 };
 

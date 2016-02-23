@@ -45,7 +45,7 @@ API
 
 * error event  
   emitted when an error occurred during build or handle phases.  
-  Listeners receive the error and the phase name as parameters.
+  Listeners receive the error object, the phase (building, handling)
 
 * TODO Page.push(state, url | loc)  
   Like history.pushState, triggers build/handle phases and listeners
