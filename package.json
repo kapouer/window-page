@@ -1,6 +1,6 @@
 {
   "name": "window-page",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Isomorphic client routing and building tools exposed through window.Page",
   "main": "index.js",
   "scripts": {
