@@ -152,7 +152,7 @@ WindowPage.prototype.import = function(doc) {
 	});
 
 	var root = document.documentElement;
-	for (var i=0; i < doc.attributes.length; i++) {
+	if (doc.attributes) for (var i=0; i < doc.attributes.length; i++) {
 		root.setAttribute(doc.attributes[i].name, doc.attributes[i].value);
 	}
 	root.replaceChild(document.adoptNode(doc.head), document.head);
