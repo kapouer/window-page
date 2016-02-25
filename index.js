@@ -25,6 +25,9 @@ function WindowPage() {
 	this.historyListener = this.historyListener.bind(this);
 	window.addEventListener('popstate', this.historyListener);
 
+	this.import = this.import.bind(this);
+	this.build = this.build.bind(this);
+
 	this.waitBuild(function() {
 		if (this.stage() == "build") {
 			this.builder = Promise.resolve();
