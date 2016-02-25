@@ -1,8 +1,11 @@
-function WindowPage(inst) {
+function WindowPage() {
+	var inst = window.Page;
 	if (inst) {
-		if (inst instanceof WindowPage) return inst;
+		// because using instanceof requires reference to the same WindowPage
+		if (inst.name == "WindowPage") return inst;
 		else if (inst.state) this.state = inst.state;
 	}
+	this.name = "WindowPage";
 
 	require('component-emitter')(this);
 	var QueryString = require('query-string');
