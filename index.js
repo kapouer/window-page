@@ -222,5 +222,5 @@ WindowPage.prototype.destroy = function() {
 	this.off();
 };
 
-window.Page = new WindowPage(window.Page);
+window.Page = new WindowPage();
 
