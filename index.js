@@ -38,12 +38,7 @@ WindowPage.prototype.build = function(fn) {
 	if (!fn) {
 		this.stage(phase);
 		this.builder = this.allFn(this.builds, phase);
-		var visible = document.documentElement.offsetWidth || document.documentElement.offsetHeight;
-		if (visible) {
-			this.builder.then(function() {
-				this.waitHandle(this.handle.bind(this));
-			}.bind(this));
-		}
+		this.waitHandle(this.handle.bind(this));
 	} else {
 		this.builds.push(fn);
 		if (this.builder) this.builder = this.oneFn(this.builder, fn, phase);
@@ -92,29 +87,33 @@ WindowPage.prototype.stage = function(name) {
 };
 
 WindowPage.prototype.waitHandle = function(cb) {
-	Promise.all(Array.from(document.querySelectorAll('link[rel="import"]'))
-	.map(function(link) {
-		if (link.import) {
-			var state = link.import.readyState;
-			var isWebkit = window.navigator.userAgent.indexOf('AppleWebKit');
-			if (state == "complete" || (state == "loading" && isWebkit && window.WebComponents)) {
-				return Promise.resolve();
-		}
-		}
-		return new Promise(function(resolve, reject) {
-			function loadListener() {
-				link.removeEventListener('load', loadListener);
-				resolve();
+	var visible = document.documentElement.offsetWidth || document.documentElement.offsetHeight;
+	if (!visible) return;
+	this.builder.then(function() {
+		return Promise.all(Array.from(document.querySelectorAll('link[rel="import"]'))
+		.map(function(link) {
+			if (link.import) {
+				var state = link.import.readyState;
+				var isWebkit = window.navigator.userAgent.indexOf('AppleWebKit');
+				if (state == "complete" || (state == "loading" && isWebkit && window.WebComponents)) {
+					return Promise.resolve();
+				}
 			}
-			function errorListener() {
-				link.removeEventListener('error', errorListener);
-				resolve();
-			}
-			link.addEventListener('load', loadListener);
-			link.addEventListener('error', errorListener);
+			return new Promise(function(resolve, reject) {
+				function loadListener() {
+					link.removeEventListener('load', loadListener);
+					resolve();
+				}
+				function errorListener() {
+					link.removeEventListener('error', errorListener);
+					resolve();
+				}
+				link.addEventListener('load', loadListener);
+				link.addEventListener('error', errorListener);
+			});
+		})).then(function() {
+			cb();
 		});
-	})).then(function() {
-		cb();
 	});
 };
 
@@ -132,7 +131,7 @@ WindowPage.prototype.waitBuild = function(cb) {
 
 WindowPage.prototype.import = function(doc) {
 	var scripts = Array.from(doc.querySelectorAll('script')).map(function(node) {
-		if (node.type && node.type != "text/javascript") return Promise.resolve();
+		if (node.type && node.type != "text/javascript") return Promise.resolve({});
 		// make sure script is not loaded when inserted into document
 		node.type = "text/plain";
 		// fetch script content ourselves
@@ -140,6 +139,7 @@ WindowPage.prototype.import = function(doc) {
 			return {src: node.src, txt: txt, node: node};
 		}).catch(function(err) {
 			console.error("Error loading", node.src, err);
+			return {};
 		});
 		else return Promise.resolve({
 			src: "inline", txt: node.textContent, node: node
