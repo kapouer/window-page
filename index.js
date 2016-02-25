@@ -7,7 +7,6 @@ function WindowPage() {
 	}
 	this.name = "WindowPage";
 
-	require('component-emitter')(this);
 	var QueryString = require('query-string');
 
 	this.location = new URL("", document.location);
@@ -35,6 +34,8 @@ function WindowPage() {
 		}
 	}.bind(this));
 }
+
+require('component-emitter')(WindowPage.prototype);
 
 WindowPage.prototype.build = function(fn) {
 	var phase = "build";
