@@ -192,7 +192,7 @@ WindowPage.prototype.import = function(doc) {
 			if (after) parent.insertBefore(link, after);
 			else parent.appendChild(link);
 		});
-	});
+	}).then(this.build);
 };
 
 /*
