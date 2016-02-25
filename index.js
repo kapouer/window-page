@@ -88,7 +88,8 @@ WindowPage.prototype.allFn = function(list, phase) {
 
 WindowPage.prototype.stage = function(name) {
 	var root = document.documentElement;
-	if (name) root.setAttribute("stage", name);
+	if (name === null) root.removeAttribute("stage");
+	else if (name) root.setAttribute("stage", name);
 	else name = root.getAttribute("stage");
 	return name;
 };
@@ -136,7 +137,16 @@ WindowPage.prototype.waitBuild = function(cb) {
 	}
 };
 
+WindowPage.prototype.reset = function() {
+	this.builder = null;
+	this.handler = null;
+	this.builds = [];
+	this.handles = [];
+	this.stage(null);
+};
+
 WindowPage.prototype.import = function(doc) {
+	this.reset();
 	var scripts = Array.from(doc.querySelectorAll('script')).map(function(node) {
 		if (node.type && node.type != "text/javascript") return Promise.resolve({});
 		// make sure script is not loaded when inserted into document
