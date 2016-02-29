@@ -95,10 +95,20 @@ WindowPage.prototype.stage = function(name) {
 };
 
 WindowPage.prototype.waitHandle = function(cb) {
-	var visible = document.documentElement.offsetWidth || document.documentElement.offsetHeight;
-	if (!visible) return;
 	this.builder.then(function() {
-		return Promise.all(Array.from(document.querySelectorAll('link[rel="import"]'))
+		var p = Promise.resolve();
+		if (document.visibilityState == "prerender") {
+			function vizListener() {
+				document.removeEventListener('visibilityChange', vizListener, false);
+				p.then(waitImports);
+			}
+			document.addEventListener('visibilityChange', vizListener, false);
+		} else {
+			p.then(waitImports);
+		}
+	});
+	function waitImports() {
+		Promise.all(Array.from(document.querySelectorAll('link[rel="import"]'))
 		.map(function(link) {
 			if (link.import) {
 				var state = link.import.readyState;
@@ -122,7 +132,7 @@ WindowPage.prototype.waitHandle = function(cb) {
 		})).then(function() {
 			cb();
 		});
-	});
+	}
 };
 
 WindowPage.prototype.waitBuild = function(cb) {
