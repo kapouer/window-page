@@ -59,7 +59,7 @@ States
 When Page is loaded the first time, and the document has never been built,
 and the DOM is ready, the builders chain is run.
 
-When the builders chain ends, and the document is visible,
+When the builders chain ends, and the document is not in prerender visibilityState,
 and all Import links are loaded, the handlers chain is run.
 
 It is also possible to call Page.build() to rerun the builders chain,
