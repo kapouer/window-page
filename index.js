@@ -174,8 +174,13 @@ WindowPage.prototype.import = function(doc) {
 	});
 
 	var imports = Array.from(doc.querySelectorAll('link[rel="import"]'));
+	var cursor;
 	imports.forEach(function(link) {
-		link.rel = "prefetch";
+		if (!cursor) {
+			cursor = doc.createTextNode("");
+			link.parentNode.insertBefore(cursor, link);
+		}
+		link.remove();
 	});
 
 	var root = document.documentElement;
@@ -195,12 +200,7 @@ WindowPage.prototype.import = function(doc) {
 			obj.node.type = "text/javascript";
 		});
 		imports.forEach(function(link) {
-			var after = link.nextSibling;
-			var parent = link.parentNode;
-			link.remove();
-			link.rel = "import";
-			if (after) parent.insertBefore(link, after);
-			else parent.appendChild(link);
+			cursor.parentNode.insertBefore(link, cursor);
 		});
 	}).then(this.build);
 };
