@@ -175,7 +175,7 @@ WindowPage.prototype.import = function(doc) {
 
 	var imports = Array.from(doc.querySelectorAll('link[rel="import"]'));
 	imports.forEach(function(link) {
-		link.rel = "";
+		link.rel = "prefetch";
 	});
 
 	var root = document.documentElement;
