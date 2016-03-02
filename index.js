@@ -30,7 +30,6 @@ function WindowPage() {
 
 	this.waitBuild(function() {
 		if (this.stage() == "build") {
-			this.builder = Promise.resolve();
 			this.waitHandle(this.handle.bind(this));
 		} else {
 			this.build();
@@ -95,7 +94,8 @@ WindowPage.prototype.stage = function(name) {
 };
 
 WindowPage.prototype.waitHandle = function(cb) {
-	this.builder.then(function() {
+	var before = this.builder || Promise.resolve();
+	before.then(function() {
 		var p = Promise.resolve();
 		if (document.visibilityState == "prerender") {
 			function vizListener() {
