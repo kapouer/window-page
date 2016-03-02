@@ -190,15 +190,18 @@ WindowPage.prototype.import = function(doc) {
 	root.replaceChild(document.adoptNode(doc.head), document.head);
 	root.replaceChild(document.adoptNode(doc.body), document.body);
 
-	// execute all scripts at once in their original order
-	return Promise.all(scripts).then(function(list) {
-		list.forEach(function(obj) {
+	// execute all scripts in their original order as soon as they loaded
+	return scripts.reduce(function(sequence, scriptPromise) {
+		return sequence.then(function() {
+			return scriptPromise;
+		}).then(function(obj) {
 			if (!obj.txt) return;
 			var script = document.createElement("script");
 			script.textContent = obj.txt;
 			document.head.appendChild(script).remove();
 			obj.node.type = "text/javascript";
 		});
+	}, Promise.resolve()).then(function() {
 		imports.forEach(function(link) {
 			cursor.parentNode.insertBefore(link, cursor);
 		});
