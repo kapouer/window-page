@@ -6,8 +6,8 @@ isomorphic server-side rendering.
 
 A work in progress.
 
-Usage
------
+Install
+-------
 
 ```
 npm install window-page
@@ -16,6 +16,33 @@ cp node_modules/window-page/window-page.js public/js/
 
 This will expose `window.Page` in the browser.
 
+
+Usage
+-----
+
+All functions that build the page (doing xhr requests and merging into dom)
+must be defined using
+
+```
+Page.build(function() {
+	// document is ready
+	// and might be in prerender visibilityState.
+	// get some json, merge it into dom...
+	// can return a promise
+});
+```
+
+All functions that define events listeners, initiate widgets, animations,
+external assets loading... must be defined using
+
+```
+Page.handle(function() {
+	// document has been built and ready
+	// scripts and link imports have all been loaded
+	// visibilityState is not prerender.
+	$('.dropdown').dropdown(); // typical semantic dropdown initializer
+});
+```
 
 API
 ---
