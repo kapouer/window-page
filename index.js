@@ -136,15 +136,23 @@ WindowPage.prototype.waitHandle = function(cb) {
 };
 
 WindowPage.prototype.waitBuild = function(cb) {
-	if (document.readyState == "interactive" || document.readyState == "complete") {
-		cb();
-	} else {
-		function listener() {
-			document.removeEventListener('DOMContentLoaded', listener);
-			cb();
-		}
-		document.addEventListener('DOMContentLoaded', listener);
+	if (this.docReady) return cb();
+	// https://github.com/jquery/jquery/issues/2100
+	if (document.readyState == "complete" ||
+		(document.readyState != "loading" && !document.documentElement.doScroll)) {
+		this.docReady = true;
+		return cb();
 	}
+	var self = this;
+	function listener() {
+		document.removeEventListener('DOMContentLoaded', listener);
+		window.removeEventListener('load', listener);
+		if (self.docReady) return;
+		self.docReady = true;
+		cb();
+	}
+	document.addEventListener('DOMContentLoaded', listener);
+	window.addEventListener('load', listener);
 };
 
 WindowPage.prototype.reset = function() {
