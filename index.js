@@ -141,7 +141,7 @@ WindowPage.prototype.waitBuild = function(cb) {
 	if (document.readyState == "complete" ||
 		(document.readyState != "loading" && !document.documentElement.doScroll)) {
 		this.docReady = true;
-		return cb();
+		return setTimeout(cb);
 	}
 	var self = this;
 	function listener() {
