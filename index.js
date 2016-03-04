@@ -108,15 +108,20 @@ WindowPage.prototype.waitHandle = function(cb) {
 		}
 	});
 	function waitImports() {
-		Promise.all(Array.from(document.querySelectorAll('link[rel="import"]'))
-		.map(function(link) {
-			if (link.import) {
-				var state = link.import.readyState;
-				var isWebkit = window.navigator.userAgent.indexOf('AppleWebKit');
-				if (state == "complete" || (state == "loading" && isWebkit && window.WebComponents)) {
-					return Promise.resolve();
-				}
+		var imports = Array.from(document.querySelectorAll('link[rel="import"]'));
+		var polyfill = window.HTMLImports;
+		var whenReady;
+
+		return Promise.all(imports.map(function(link) {
+			if (link.import && link.import.readyState == "complete") {
+				// no need to wait, wether native or polyfill
+				return Promise.resolve();
 			}
+			if (polyfill) {
+				// link.onload cannot be trusted
+				return importsReady();
+			}
+
 			return new Promise(function(resolve, reject) {
 				function loadListener() {
 					link.removeEventListener('load', loadListener);
@@ -132,6 +137,15 @@ WindowPage.prototype.waitHandle = function(cb) {
 		})).then(function() {
 			cb();
 		});
+	}
+
+	function importsReady() {
+		if (!whenReady) whenReady = new Promise(function(resolve) {
+			polyfill.whenReady(function() {
+				resolve();
+			});
+		});
+		return whenReady;
 	}
 };
 
