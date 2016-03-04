@@ -110,7 +110,17 @@ WindowPage.prototype.waitHandle = function(cb) {
 	function waitImports() {
 		var imports = Array.from(document.querySelectorAll('link[rel="import"]'));
 		var polyfill = window.HTMLImports;
-		var whenReady;
+		var whenReady = (function() {
+			var promise;
+			return function() {
+				if (!promise) promise = new Promise(function(resolve) {
+					polyfill.whenReady(function() {
+						setTimeout(resolve);
+					});
+				});
+				return promise;
+			};
+		})();
 
 		return Promise.all(imports.map(function(link) {
 			if (link.import && link.import.readyState == "complete") {
@@ -119,7 +129,7 @@ WindowPage.prototype.waitHandle = function(cb) {
 			}
 			if (polyfill) {
 				// link.onload cannot be trusted
-				return importsReady();
+				return whenReady();
 			}
 
 			return new Promise(function(resolve, reject) {
@@ -137,15 +147,6 @@ WindowPage.prototype.waitHandle = function(cb) {
 		})).then(function() {
 			cb();
 		});
-	}
-
-	function importsReady() {
-		if (!whenReady) whenReady = new Promise(function(resolve) {
-			polyfill.whenReady(function() {
-				resolve();
-			});
-		});
-		return whenReady;
 	}
 };
 
