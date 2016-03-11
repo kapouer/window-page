@@ -1,111 +1,172 @@
 window.Page
 ===========
 
-Client-side page routing and loading, compatible with web components and
-isomorphic server-side rendering.
+Light and general client-side page tool that helps routing, building and
+handling ui, compatible with web components and server prerendering.
 
-A work in progress.
+Compatible with visibility API 'prerender' state, and web components.
+
+Designed to degrade gracefully on old browsers.
+
 
 Install
 -------
 
 ```
 npm install window-page
-cp node_modules/window-page/window-page.js public/js/
+ln -s node_modules/window-page/window-page.js public/js/
 ```
-
-This will expose `window.Page` in the browser.
+then load the script in a web page.
 
 
 Usage
 -----
 
-All functions that build the page (doing xhr requests and merging into dom)
-must be defined using
+window.Page is a static object, it does not hold any state.
+
+The object 'page' is used to hold the current page state and is passed as
+argument to all thenables.
+
 
 ```
-Page.build(function() {
-	// document is ready
-	// and might be in prerender visibilityState.
-	// get some json, merge it into dom...
-	// can return a promise
+// get state and document from location
+Page.route(function(page) {
+	GET(page.pathname + '.json').then(function(state) {
+		page.state = state;
+		return GET(state.template, {type: "document"});
+	}).then(function(doc) {
+		page.document = doc;
+	});
 });
-```
 
-All functions that define events listeners, initiate widgets, animations,
-external assets loading... must be defined using
+// merge state into DOM (can fetch more remote data) - no user interactions yet
+Page.build(function(page) {
+	Domt.merge(document.body, page.state);
+});
 
-```
-Page.handle(function() {
-	// document has been built and ready
-	// scripts and link imports have all been loaded
-	// visibilityState is not prerender.
+// initialize user interactions
+Page.handle(function(page) {
 	$('.dropdown').dropdown(); // typical semantic dropdown initializer
 });
 ```
 
+
 API
 ---
 
-* Page.state  
-  the state object, like history.state but without the serialization woes.
+### page properties
 
-* Page.location  
-  current location object, should be the same as document.location.
+The page object has the same properties as a URL instance, along with
 
-* Page.parse  
-  Parse a query string; without arguments, parses document.location.search.
+* page.query  
+  the parsed query string
 
-* Page.stringify  
-  Stringify object to query string.
+* page.document  
+  the document set by routers chain for import
+
+* page.state  
+  the data set by routers chain for builders
+
+
+### Chains
+
+There are three chains (route, build, handle).
+
+* Page.route(fn)  
+  Queue a route function.  
 
 * Page.build(fn)  
-  Queue a build function (can be a thenable)  
-  If called without argument, execute the builders chain.  
+  Queue a build function  
 
 * Page.handle(fn)  
-  Queue a handler function (can be a thenable)  
-  If called without argument, execute the handlers chain.
-
-* Page.import(doc)  
-  Replace current document by another one.  
-  Scripts are loaded and run in the right order.  
-  Import Links are run after all scripts are loaded.  
-  Returns a promise.
-
-* TODO Page.push(state, url | loc)  
-  Like history.pushState, triggers build/handle phases and listeners
-
-* TODO Page.replace(state, url | loc)  
-  Like history.replaceState, triggers build/handle phases and listeners
+  Queue a handler function  
 
 
-States
-------
+### History
 
-When Page is loaded the first time, and the document has never been built,
-and the DOM is ready, the builders chain is run.
+* Page.push(page or url)
 
-When the builders chain ends, and the document is not in prerender visibilityState,
-and all Import links are loaded, the handlers chain is run.
+* Page.replace(page or url)
 
-It is also possible to call Page.build() to rerun the builders chain,
-followed by the handlers chain under the same conditions as before.
+The page object is first converted to a url, appended or replacing current
+document.location (if window.history API is available).
 
-TODO:
-Page.push could load a remote document, import it and then call build() on it.
-Page.replace, if the document is the same, could update Page.state and call
-build() to rebuild the page.
+Then depending on page.document / page.state, routers is run, or directly
+builders, see below.
 
 
-Events
-------
+Lifecycle
+---------
 
-* query event  
-  emitted when only document.location.search has changed.  
-  Listeners receive the query object as parameter.
+Page is loaded by window-page.js, then user scripts append thenables to the chains,
+then document waits to be ready (DOM and Web Components if any are pending).
 
-* error event  
-  emitted when an error occurred during build or handle phases.  
-  Listeners receive the error object, the phase (building, handling)
+The page might have already been built and serialized once, in which case
+page.stage = "build" is already set and the handlers chain is run directly.
+
+Else the routers chain is run; when it ends
+- page.document is imported into window.document if set and not already done
+- then builders are run
+
+When builders chain ends:
+- if window.visibilityState == 'prerender' it stops there
+- else the handlers chain is run
+
+Page.push/replace can be called with a page object that already has a
+document or a state, in which case the routers chain jumps to its end directly.
+
+For example, to rebuild a page with a new state in the same document, just do
+```
+page.state = newState;
+Page.replace(page);
+```
+This won't call any router, even if the build chain was done elsewhere.
+
+
+Example: update when query change
+---------------------------------
+
+In a js file that deals with application routers:
+
+```
+Page.route(function(page) {
+	// GET(...) same usage as above
+});
+```
+
+In another (possibly page related) js file:
+```
+
+function update(query) {
+	GET({pathname: "/api/data", query: query}).then(function(obj) {
+		myMergeUpdate(obj);
+	});
+}
+
+Page.build(function(page) {
+	// main build using data from Page.state
+	if (page.search == location.search) {
+		// application understands this as not updating the page
+		myMerge(page.state.articles);
+	}
+	// finish the build using query params
+	update(page.query);
+});
+
+Page.handle(function(page) {
+	$('form').on('submit', function(e) {
+		e.preventDefault();
+		// push to history, triggers routers chain which in turn will call update()
+		page.query = $(this).form('get values');
+		// won't trigger routers, only search changes
+		Page.push(page);
+	});
+});
+```
+
+
+License
+-------
+
+See LICENSE file.
 
