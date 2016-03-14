@@ -99,10 +99,10 @@ WindowPage.prototype.waitHandle = function(cb) {
 		var p = Promise.resolve();
 		if (document.visibilityState == "prerender") {
 			function vizListener() {
-				document.removeEventListener('visibilityChange', vizListener, false);
+				document.removeEventListener('visibilitychange', vizListener, false);
 				p.then(waitImports);
 			}
-			document.addEventListener('visibilityChange', vizListener, false);
+			document.addEventListener('visibilitychange', vizListener, false);
 		} else {
 			p.then(waitImports);
 		}
