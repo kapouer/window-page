@@ -91,6 +91,15 @@ Then depending on page.document, routers chain is run, or directly
 builders chain, see below.
 
 
+### Tools
+
+* Page.parse(url)  
+  parses a url and its query
+
+* Page.format(obj)  
+  format a parsed url
+
+
 Lifecycle
 ---------
 
