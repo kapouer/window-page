@@ -17,6 +17,12 @@ function WindowPage() {
 		var query = QueryString.stringify(obj.query);
 		if (query) obj.search = query;
 		else obj.search = null;
+		if (obj.path) {
+			var help = this.parse(obj.path);
+			obj.pathname = help.pathname;
+			obj.search = help.search;
+			delete obj.path;
+		}
 		return obj.toString();
 	};
 
