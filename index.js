@@ -28,7 +28,6 @@ function WindowPage() {
 
 	this.reset();
 	this.stage(null);
-	this.page = this.parse("");
 
 	this.historyListener = this.historyListener.bind(this);
 	window.addEventListener('popstate', this.historyListener);
@@ -44,7 +43,7 @@ function WindowPage() {
 	this.waitUiReady = this.waitUiReady.bind(this);
 
 	this.waitReady().then(function() {
-		var page = this.page;
+		var page = 	this.parse("");
 		var stage = this.stage();
 		page.stage = stage;
 		if (stage == "route") {
@@ -54,7 +53,9 @@ function WindowPage() {
 		} else if (stage == "build") {
 			return Promise.resolve(page)
 				.then(this.waitUiReady)
-				.then(this.runHandles);
+				.then(function() {
+					return this.runHandles(page);
+				}.bind(this));
 		}
 	}.bind(this));
 }
@@ -80,7 +81,9 @@ WindowPage.prototype.runBuilds = function(page) {
 	this.builder = this.allFn(page, this.builds);
 	return this.builder
 		.then(this.waitUiReady)
-		.then(this.runHandles);
+		.then(function() {
+			return this.runHandles(page);
+		}.bind(this));
 };
 
 WindowPage.prototype.build = function(fn) {
@@ -106,15 +109,15 @@ WindowPage.prototype.handle = function(fn) {
 	return this;
 };
 
-WindowPage.prototype.catcher = function(phase, err) {
-	console.error("Uncaught error during", phase, err);
+WindowPage.prototype.catcher = function(phase, err, fn) {
+	console.error("Uncaught error during", phase, err, fn);
 };
 
 WindowPage.prototype.oneFn = function(p, fn) {
 	var catcher = this.catcher.bind(this);
 	return p.then(function(page) {
 		return Promise.resolve(page).then(fn).catch(function(err) {
-			return catcher(page.stage, err);
+			return catcher(page.stage, err, fn);
 		}).then(function() {
 			return page;
 		});
@@ -229,7 +232,9 @@ WindowPage.prototype.reset = function() {
 
 WindowPage.prototype.importDocument = function(page) {
 	var doc = page.document;
+	if (!doc) doc = page.document = window.document;
 	if (doc == window.document) return page;
+	page.document = window.document;
 	this.reset();
 	var scripts = Array.from(doc.querySelectorAll('script')).map(function(node) {
 		if (node.type && node.type != "text/javascript") return Promise.resolve({});
@@ -292,9 +297,8 @@ WindowPage.prototype.replace = function(page) {
 };
 
 WindowPage.prototype.historyMethod = function(method, page) {
-	this.page = page;
-	return Promise.resolve(page).then(
-		page.document == window.document ? this.runBuilds : this.runRoutes
+	return (
+		page.document == window.document ? this.runBuilds(page) : this.runRoutes(page)
 	).then(function() {
 		method = method + 'State';
 		if (!window.history || !window.history[method]) return;
@@ -304,7 +308,7 @@ WindowPage.prototype.historyMethod = function(method, page) {
 
 WindowPage.prototype.historyListener = function(e) {
 	// happens on some browsers
-	if (document.location.href == this.format(this.page)) return;
+//	if (document.location.href == this.format(this.page)) return;
 	// TODO
 
 };
