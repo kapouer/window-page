@@ -102,14 +102,16 @@ builders chain, see below.
 Lifecycle
 ---------
 
-Page is loaded by window-page.js, then user scripts append thenables to the chains,
-then document waits to be ready (DOM and Web Components if any are pending).
+window.Page instance is created after window-page.js is loaded, then user scripts
+append thenables to the route/build/handle chains.
 
 The page might have already been built and serialized once, in which case
 `page.document = document;` and the handlers chain is run directly.
 
 Else the routers chain is run; when it ends
-- page.document is imported into window.document if set and not already done
+- page.document is imported into window.document if set and not already done;
+  this importation means new scripts are loaded, in which case all chains are
+  reset,
 - then builders are run
 
 When builders chain ends:

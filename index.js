@@ -21,6 +21,8 @@ function WindowPage() {
 	};
 
 	this.reset();
+	this.stage(null);
+	this.page = this.parse("");
 
 	this.historyListener = this.historyListener.bind(this);
 	window.addEventListener('popstate', this.historyListener);
@@ -55,11 +57,7 @@ WindowPage.prototype.runRoutes = function(page) {
 	page.stage = "route";
 	this.stage(page.stage);
 	this.router = this.allFn(page, this.routes);
-	return this.router.then(function() {
-		if (page.document != window.document) {
-			return this.import(page.document);
-		}
-	}.bind(this)).then(this.runBuilds);
+	return this.router.then(this.importDocument.bind(this)).then(this.runBuilds);
 };
 
 WindowPage.prototype.route = function(fn) {
@@ -217,11 +215,11 @@ WindowPage.prototype.reset = function() {
 	this.routes = [];
 	this.builds = [];
 	this.handles = [];
-	this.stage(null);
-	this.page = this.parse("");
 };
 
-WindowPage.prototype.import = function(doc) {
+WindowPage.prototype.importDocument = function(page) {
+	var doc = page.document;
+	if (doc == window.document) return page;
 	this.reset();
 	var scripts = Array.from(doc.querySelectorAll('script')).map(function(node) {
 		if (node.type && node.type != "text/javascript") return Promise.resolve({});
@@ -271,6 +269,7 @@ WindowPage.prototype.import = function(doc) {
 		imports.forEach(function(link) {
 			cursor.parentNode.insertBefore(link, cursor);
 		});
+		return page;
 	});
 };
 
