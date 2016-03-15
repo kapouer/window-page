@@ -61,10 +61,9 @@ WindowPage.prototype.runRoutes = function(page) {
 };
 
 WindowPage.prototype.route = function(fn) {
-	var phase = "route";
 	this.routes.push(fn);
-	if (this.router && this.stage() == phase) {
-		this.router = this.oneFn(this.router, fn, phase);
+	if (this.router && this.stage() == "route") {
+		this.router = this.oneFn(this.router, fn);
 	}
 	return this;
 };
@@ -79,10 +78,9 @@ WindowPage.prototype.runBuilds = function(page) {
 };
 
 WindowPage.prototype.build = function(fn) {
-	var phase = "build";
 	this.builds.push(fn);
-	if (this.builder && this.stage() == phase) {
-		this.builder = this.oneFn(this.builder, fn, phase);
+	if (this.builder && this.stage() == "build") {
+		this.builder = this.oneFn(this.builder, fn);
 	}
 	return this;
 };
@@ -95,10 +93,9 @@ WindowPage.prototype.runHandles = function(page) {
 
 
 WindowPage.prototype.handle = function(fn) {
-	var phase = "handle";
 	this.handles.push(fn);
 	if (this.handler) {
-		this.handler = this.oneFn(this.handler, fn, phase);
+		this.handler = this.oneFn(this.handler, fn);
 	}
 	return this;
 };
@@ -107,15 +104,22 @@ WindowPage.prototype.catcher = function(phase, err) {
 	console.error("Uncaught error during", phase, err);
 };
 
-WindowPage.prototype.oneFn = function(p, fn, phase) {
-	return p.then(fn).catch(this.catcher.bind(this, phase));
+WindowPage.prototype.oneFn = function(p, fn) {
+	var catcher = this.catcher.bind(this);
+	return p.then(function(page) {
+		return Promise.resolve(page).then(fn).catch(function(err) {
+			return catcher(page.stage, err);
+		}).then(function() {
+			return page;
+		});
+	});
 };
 
 WindowPage.prototype.allFn = function(page, list) {
 	var p = Promise.resolve(page);
 	var self = this;
 	list.forEach(function(fn) {
-		p = self.oneFn(p, fn, page.stage);
+		p = self.oneFn(p, fn);
 	});
 	return p;
 };

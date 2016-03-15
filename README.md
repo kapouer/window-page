@@ -65,7 +65,7 @@ The page object has the same properties as a URL instance, along with
 
 ### Chains
 
-There are three chains (route, build, handle).
+There are three chains (route, build, handle) that accepts thenables.
 
 * Page.route(fn)  
   Queue a route function.  
@@ -75,6 +75,8 @@ There are three chains (route, build, handle).
 
 * Page.handle(fn)  
   Queue a handler function  
+
+The return value of the thenables is ignored.
 
 
 ### History
@@ -150,20 +152,16 @@ Page.route(function(page) {
 
 In another (possibly page related) js file:
 ```
-
-function update(query) {
-	GET({pathname: "/api/data", query: query}).then(function(obj) {
-		myMergeUpdate(obj);
-	});
-}
-
 Page.build(function(page) {
 	if (page.search == location.search) {
 		// application understands this as not updating the page
 		myMerge(page.data.articles);
 	}
-	// finish the build using query params
-	update(page.query);
+	// the update part of the build
+	var query = page.query;
+	GET({pathname: "/api/data", query: query}).then(function(obj) {
+		myMergeUpdate(obj);
+	});
 });
 
 Page.handle(function(page) {
