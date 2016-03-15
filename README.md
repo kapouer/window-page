@@ -1,12 +1,11 @@
 window.Page
 ===========
 
-Light and general client-side page tool that helps routing, building and
-handling ui, compatible with web components and server prerendering.
+A general, light, three-staged-chains client page (pre)renderer and router.
 
-Compatible with visibility API 'prerender' state, and web components.
+Compatible with web components and visibility API.
 
-Designed to degrade gracefully on old browsers.
+Designed to degrade gracefully on old browsers - can work without history API.
 
 
 Install

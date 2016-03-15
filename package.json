@@ -1,7 +1,7 @@
 {
   "name": "window-page",
   "version": "1.0.0",
-  "description": "Isomorphic client routing and building tools exposed through window.Page",
+  "description": "Route, build, handle client web pages",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -21,7 +21,6 @@
   "author": "Jérémy Lal <kapouer@melix.org>",
   "license": "MIT",
   "dependencies": {
-    "component-emitter": "^1.2.0",
     "query-string": "^3.0.0"
   },
   "bugs": {
