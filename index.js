@@ -16,7 +16,7 @@ function WindowPage() {
 	this.format = function(obj) {
 		var query = QueryString.stringify(obj.query);
 		if (query) obj.search = query;
-		else obj.search = null;
+		else delete obj.search;
 		if (obj.path) {
 			var help = this.parse(obj.path);
 			obj.pathname = help.pathname;
