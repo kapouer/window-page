@@ -9,10 +9,11 @@ function WindowPage() {
 	var QueryString = require('query-string');
 
 	this.parse = function(str) {
-		var obj = new URL(str, document.location);
+		var loc = this.location ? this.location.toString() : document.location.toString();
+		var obj = new URL(str || "", loc);
 		obj.query = QueryString.parse(obj.search);
 		return obj;
-	};
+	}.bind(this);
 	this.format = function(obj) {
 		var query = QueryString.stringify(obj.query);
 		if (query) obj.search = query;
@@ -25,6 +26,8 @@ function WindowPage() {
 		}
 		return obj.toString();
 	};
+
+	this.location = this.parse(document.location.toString());
 
 	this.reset();
 
@@ -47,14 +50,17 @@ function WindowPage() {
 
 WindowPage.prototype.run = function(page) {
 	var pageUrl = this.format(page);
-	page.browsing = pageUrl != document.location.toString();
+	page.browsing = false;
+	if (pageUrl != this.location.href) {
+		page.browsing = true;
+	}
 	var self = this;
 	return this.waitReady().then(function() {
 		if (!page.document) {
 			return self.runChain('route', page);
 		}
 	}).then(function() {
-		if (page.document != window.document) {
+		if (page.document && page.document != window.document) {
 			self.reset();
 			page.updating = false;
 			return self.importDocument(page.document).then(function() {
@@ -71,6 +77,7 @@ WindowPage.prototype.run = function(page) {
 			return self.runChain('handle', page);
 		});
 	}).then(function() {
+		self.location = self.parse(pageUrl);
 		page.updating = true;
 	});
 };
@@ -87,7 +94,6 @@ WindowPage.prototype.runChain = function(stage, page) {
 	page.stage = stage;
 	this.stage(stage);
 	var chain = this.chains[stage];
-	console.log("run chain", stage);
 	chain.promise = this.allFn(page, chain.thenables);
 	return chain.promise.then(function() {
 		return page;
@@ -269,17 +275,15 @@ WindowPage.prototype.importDocument = function(doc) {
 };
 
 WindowPage.prototype.push = function(page) {
-	this.historyMethod('push', page);
+	return this.historyMethod('push', page);
 };
 
 WindowPage.prototype.replace = function(page) {
-	this.historyMethod('replace', page);
+	return this.historyMethod('replace', page);
 };
 
 WindowPage.prototype.historyMethod = function(method, page) {
-	console.log("called history", method, Page.format(page));
 	return this.run(page).then(function() {
-		console.log("done history");
 		method = method + 'State';
 		if (!window.history || !window.history[method]) return;
 		window.history[method](null, page.document.title, this.format(page));
