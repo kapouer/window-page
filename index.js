@@ -41,7 +41,7 @@ function WindowPage() {
 			return loc.toString();
 		}
 		var str = obj.pathname || "";
-		if (obj.query) str += '?' + QueryString.format(obj.query);
+		if (obj.query) str += '?' + QueryString.stringify(obj.query);
 		if (obj.hash) str += '#' + obj.hash;
 		return str;
 	}.bind(this);
@@ -66,7 +66,7 @@ function WindowPage() {
 }
 
 WindowPage.prototype.run = function(state) {
-	this.format(stage); // converts path if any
+	this.format(state); // converts path if any
 	var self = this;
 	return this.waitReady().then(function() {
 		if (!state.imported) {
