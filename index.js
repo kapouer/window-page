@@ -57,7 +57,7 @@ function WindowPage() {
 }
 
 WindowPage.prototype.run = function(page) {
-	var pageUrl = this.format(page);
+	this.format(page); // cleanup
 	var self = this;
 	return this.waitReady().then(function() {
 		if (!page.imported) {
@@ -81,7 +81,6 @@ WindowPage.prototype.run = function(page) {
 			return self.runChain('handle', page);
 		});
 	}).then(function() {
-		self.url = self.format(page);
 		page.updating = true;
 	});
 };
