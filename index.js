@@ -13,27 +13,38 @@ function WindowPage() {
 		obj.query = QueryString.parse(obj.search);
 		return obj;
 	}.bind(this);
+
 	this.format = function(obj) {
-		var search = QueryString.stringify(obj.query);
-		var nobj = obj;
-		if (!(obj instanceof window.URL)) {
-			nobj = this.parse(obj.path);
-			if (!obj.path) {
-				if (obj.pathname) nobj.pathname = obj.pathname;
-				if (obj.search && obj.search != "?") nobj.search = obj.search;
-				if (obj.hash && obj.hash != "#") nobj.hash = obj.hash;
-			}
-			if (obj.port && obj.port != 80) nobj.port = obj.port;
-			if (obj.hostname) nobj.hostname = obj.hostname;
-			if (obj.protocol) nobj.protocol = obj.protocol;
+		var dest = obj;
+		if (obj.path) {
+			var helper = this.parse(obj.path);
+			delete obj.path;
+			["pathname", "hash", "search", "query"].forEach(function(k) {
+				if (helper[k] !== undefined) obj[k] = helper[k];
+			});
 		}
-		if (search) nobj.search = search;
-		else if (obj.query) delete nobj.search;
-		if (!obj.hostname && !obj.protocol && !obj.port) {
-			if (!obj.pathname) return nobj.search;
-			else return nobj.pathname + nobj.search;
+		if (!(obj instanceof window.URL)) {
+			dest = this.parse();
+			for (var k in dest) if (obj[k] !== undefined && !~["href", "host"].indexOf(k)) dest[k] = obj[k];
+		}
+
+		var search = QueryString.stringify(obj.query);
+
+		if (search) dest.search = search;
+		else if (obj.query) delete dest.search;
+
+		if (dest.hash && dest.hash == "#") delete dest.hash;
+		if (dest.port == 80) delete dest.port;
+		var loc = document.location;
+		if ((!obj.hostname || obj.hostname == loc.hostname)
+		&& (!obj.protocol || obj.protocol == loc.protocol)
+		&& (!obj.port || obj.port == loc.port)) {
+			var str = obj.pathname ? dest.pathname : "";
+			if (dest.search) str += dest.search
+			if (dest.hash) str += dest.hash;
+			return str;
 		} else {
-			return nobj.toString();
+			return dest.toString();
 		}
 	};
 
