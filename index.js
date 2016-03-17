@@ -9,7 +9,7 @@ function WindowPage() {
 	var QueryString = require('query-string');
 
 	this.parse = function(str) {
-		var dloc = document.location;
+		var dloc = this.window.document.location;
 		var loc = new URL(str || "", dloc.toString());
 		var obj = {
 			pathname: loc.pathname,
@@ -26,7 +26,7 @@ function WindowPage() {
 	}.bind(this);
 
 	this.format = function(obj) {
-		var dloc = document.location;
+		var dloc = this.window.document.location;
 		if (obj.path) {
 			var parsedPath = this.parse(obj.path);
 			obj.pathname = parsedPath.pathname;
@@ -47,9 +47,6 @@ function WindowPage() {
 	}.bind(this);
 
 	this.reset();
-
-	this.historyListener = this.historyListener.bind(this);
-	window.addEventListener('popstate', this.historyListener);
 
 	this.route = this.chainThenable.bind(this, "route");
 	this.build = this.chainThenable.bind(this, "build");
@@ -297,19 +294,24 @@ WindowPage.prototype.replace = function(state) {
 
 WindowPage.prototype.historyMethod = function(method, state) {
 	if (typeof state == "string") state = this.parse(state);
-	var supported = !!window.history;
-	if (supported) {
-		if (!this.wroteState && method == "push") {
+	var supported = !!this.window.history;
+	if (supported && !this.historyListener) {
+		this.historyListener = function(e) {
+			var state = this.stateFrom(e.state);
+			if (!state) return;
+			this.run(state);
+		}.bind(this);
+		this.window.addEventListener('popstate', this.historyListener);
+		if (method == "push") {
 			var to = this.stateTo(this.state);
-			window.history.replaceState(to, document.title, to.href);
-			this.wroteState = true;
+			this.window.history.replaceState(to, document.title, to.href);
 		}
 	}
 	return this.run(state).then(function() {
 		this.state = state;
 		var to = this.stateTo(state);
 		if (supported) {
-			window.history[method + 'State'](to, document.title, to.href);
+			this.window.history[method + 'State'](to, document.title, to.href);
 		}
 	}.bind(this));
 };
@@ -338,12 +340,6 @@ WindowPage.prototype.stateFrom = function(from) {
 		state.updating = true;
 	}
 	return state;
-};
-
-WindowPage.prototype.historyListener = function(e) {
-	var state = this.stateFrom(e.state);
-	if (!state) return;
-	this.run(state);
 };
 
 window.Page = new WindowPage();
