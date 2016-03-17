@@ -29,7 +29,12 @@ function WindowPage() {
 		}
 		if (search) nobj.search = search;
 		else if (obj.query) delete nobj.search;
-		return nobj.toString();
+		if (!obj.hostname && !obj.protocol && !obj.port) {
+			if (!obj.pathname) return nobj.search;
+			else return nobj.pathname + nobj.search;
+		} else {
+			return nobj.toString();
+		}
 	};
 
 	this.reset();
