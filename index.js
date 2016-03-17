@@ -5,6 +5,7 @@ function WindowPage() {
 		if (inst.name == "WindowPage") return inst;
 	}
 	this.name = "WindowPage";
+	this.window = window;
 
 	var QueryString = require('query-string');
 
