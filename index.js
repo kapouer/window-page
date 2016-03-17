@@ -296,6 +296,7 @@ WindowPage.prototype.replace = function(state) {
 };
 
 WindowPage.prototype.historyMethod = function(method, state) {
+	if (typeof state == "string") state = this.parse(state);
 	var supported = !!window.history;
 	if (supported) {
 		if (!this.wroteState && method == "push") {
