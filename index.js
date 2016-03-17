@@ -27,84 +27,78 @@ function WindowPage() {
 	};
 
 	this.reset();
-	this.stage(null);
 
 	this.historyListener = this.historyListener.bind(this);
 	window.addEventListener('popstate', this.historyListener);
 
-	this.route = this.route.bind(this);
-	this.build = this.build.bind(this);
-	this.handle = this.handle.bind(this);
+	this.route = this.chainThenable.bind(this, "route");
+	this.build = this.chainThenable.bind(this, "build");
+	this.handle = this.chainThenable.bind(this, "handle");
 
-	this.runRoutes = this.runRoutes.bind(this);
-	this.runBuilds = this.runBuilds.bind(this);
-	this.runHandles = this.runHandles.bind(this);
+	this.importDocument = this.importDocument.bind(this);
 
 	this.waitUiReady = this.waitUiReady.bind(this);
 
-	this.waitReady().then(function() {
-		var page = 	this.parse("");
-		var stage = this.stage();
-		page.stage = stage;
-		if (stage == "route") {
-			return this.runRoutes(page);
-		} else if (stage == "route") {
-			return this.runBuilds(page);
-		} else if (stage == "build") {
-			return Promise.resolve(page)
-				.then(this.waitUiReady)
-				.then(function() {
-					return this.runHandles(page);
-				}.bind(this));
-		}
-	}.bind(this));
+	var page = 	this.parse("");
+	page.stage = this.stage();
+	if (page.stage == "build") page.document = window.document;
+	this.run(page);
 }
 
-WindowPage.prototype.runRoutes = function(page) {
-	page.stage = "route";
-	this.stage(page.stage);
-	this.router = this.allFn(page, this.routes);
-	return this.router.then(this.importDocument.bind(this)).then(this.runBuilds);
+WindowPage.prototype.run = function(page) {
+	var pageUrl = this.format(page);
+	page.browsing = pageUrl != document.location.toString();
+	var self = this;
+	return this.waitReady().then(function() {
+		if (!page.document) {
+			return self.runChain('route', page);
+		}
+	}).then(function() {
+		if (page.document != window.document) {
+			self.reset();
+			page.updating = false;
+			return self.importDocument(page.document).then(function() {
+				page.document = window.document;
+			});
+		}
+	}).then(function() {
+		if (page.stage != "build") {
+			// always run except if the document has just been opened in a build stage
+			return self.runChain('build', page);
+		}
+	}).then(function() {
+		return self.waitUiReady(page).then(function() {
+			return self.runChain('handle', page);
+		});
+	}).then(function() {
+		page.updating = true;
+	});
 };
 
-WindowPage.prototype.route = function(fn) {
-	this.routes.push(fn);
-	if (this.router && this.stage() == "route") {
-		this.router = this.oneFn(this.router, fn);
-	}
-	return this;
+WindowPage.prototype.reset = function() {
+	this.chains = {
+		route: {thenables: []},
+		build: {thenables: []},
+		handle: {thenables: []}
+	};
 };
 
-WindowPage.prototype.runBuilds = function(page) {
-	page.stage = "build";
-	this.stage(page.stage);
-	this.builder = this.allFn(page, this.builds);
-	return this.builder
-		.then(this.waitUiReady)
-		.then(function() {
-			return this.runHandles(page);
-		}.bind(this));
+WindowPage.prototype.runChain = function(stage, page) {
+	page.stage = stage;
+	this.stage(stage);
+	var chain = this.chains[stage];
+	console.log("run chain", stage);
+	chain.promise = this.allFn(page, chain.thenables);
+	return chain.promise.then(function() {
+		return page;
+	});
 };
 
-WindowPage.prototype.build = function(fn) {
-	this.builds.push(fn);
-	if (this.builder && this.stage() == "build") {
-		this.builder = this.oneFn(this.builder, fn);
-	}
-	return this;
-};
-
-WindowPage.prototype.runHandles = function(page) {
-	page.stage = "handle"
-	this.handler = this.allFn(page, this.handles);
-	return this.handler;
-};
-
-
-WindowPage.prototype.handle = function(fn) {
-	this.handles.push(fn);
-	if (this.handler) {
-		this.handler = this.oneFn(this.handler, fn);
+WindowPage.prototype.chainThenable = function(stage, fn) {
+	var chain = this.chains[stage];
+	chain.thenables.push(fn);
+	if (chain.promise && this.stage() == stage) {
+		chain.promise = this.oneFn(chain.promise, fn);
 	}
 	return this;
 };
@@ -138,11 +132,10 @@ WindowPage.prototype.stage = function(name) {
 	if (name === null) root.removeAttribute("stage");
 	else if (name) root.setAttribute("stage", name);
 	else name = root.getAttribute("stage");
-	if (!name) name = "route";
 	return name;
 };
 
-WindowPage.prototype.waitUiReady = function() {
+WindowPage.prototype.waitUiReady = function(page) {
 	if (document.visibilityState == "prerender") {
 		var solve, p = new Promise(function(resolve) { solve = resolve; });
 		function vizListener() {
@@ -191,7 +184,9 @@ WindowPage.prototype.waitUiReady = function() {
 				link.addEventListener('load', loadListener);
 				link.addEventListener('error', errorListener);
 			});
-		}));
+		})).then(function() {
+			return page;
+		});
 	}
 };
 
@@ -221,21 +216,7 @@ WindowPage.prototype.waitReady = function() {
 	return p;
 };
 
-WindowPage.prototype.reset = function() {
-	this.router = null;
-	this.builder = null;
-	this.handler = null;
-	this.routes = [];
-	this.builds = [];
-	this.handles = [];
-};
-
-WindowPage.prototype.importDocument = function(page) {
-	var doc = page.document;
-	if (!doc) doc = page.document = window.document;
-	if (doc == window.document) return page;
-	page.document = window.document;
-	this.reset();
+WindowPage.prototype.importDocument = function(doc) {
 	var scripts = Array.from(doc.querySelectorAll('script')).map(function(node) {
 		if (node.type && node.type != "text/javascript") return Promise.resolve({});
 		// make sure script is not loaded when inserted into document
@@ -284,7 +265,6 @@ WindowPage.prototype.importDocument = function(page) {
 		imports.forEach(function(link) {
 			cursor.parentNode.insertBefore(link, cursor);
 		});
-		return page;
 	});
 };
 
@@ -297,9 +277,9 @@ WindowPage.prototype.replace = function(page) {
 };
 
 WindowPage.prototype.historyMethod = function(method, page) {
-	return (
-		page.document == window.document ? this.runBuilds(page) : this.runRoutes(page)
-	).then(function() {
+	console.log("called history", method, Page.format(page));
+	return this.run(page).then(function() {
+		console.log("done history");
 		method = method + 'State';
 		if (!window.history || !window.history[method]) return;
 		window.history[method](null, page.document.title, this.format(page));

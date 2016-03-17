@@ -52,31 +52,41 @@ Page.handle(function(page) {
 API
 ---
 
-### page properties
+### page object
 
-The page object has the same properties as a URL instance, along with
+The page object extends a standard URL instance
 
-* page.query  
-  the parsed query string
+* page.pathname, search, hostname, protocol...
+  the usual properties
+* query  
+  the parsed query string.
+
+When Page.format(page) is called, the query object is stringified first, then
+it returns the result of location.toString.
+
+It has some extra properties that are passed along to all fn functions
 
 * page.document  
-  the document set by routers chain for import
+  the document set by routers chain for import, then window.document
+
+* page.browsing  
+  is set to true if document location is going to change after chains are run
+  successfully.
+
+* page.updating  
+  is set to true if the currently run chain function has already run once on
+  the current document instance.
 
 
-### Chains
+### Chains setup
 
-There are three chains (route, build, handle) that accepts thenables.
+* Page.route(fn)
+* Page.build(fn)
+* Page.handle(fn)
 
-* Page.route(fn)  
-  Queue a route function.  
+The return values of the promises are ignored.
 
-* Page.build(fn)  
-  Queue a build function  
-
-* Page.handle(fn)  
-  Queue a handler function  
-
-The return value of the thenables is ignored.
+All functions receive the same "page" parameter.
 
 
 ### History
@@ -84,12 +94,6 @@ The return value of the thenables is ignored.
 * Page.push(page or url)
 
 * Page.replace(page or url)
-
-The page object is first converted to a url, appended or replacing current
-document.location (if window.history API is available).
-
-Then depending on page.document, routers chain is run, or directly
-builders chain, see below.
 
 
 ### Tools
@@ -101,42 +105,70 @@ builders chain, see below.
   format a parsed url
 
 
-Lifecycle
----------
+Run chains
+----------
 
-window.Page instance is created after window-page.js is loaded, then user scripts
-append thenables to the route/build/handle chains.
+There are three chains (route, build, handle) that accepts thenables.
 
-The page might have already been built and serialized once, in which case
-`page.document = document;` and the handlers chain is run directly.
+The first time the document is parsed into a DOM, it is "initial", and the
+second time it is "revived" (it has been initial then built and serialized then
+reopened elsewhare).
 
-Else the routers chain is run; when it ends
-- page.document is imported into window.document if set and not already done;
-  this importation means new scripts are loaded, in which case all chains are
-  reset,
-- then builders are run
+Chains are always run after DOM is ready.
 
-When builders chain ends:
-- if window.visibilityState == 'prerender' it stops there
-- else the handlers chain is run
+Between route and build chain, if page.document is not window.document,
+it is imported into it and the build chain is run when the import is finished
+and imported scripts and links are ready.
 
-Page.push/replace can be called with an object that has a document, in which
-case the routers chain jumps to its end directly. This is useful for rebuilding
-a page without refetching its document and/or its data.
+The handle chain is never run when prerendering.
 
-For example, to rebuild a page with a new page in the same document, just do
+### 1. Initial document - construction
+
+DOM Ready on new document, or page.document is not window.document:
+- route
+- build
+- handle
+
+### 2. Initial or revived document - navigation
+
+Page.replace, or Page.push call:
+- build
+- handle
+
+### 3. Revived document - opening
+
+DOM Ready on built document:
+- handle
+
+
+Application behaviors
+---------------------
+
+- route functions typically sets `page.data` (or anything else that does not
+conflict with existing properties)
+- the second time a chain is run on current document, `page.updating == true`
+- before chains are run, if location will change, `page.browsing == true`
+
+### Reload or update
+
+Both are characterized by `page.updating` being true.
+
+A reload is done using `Page.replace(page)` with changes in application data
+but not in page location, meaning `page.browsing` is false.
+
+An update is done using `Page.push(page)` with changes in page location, meaning
+`page.browsing` is true.
+
+It is up to the application build and handle functions to deal with being run
+several times.
+
+
+### Open new url
+
+Because of the need to get new data and document, simply do
 ```
-Page.replace({
-	data: someData,
-	document: document
-});
+Page.push(newHref)
 ```
-or even simpler, if the page argument is available:
-```
-page.data = someData;
-Page.replace(page);
-```
-Both won't call the routers chain.
 
 
 Example: update when query change
@@ -153,7 +185,7 @@ Page.route(function(page) {
 In another (possibly page related) js file:
 ```
 Page.build(function(page) {
-	if (page.search == location.search) {
+	if (page.data) {
 		// application understands this as not updating the page
 		myMerge(page.data.articles);
 	}
@@ -165,7 +197,7 @@ Page.build(function(page) {
 });
 
 Page.handle(function(page) {
-	$('form').on('submit', function(e) {
+	if (!page.updating) $('form').on('submit', function(e) {
 		e.preventDefault();
 		// push to history, triggers routers chain which in turn will call update()
 		page.query = $(this).form('get values');
