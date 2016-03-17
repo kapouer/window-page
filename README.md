@@ -101,7 +101,8 @@ All functions receive the same "page" parameter.
   parses a url and its query
 
 * Page.format(obj)  
-  format a parsed url
+  format a parsed url - if obj is not a URL instance, only the specified parts
+  are returned, not the absolute url.
 
 
 Run chains
