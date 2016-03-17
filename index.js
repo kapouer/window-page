@@ -14,16 +14,22 @@ function WindowPage() {
 		return obj;
 	}.bind(this);
 	this.format = function(obj) {
-		var query = QueryString.stringify(obj.query);
-		if (query) obj.search = query;
-		else delete obj.search;
-		if (obj.path) {
-			var help = this.parse(obj.path);
-			obj.pathname = help.pathname;
-			obj.search = help.search;
-			delete obj.path;
+		var search = QueryString.stringify(obj.query);
+		var nobj = obj;
+		if (!(obj instanceof window.URL)) {
+			nobj = this.parse(obj.path);
+			if (!obj.path) {
+				if (obj.pathname) nobj.pathname = obj.pathname;
+				if (obj.search && obj.search != "?") nobj.search = obj.search;
+			}
+			if (obj.port && obj.port != 80) nobj.port = obj.port;
+			if (obj.hostname) nobj.hostname = obj.hostname;
+			if (obj.protocol) nobj.protocol = obj.protocol;
+			if (obj.hash && obj.hash != "#") nobj.hash = obj.hash;
 		}
-		return obj.toString();
+		if (search) nobj.search = search;
+		else if (obj.query) delete nobj.search;
+		return nobj.toString();
 	};
 
 	this.reset();
