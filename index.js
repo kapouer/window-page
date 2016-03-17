@@ -276,20 +276,31 @@ WindowPage.prototype.replace = function(page) {
 };
 
 WindowPage.prototype.historyMethod = function(method, page) {
+	var supported = !!window.history;
+	if (supported) {
+		if (!this.wroteState && method == "push") {
+			var state = this.toState(page);
+			state.href = document.location.toString();
+			window.history.replaceState(state, document.title, state.href);
+			this.wroteState = true;
+		}
+	}
 	return this.run(page).then(function() {
-		method = method + 'State';
-		if (!window.history || !window.history[method]) return;
-		var state = {
-			html: page.document && page.document.documentElement.outerHTML,
-			data: page.data,
-			href: page.href
-		};
-		window.history[method](state, document.title, this.format(page));
+		if (supported) {
+			window.history[method + 'State'](this.toState(page), document.title, this.format(page));
+		}
 	}.bind(this));
 };
 
-WindowPage.prototype.historyListener = function(e) {
-	var state = e.state;
+WindowPage.prototype.toState = function(page) {
+	return {
+		html: page.document && page.document.documentElement.outerHTML,
+		data: page.data,
+		href: page.href
+	};
+};
+
+WindowPage.prototype.fromState = function(state) {
 	if (!state || !state.href) return;
 	var page = this.parse(state.href);
 	if (state.data) page.data = state.data;
@@ -303,6 +314,12 @@ WindowPage.prototype.historyListener = function(e) {
 		page.imported = true;
 		page.updating = true;
 	}
+	return page;
+};
+
+WindowPage.prototype.historyListener = function(e) {
+	var page = this.fromState(e.state);
+	if (!page) return;
 	this.run(page);
 };
 
