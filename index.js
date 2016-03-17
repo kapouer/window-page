@@ -9,8 +9,7 @@ function WindowPage() {
 	var QueryString = require('query-string');
 
 	this.parse = function(str) {
-		var loc = this.location ? this.location.toString() : document.location.toString();
-		var obj = new URL(str || "", loc);
+		var obj = new URL(str || "", document.location.toString());
 		obj.query = QueryString.parse(obj.search);
 		return obj;
 	}.bind(this);
@@ -26,8 +25,6 @@ function WindowPage() {
 		}
 		return obj.toString();
 	};
-
-	this.location = this.parse(document.location.toString());
 
 	this.reset();
 
@@ -51,7 +48,7 @@ function WindowPage() {
 WindowPage.prototype.run = function(page) {
 	var pageUrl = this.format(page);
 	page.browsing = false;
-	if (pageUrl != this.location.href) {
+	if (pageUrl != document.location.toString()) {
 		page.browsing = true;
 	}
 	var self = this;
@@ -77,7 +74,6 @@ WindowPage.prototype.run = function(page) {
 			return self.runChain('handle', page);
 		});
 	}).then(function() {
-		self.location = self.parse(pageUrl);
 		page.updating = true;
 	});
 };
