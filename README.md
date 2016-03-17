@@ -25,23 +25,24 @@ window.Page is a static object, it does not hold any state.
 
 ```
 // get data and document from location
-Page.route(function(page) {
+Page.route(function(state) {
 	GET(page.pathname + '.json').then(function(data) {
 		// not mandatory property name, but a good idea to avoid future collisions
-		page.data = data;
+		state.data = data;
 		return GET(data.template, {type: "document"});
 	}).then(function(doc) {
-		page.document = doc;
+		state.document = doc;
 	});
 });
 
 // merge data into DOM (can fetch more remote data) - no user interactions yet
-Page.build(function(page) {
-	Domt.merge(document.body, page.data);
+Page.build(function(state) {
+	Domt.merge(document.body, state.data);
 });
 
 // initialize user interactions
-Page.handle(function(page) {
+Page.handle(function(state) {
+	if (state.update) return;
 	$('.dropdown').dropdown(); // typical semantic dropdown initializer
 });
 ```
@@ -50,31 +51,29 @@ Page.handle(function(page) {
 API
 ---
 
-### page object
+### state object
 
-The page object extends a standard URL instance
+The state object describes components of the url parsed with Page.parse()
 
-* page.pathname, search, hostname, protocol...
-  the usual properties
-* query  
-  the parsed query string.
+* state.pathname, state.query, state.hash  
+  see also Page.format(state)
 
-When Page.format(page) is called, the query object is stringified first, then
-it returns the result of location.toString.
+The state object is also the place to keep application data, if any
 
-It has some extra properties that are passed along to all fn functions
+* state.data    
+  It is also a good idea to make sure that data is serializable.
 
-* page.document  
-  set by the route chain to a DOM document that is imported into window.document
+And it has some non-enumerable properties that are passed along to all chain
+functions:
 
-* page.updating  
+* state.document  
+  the route chain is supposed to populate this with a DOM document, and when the
+  route chain is finished it is imported into window.document before the build
+  chain starts.
+
+* state.updating  
   is set to true if the currently run chain function has already run once on
   the current document instance.
-
-* page.data  
-  Optional for now.  
-  this is where application data should be kept, if any.  
-  It is also a good idea to make sure that data is serialized.
 
 
 ### Chains setup
@@ -85,24 +84,27 @@ It has some extra properties that are passed along to all fn functions
 
 The return values of the promises are ignored.
 
-All functions receive the same "page" parameter.
+All functions receive the same "state" parameter, which ends up being available
+as `Page.state`.
 
 
 ### History
 
-* Page.push(page or url)
+* Page.state  
+  the current state
 
-* Page.replace(page or url)
+* Page.push(state or url)
+
+* Page.replace(state or url)
 
 
 ### Tools
 
 * Page.parse(url)  
-  parses a url and its query
+  parses a url and fill only properties that were defined in the url.
 
 * Page.format(obj)  
-  format a parsed url - if obj is not a URL instance, only the specified parts
-  are returned, not the absolute url.
+  format a parsed url to a string with only what was defined.
 
 
 Run chains
@@ -116,7 +118,7 @@ reopened elsewhare).
 
 Chains are always run after DOM is ready.
 
-Between route and build chain, if page.document has not been imported,
+Between route and build chain, if state.document has not been imported,
 it is imported into it and the build chain is run when the import is finished
 and its scripts and import links are loaded.
 
@@ -124,7 +126,7 @@ The handle chain is never run when prerendering.
 
 ### 1. Initial document - construction
 
-DOM Ready on new document, or page.document has not been imported:
+DOM Ready on new document, or state.document has not been imported:
 - route
 - build
 - handle
@@ -144,13 +146,13 @@ DOM Ready on built document:
 Application behaviors
 ---------------------
 
-- route functions typically sets `page.data` (or anything else that does not
+- route functions typically sets `state.data` (or anything else that does not
 conflict with existing properties)
-- the second time a chain is run on current document, `page.updating == true`
+- the second time a chain is run on current document, `state.updating == true`
 
 ### Reload or update
 
-Both are characterized by `page.updating` being true.
+Both are characterized by `state.updating` being true.
 
 When using Page.push or Page.replace, it is up to the application build and
 handle functions to deal with being run several times.
@@ -170,33 +172,33 @@ Example: update when query change
 In a js file that deals with application routers:
 
 ```
-Page.route(function(page) {
+Page.route(function(state) {
 	// GET(...) same usage as above
 });
 ```
 
-In another (possibly page related) js file:
+In another js file:
 ```
-Page.build(function(page) {
-	if (page.data) {
-		// application understands this as not updating the page
-		myMerge(page.data.articles);
+Page.build(function(state) {
+	if (state.data) {
+		// application understands this as not updating the state
+		myMerge(state.data.articles);
 	}
 	// the update part of the build
-	var query = page.query;
+	var query = state.query;
 	GET({pathname: "/api/data", query: query}).then(function(obj) {
 		myMergeUpdate(obj);
 	});
 });
 
-Page.handle(function(page) {
-	if (!page.updating) $('form').on('submit', function(e) {
+Page.handle(function(state) {
+	if (!state.updating) $('form').on('submit', function(e) {
 		e.preventDefault();
 		// push to history, triggers routers chain which in turn will call update()
-		page.query = $(this).form('get values');
-		// doesn't run routers chain because we're pushing an existing page with
+		state.query = $(this).form('get values');
+		// doesn't run routers chain because we're pushing an existing state with
 		// a document already set
-		Page.push(page);
+		Page.push(state);
 	});
 });
 ```

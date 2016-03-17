@@ -9,44 +9,42 @@ function WindowPage() {
 	var QueryString = require('query-string');
 
 	this.parse = function(str) {
-		var obj = new URL(str || "", document.location.toString());
-		obj.query = QueryString.parse(obj.search);
+		var dloc = document.location;
+		var loc = new URL(str || "", dloc.toString());
+		var obj = {
+			pathname: loc.pathname,
+			query: QueryString.parse(loc.search),
+			hash: loc.hash
+		};
+		if (obj.hash && obj.hash[0] == "#") obj.hash = obj.hash.substring(1);
+		if (loc.port != dloc.port || loc.hostname != dloc.hostname || loc.protocol != dloc.protocol) {
+			obj.port = loc.port;
+			obj.hostname = loc.hostname;
+			obj.protocol = loc.protocol;
+		}
 		return obj;
 	}.bind(this);
 
 	this.format = function(obj) {
-		var dest = obj;
+		var dloc = document.location;
 		if (obj.path) {
-			var helper = this.parse(obj.path);
+			var parsedPath = this.parse(obj.path);
+			obj.pathname = parsedPath.pathname;
+			obj.query = parsedPath.query;
+			obj.hash = parsedPath.hash;
 			delete obj.path;
-			["pathname", "hash", "search", "query"].forEach(function(k) {
-				if (helper[k] !== undefined) obj[k] = helper[k];
-			});
 		}
-		if (!(obj instanceof window.URL)) {
-			dest = this.parse();
-			for (var k in dest) if (obj[k] !== undefined && !~["href", "host"].indexOf(k)) dest[k] = obj[k];
+		if (obj.protocol || obj.hostname || obj.port) {
+			var loc = new URL("", dloc.toString());
+			// copy only enumerable properties of a URL instance
+			for (var k in loc) if (obj[k] !== undefined) loc[k] = obj[k];
+			return loc.toString();
 		}
-
-		var search = QueryString.stringify(obj.query);
-
-		if (search) dest.search = search;
-		else if (obj.query) delete dest.search;
-
-		if (dest.hash && dest.hash == "#") delete dest.hash;
-		if (dest.port == 80) delete dest.port;
-		var loc = document.location;
-		if ((!obj.hostname || obj.hostname == loc.hostname)
-		&& (!obj.protocol || obj.protocol == loc.protocol)
-		&& (!obj.port || obj.port == loc.port)) {
-			var str = obj.pathname ? dest.pathname : "";
-			if (dest.search) str += dest.search
-			if (dest.hash) str += dest.hash;
-			return str;
-		} else {
-			return dest.toString();
-		}
-	};
+		var str = obj.pathname || "";
+		if (obj.query) str += '?' + QueryString.format(obj.query);
+		if (obj.hash) str += '#' + obj.hash;
+		return str;
+	}.bind(this);
 
 	this.reset();
 
@@ -61,38 +59,39 @@ function WindowPage() {
 
 	this.waitUiReady = this.waitUiReady.bind(this);
 
-	var page = 	this.parse("");
-	page.stage = this.stage();
-	if (page.stage == "build") page.imported = true;
-	this.run(page);
+	var state = this.parse();
+	state.stage = this.stage();
+	if (state.stage == "build") state.imported = true;
+	this.run(state);
 }
 
-WindowPage.prototype.run = function(page) {
-	this.format(page); // cleanup
+WindowPage.prototype.run = function(state) {
+	this.format(stage); // converts path if any
 	var self = this;
 	return this.waitReady().then(function() {
-		if (!page.imported) {
-			return self.runChain('route', page);
+		if (!state.imported) {
+			return self.runChain('route', state);
 		}
 	}).then(function() {
-		if (!page.imported && page.document) {
+		if (!state.imported && state.document) {
 			self.reset();
-			page.updating = false;
-			return self.importDocument(page.document).then(function() {
-				page.imported = true;
+			state.updating = false;
+			return self.importDocument(state.document).then(function() {
+				state.imported = true;
 			});
 		}
 	}).then(function() {
-		if (page.stage != "build") {
+		self.state = state;
+		if (state.stage != "build") {
 			// always run except if the document has just been opened in a build stage
-			return self.runChain('build', page);
+			return self.runChain('build', state);
 		}
 	}).then(function() {
-		return self.waitUiReady(page).then(function() {
-			return self.runChain('handle', page);
+		return self.waitUiReady(state).then(function() {
+			return self.runChain('handle', state);
 		});
 	}).then(function() {
-		page.updating = true;
+		state.updating = true;
 	});
 };
 
@@ -104,42 +103,42 @@ WindowPage.prototype.reset = function() {
 	};
 };
 
-WindowPage.prototype.runChain = function(stage, page) {
-	page.stage = stage;
-	this.stage(stage);
-	var chain = this.chains[stage];
-	chain.promise = this.allFn(page, chain.thenables);
+WindowPage.prototype.runChain = function(name, state) {
+	state.stage = name;
+	this.stage(name);
+	var chain = this.chains[name];
+	chain.promise = this.allFn(state, chain.thenables);
 	return chain.promise.then(function() {
-		return page;
+		return state;
 	});
 };
 
-WindowPage.prototype.chainThenable = function(stage, fn) {
-	var chain = this.chains[stage];
+WindowPage.prototype.chainThenable = function(name, fn) {
+	var chain = this.chains[name];
 	chain.thenables.push(fn);
-	if (chain.promise && this.stage() == stage) {
+	if (chain.promise && this.stage() == name) {
 		chain.promise = this.oneFn(chain.promise, fn);
 	}
 	return this;
 };
 
-WindowPage.prototype.catcher = function(phase, err, fn) {
-	console.error("Uncaught error during", phase, err, fn);
+WindowPage.prototype.catcher = function(name, err, fn) {
+	console.error("Uncaught error during", name, err, fn);
 };
 
 WindowPage.prototype.oneFn = function(p, fn) {
 	var catcher = this.catcher.bind(this);
-	return p.then(function(page) {
-		return Promise.resolve(page).then(fn).catch(function(err) {
-			return catcher(page.stage, err, fn);
+	return p.then(function(state) {
+		return Promise.resolve(state).then(fn).catch(function(err) {
+			return catcher(state.stage, err, fn);
 		}).then(function() {
-			return page;
+			return state;
 		});
 	});
 };
 
-WindowPage.prototype.allFn = function(page, list) {
-	var p = Promise.resolve(page);
+WindowPage.prototype.allFn = function(state, list) {
+	var p = Promise.resolve(state);
 	var self = this;
 	list.forEach(function(fn) {
 		p = self.oneFn(p, fn);
@@ -155,7 +154,7 @@ WindowPage.prototype.stage = function(name) {
 	return name;
 };
 
-WindowPage.prototype.waitUiReady = function(page) {
+WindowPage.prototype.waitUiReady = function(state) {
 	if (document.visibilityState == "prerender") {
 		var solve, p = new Promise(function(resolve) { solve = resolve; });
 		function vizListener() {
@@ -205,7 +204,7 @@ WindowPage.prototype.waitUiReady = function(page) {
 				link.addEventListener('error', errorListener);
 			});
 		})).then(function() {
-			return page;
+			return state;
 		});
 	}
 };
@@ -288,60 +287,62 @@ WindowPage.prototype.importDocument = function(doc) {
 	});
 };
 
-WindowPage.prototype.push = function(page) {
-	return this.historyMethod('push', page);
+WindowPage.prototype.push = function(state) {
+	return this.historyMethod('push', state);
 };
 
-WindowPage.prototype.replace = function(page) {
-	return this.historyMethod('replace', page);
+WindowPage.prototype.replace = function(state) {
+	return this.historyMethod('replace', state);
 };
 
-WindowPage.prototype.historyMethod = function(method, page) {
+WindowPage.prototype.historyMethod = function(method, state) {
 	var supported = !!window.history;
 	if (supported) {
 		if (!this.wroteState && method == "push") {
-			var state = this.toState(page);
-			state.href = document.location.toString();
-			window.history.replaceState(state, document.title, state.href);
+			var to = this.stateTo(this.state);
+			window.history.replaceState(to, document.title, to.href);
 			this.wroteState = true;
 		}
 	}
-	return this.run(page).then(function() {
+	return this.run(state).then(function() {
+		this.state = state;
+		var to = this.stateTo(state);
 		if (supported) {
-			window.history[method + 'State'](this.toState(page), document.title, this.format(page));
+			window.history[method + 'State'](to, document.title, to.href);
 		}
 	}.bind(this));
 };
 
-WindowPage.prototype.toState = function(page) {
-	return {
-		html: page.document && page.document.documentElement.outerHTML,
-		data: page.data,
-		href: page.href
+WindowPage.prototype.stateTo = function(state) {
+	var to = {
+		href: this.format(state)
 	};
+	if (state.document) to.html = state.document.documentElement.outerHTML;
+	if (state.data) to.data = state.data;
+	return to;
 };
 
-WindowPage.prototype.fromState = function(state) {
-	if (!state || !state.href) return;
-	var page = this.parse(state.href);
-	if (state.data) page.data = state.data;
-	if (state.html) {
+WindowPage.prototype.stateFrom = function(from) {
+	if (!from || !from.href) return;
+	var state = this.parse(from.href);
+	if (from.data) state.data = from.data;
+	if (from.html) {
 		var doc = document.implementation.createHTMLDocument("");
 		doc.open();
-		doc.write(state.html);
+		doc.write(from.html);
 		doc.close();
-		page.document = doc;
+		state.document = doc;
 	} else {
-		page.imported = true;
-		page.updating = true;
+		state.imported = true;
+		state.updating = true;
 	}
-	return page;
+	return state;
 };
 
 WindowPage.prototype.historyListener = function(e) {
-	var page = this.fromState(e.state);
-	if (!page) return;
-	this.run(page);
+	var state = this.stateFrom(e.state);
+	if (!state) return;
+	this.run(state);
 };
 
 window.Page = new WindowPage();
