@@ -23,13 +23,11 @@ Usage
 
 window.Page is a static object, it does not hold any state.
 
-The object passed to functions holds the current page state, see below.
-
-
 ```
 // get data and document from location
 Page.route(function(page) {
 	GET(page.pathname + '.json').then(function(data) {
+		// not mandatory property name, but a good idea to avoid future collisions
 		page.data = data;
 		return GET(data.template, {type: "document"});
 	}).then(function(doc) {
@@ -67,15 +65,16 @@ it returns the result of location.toString.
 It has some extra properties that are passed along to all fn functions
 
 * page.document  
-  the document set by routers chain for import, then window.document
-
-* page.browsing  
-  is set to true if document location is going to change after chains are run
-  successfully.
+  set by the route chain to a DOM document that is imported into window.document
 
 * page.updating  
   is set to true if the currently run chain function has already run once on
   the current document instance.
+
+* page.data  
+  Optional for now.  
+  this is where application data should be kept, if any.  
+  It is also a good idea to make sure that data is serialized.
 
 
 ### Chains setup
@@ -116,15 +115,15 @@ reopened elsewhare).
 
 Chains are always run after DOM is ready.
 
-Between route and build chain, if page.document is not window.document,
+Between route and build chain, if page.document has not been imported,
 it is imported into it and the build chain is run when the import is finished
-and imported scripts and links are ready.
+and its scripts and import links are loaded.
 
 The handle chain is never run when prerendering.
 
 ### 1. Initial document - construction
 
-DOM Ready on new document, or page.document is not window.document:
+DOM Ready on new document, or page.document has not been imported:
 - route
 - build
 - handle
@@ -147,20 +146,13 @@ Application behaviors
 - route functions typically sets `page.data` (or anything else that does not
 conflict with existing properties)
 - the second time a chain is run on current document, `page.updating == true`
-- before chains are run, if location will change, `page.browsing == true`
 
 ### Reload or update
 
 Both are characterized by `page.updating` being true.
 
-A reload is done using `Page.replace(page)` with changes in application data
-but not in page location, meaning `page.browsing` is false.
-
-An update is done using `Page.push(page)` with changes in page location, meaning
-`page.browsing` is true.
-
-It is up to the application build and handle functions to deal with being run
-several times.
+When using Page.push or Page.replace, it is up to the application build and
+handle functions to deal with being run several times.
 
 
 ### Open new url

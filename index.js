@@ -41,27 +41,23 @@ function WindowPage() {
 
 	var page = 	this.parse("");
 	page.stage = this.stage();
-	if (page.stage == "build") page.document = window.document;
+	if (page.stage == "build") page.imported = true;
 	this.run(page);
 }
 
 WindowPage.prototype.run = function(page) {
 	var pageUrl = this.format(page);
-	page.browsing = false;
-	if (pageUrl != document.location.toString()) {
-		page.browsing = true;
-	}
 	var self = this;
 	return this.waitReady().then(function() {
-		if (!page.document) {
+		if (!page.imported) {
 			return self.runChain('route', page);
 		}
 	}).then(function() {
-		if (page.document && page.document != window.document) {
+		if (!page.imported && page.document) {
 			self.reset();
 			page.updating = false;
 			return self.importDocument(page.document).then(function() {
-				page.document = window.document;
+				page.imported = true;
 			});
 		}
 	}).then(function() {
@@ -74,6 +70,7 @@ WindowPage.prototype.run = function(page) {
 			return self.runChain('handle', page);
 		});
 	}).then(function() {
+		self.url = self.format(page);
 		page.updating = true;
 	});
 };
@@ -282,15 +279,31 @@ WindowPage.prototype.historyMethod = function(method, page) {
 	return this.run(page).then(function() {
 		method = method + 'State';
 		if (!window.history || !window.history[method]) return;
-		window.history[method](null, page.document.title, this.format(page));
+		var state = {
+			html: page.document && page.document.documentElement.outerHTML,
+			data: page.data,
+			href: page.href
+		};
+		window.history[method](state, document.title, this.format(page));
 	}.bind(this));
 };
 
 WindowPage.prototype.historyListener = function(e) {
-	// happens on some browsers
-//	if (document.location.href == this.format(this.page)) return;
-	// TODO
-
+	var state = e.state;
+	if (!state || !state.href) return;
+	var page = this.parse(state.href);
+	if (state.data) page.data = state.data;
+	if (state.html) {
+		var doc = document.implementation.createHTMLDocument("");
+		doc.open();
+		doc.write(state.html);
+		doc.close();
+		page.document = doc;
+	} else {
+		page.imported = true;
+		page.updating = true;
+	}
+	this.run(page);
 };
 
 window.Page = new WindowPage();
