@@ -21,11 +21,11 @@ function WindowPage() {
 			if (!obj.path) {
 				if (obj.pathname) nobj.pathname = obj.pathname;
 				if (obj.search && obj.search != "?") nobj.search = obj.search;
+				if (obj.hash && obj.hash != "#") nobj.hash = obj.hash;
 			}
 			if (obj.port && obj.port != 80) nobj.port = obj.port;
 			if (obj.hostname) nobj.hostname = obj.hostname;
 			if (obj.protocol) nobj.protocol = obj.protocol;
-			if (obj.hash && obj.hash != "#") nobj.hash = obj.hash;
 		}
 		if (search) nobj.search = search;
 		else if (obj.query) delete nobj.search;
