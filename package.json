@@ -1,6 +1,6 @@
 {
   "name": "window-page",
-  "version": "1.0.0-rc5",
+  "version": "1.0.0-rc6",
   "description": "Route, build, handle client web pages",
   "main": "index.js",
   "scripts": {
