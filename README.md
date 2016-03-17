@@ -90,6 +90,9 @@ as `Page.state`.
 
 ### History
 
+* Page.window  
+  change history of which window, default to `window`
+
 * Page.state  
   the current state
 
@@ -101,10 +104,12 @@ as `Page.state`.
 ### Tools
 
 * Page.parse(url)  
-  parses a url and fill only properties that were defined in the url.
+  parses a url and fill only properties that were defined in the url,  
+  parses the query string into an object if any.
 
 * Page.format(obj)  
-  format a parsed url to a string with only what was defined.
+  format a parsed url to a string with only what was defined,  
+  converts obj.path to pathname, query then stringify query obj if any.
 
 
 Run chains
