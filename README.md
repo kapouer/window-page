@@ -5,7 +5,8 @@ A general, light, three-staged-chains client page (pre)renderer and router.
 
 Compatible with web components and visibility API.
 
-Designed to degrade gracefully on old browsers - can work without history API.
+It also presents a higher-level api for window.history, which degrades
+gracefully when not natively supported.
 
 
 Install
@@ -20,8 +21,6 @@ then load the script in a web page.
 
 Usage
 -----
-
-window.Page is a static object, it does not hold any state.
 
 ```
 // get data and document from location
