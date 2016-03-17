@@ -41,7 +41,8 @@ function WindowPage() {
 			return loc.toString();
 		}
 		var str = obj.pathname || "";
-		if (obj.query) str += '?' + QueryString.stringify(obj.query);
+		var qs = QueryString.stringify(obj.query || {});
+		if (qs) str += '?' + qs;
 		if (obj.hash) str += '#' + obj.hash;
 		return str;
 	}.bind(this);
