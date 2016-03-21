@@ -1,7 +1,7 @@
 {
   "name": "window-page",
-  "version": "1.0.0-rc6",
-  "description": "Route, build, handle client web pages",
+  "version": "1.0.0-rc7",
+  "description": "Route, setup, and build web pages",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -12,11 +12,11 @@
     "url": "https://github.com/kapouer/window-page.git"
   },
   "keywords": [
-    "window",
-    "page",
     "isomorphic",
     "router",
-    "history"
+    "history",
+    "webcomponent",
+    "prerender"
   ],
   "author": "Jérémy Lal <kapouer@melix.org>",
   "license": "MIT",
