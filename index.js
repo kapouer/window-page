@@ -74,7 +74,6 @@ WindowPage.prototype.run = function(state) {
 	}).then(function() {
 		if (!state.imported && state.document) {
 			self.reset();
-			state.updating = false;
 			return self.importDocument(state.document).then(function() {
 				state.imported = true;
 			});
@@ -89,8 +88,6 @@ WindowPage.prototype.run = function(state) {
 		return self.waitUiReady(state).then(function() {
 			return self.runChain('handle', state);
 		});
-	}).then(function() {
-		state.updating = true;
 	});
 };
 
@@ -343,7 +340,6 @@ WindowPage.prototype.stateFrom = function(from) {
 		state.document = doc;
 	} else {
 		state.imported = true;
-		state.updating = true;
 	}
 	return state;
 };
