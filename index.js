@@ -295,7 +295,11 @@ WindowPage.prototype.replace = function(state) {
 };
 
 WindowPage.prototype.historyMethod = function(method, state) {
-	if (typeof state == "string") state = this.parse(state);
+	var copy = this.parse(typeof state == "string" ? state : this.format(state));
+	['document', 'data', 'imported'].forEach(function(k) {
+		if (state[k]) copy[k] = state[k];
+	});
+
 	var supported = !!this.window.history;
 	if (supported && !this.historyListener) {
 		this.historyListener = function(e) {
@@ -309,9 +313,9 @@ WindowPage.prototype.historyMethod = function(method, state) {
 			this.window.history.replaceState(to, document.title, to.href);
 		}
 	}
-	return this.run(state).then(function() {
-		this.state = state;
-		var to = this.stateTo(state);
+	return this.run(copy).then(function() {
+		this.state = copy;
+		var to = this.stateTo(copy);
 		if (supported) {
 			this.window.history[method + 'State'](to, document.title, to.href);
 		}
