@@ -11,15 +11,18 @@ function WindowPage() {
 
 	this.route = this.chainThenable.bind(this, "route");
 	this.build = this.chainThenable.bind(this, "build");
-	this.handle = this.chainThenable.bind(this, "handle");
+	this.setup = this.chainThenable.bind(this, "setup");
 
 	this.importDocument = this.importDocument.bind(this);
 
 	this.waitUiReady = this.waitUiReady.bind(this);
 
 	var state = this.parse();
-	state.stage = this.stage();
-	if (state.stage == "build") state.imported = true;
+	state.prerendered = document.documentElement.hasAttribute("prerendered");
+	if (state.prerendered) {
+		state.imported = true;
+		state.built = true;
+	}
 	this.run(state);
 }
 
@@ -72,21 +75,25 @@ WindowPage.prototype.run = function(state) {
 			return self.runChain('route', state);
 		}
 	}).then(function() {
-		if (!state.imported && state.document) {
-			self.reset();
-			return self.importDocument(state.document).then(function() {
-				state.imported = true;
-			});
-		}
+		if (state.imported || !state.document) return;
+		self.reset();
+		return self.importDocument(state.document).then(function() {
+			state.imported = true;
+		});
 	}).then(function() {
-		self.state = state;
-		if (state.stage != "build") {
-			// always run except if the document has just been opened in a build stage
-			return self.runChain('build', state);
-		}
-	}).then(function() {
+		self.state = state; // this is the new current state
+		if (state.setup) return;
 		return self.waitUiReady(state).then(function() {
-			return self.runChain('handle', state);
+			return self.runChain('setup', state).then(function() {
+				state.setup = true;
+			});
+		});
+	}).then(function() {
+		// do not run again if setup chain has not been run
+		if (state.built && !state.setup) return;
+		return self.runChain('build', state).then(function() {
+			document.documentElement.setAttribute("prerendered", "true");
+			state.built = true;
 		});
 	});
 };
@@ -95,15 +102,13 @@ WindowPage.prototype.reset = function() {
 	this.chains = {
 		route: {thenables: []},
 		build: {thenables: []},
-		handle: {thenables: []}
+		setup: {thenables: []}
 	};
 };
 
 WindowPage.prototype.runChain = function(name, state) {
-	state.stage = name;
-	this.stage(name);
 	var chain = this.chains[name];
-	chain.promise = this.allFn(state, chain.thenables);
+	chain.promise = this.allFn(state, name, chain.thenables);
 	return chain.promise.then(function() {
 		return state;
 	});
@@ -112,8 +117,8 @@ WindowPage.prototype.runChain = function(name, state) {
 WindowPage.prototype.chainThenable = function(name, fn) {
 	var chain = this.chains[name];
 	chain.thenables.push(fn);
-	if (chain.promise && this.stage() == name) {
-		chain.promise = this.oneFn(chain.promise, fn);
+	if (chain.promise) {
+		chain.promise = this.oneFn(chain.promise, name, fn);
 	}
 	return this;
 };
@@ -122,32 +127,24 @@ WindowPage.prototype.catcher = function(name, err, fn) {
 	console.error("Uncaught error during", name, err, fn);
 };
 
-WindowPage.prototype.oneFn = function(p, fn) {
+WindowPage.prototype.oneFn = function(p, name, fn) {
 	var catcher = this.catcher.bind(this);
 	return p.then(function(state) {
 		return Promise.resolve(state).then(fn).catch(function(err) {
-			return catcher(state.stage, err, fn);
+			return catcher(name, err, fn);
 		}).then(function() {
 			return state;
 		});
 	});
 };
 
-WindowPage.prototype.allFn = function(state, list) {
+WindowPage.prototype.allFn = function(state, name, list) {
 	var p = Promise.resolve(state);
 	var self = this;
 	list.forEach(function(fn) {
-		p = self.oneFn(p, fn);
+		p = self.oneFn(p, name, fn);
 	});
 	return p;
-};
-
-WindowPage.prototype.stage = function(name) {
-	var root = document.documentElement;
-	if (name === null) root.removeAttribute("stage");
-	else if (name) root.setAttribute("stage", name);
-	else name = root.getAttribute("stage");
-	return name;
 };
 
 WindowPage.prototype.waitUiReady = function(state) {
@@ -293,7 +290,7 @@ WindowPage.prototype.replace = function(state) {
 
 WindowPage.prototype.historyMethod = function(method, state) {
 	var copy = this.parse(typeof state == "string" ? state : this.format(state));
-	['document', 'data', 'imported'].forEach(function(k) {
+	['document', 'data', 'imported', 'built', 'setup'].forEach(function(k) {
 		if (state[k]) copy[k] = state[k];
 	});
 
