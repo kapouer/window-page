@@ -1,22 +1,31 @@
 window.Page
 ===========
 
-A general, light, three-staged-chains client page (pre)renderer and router.
+A general, light, client page controller for running the:
 
-Compatible with web components and visibility API.
+- route, matching url with document and data
+- setup, adding listeners on delegated events
+- build, filling the document using collected data
 
-It also presents a higher-level api for window.history, which degrades
-gracefully when not natively supported.
+window.Page is designed to play well with:
+
+- webcomponents and link imports
+- visibility API, when prerendering is done on server
+- history API, supporting single or multiple pages applications or mixes of both
+
+and degrades gracefully when these features are not supported on client.
 
 
 Install
 -------
 
+Manual installation is simple:
 ```
 npm install window-page
 ln -s node_modules/window-page/window-page.js public/js/
 ```
-then load the script in a web page.
+then add a script tag in a web page, before the application scripts that
+use the chain methods.
 
 
 Usage
@@ -34,16 +43,20 @@ Page.route(function(state) {
 	});
 });
 
-// merge data into DOM (can fetch more remote data) - no user interactions yet
-Page.build(function(state) {
-	Domt.merge(document.body, state.data);
+// initialize user interactions, called only once per imported document
+Page.setup(function(state) {
+	// global, static ui elements can be initialized here
+	// if a build function adds more dropdowns, it is responsible for initializing
+	// them altogether.
+	$('.dropdown').dropdown();
 });
 
-// initialize user interactions
-Page.handle(function(state) {
-	if (state.update) return;
-	$('.dropdown').dropdown(); // typical semantic dropdown initializer
+// merge data into DOM (can fetch more remote data) - no user interactions yet
+// maybe called several times per imported document
+Page.build(function(state) {
+	if (state.data) Domt.merge(document.body, state.data);
 });
+
 ```
 
 
@@ -75,11 +88,11 @@ functions:
   the current document instance.
 
 
-### Chains setup
+### Chains
 
 * Page.route(fn)
+* Page.setup(fn)
 * Page.build(fn)
-* Page.handle(fn)
 
 The return values of the promises are ignored.
 
@@ -114,52 +127,88 @@ as `Page.state`.
 Run chains
 ----------
 
-There are three chains (route, build, handle) that accepts thenables.
+There are three chains (route, setup, build) that accepts thenables.
 
-The first time the document is parsed into a DOM, it is "initial", and the
-second time it is "revived" (it has been initial then built and serialized then
-reopened elsewhare).
+The first time the document is parsed into a DOM, it is in its 'initial' state,
+the second time it is 'prerendered'; meaning it has been built once, serialized,
+then reopened later in a browser.
 
 Chains are always run after DOM is ready.
 
-Between route and build chain, if state.document has not been imported,
-it is imported into it and the build chain is run when the import is finished
-and its scripts and import links are loaded.
+When the route chain has finished, if state.document has not been imported,
+it is imported into current document, scripts and import links being loaded
+in order.
 
-The handle chain is never run when prerendering.
+The setup chain is not run when prerendering, and the build chain is not run
+when reopening a prerendered document (but it can be run again when push or replace
+methods are called).
 
 ### 1. Initial document - construction
 
 DOM Ready on new document, or state.document has not been imported:
 - route
+- setup (if not prerendering)
 - build
-- handle
 
-### 2. Initial or revived document - navigation
+### 2. Initial or prerendered document - navigation
 
-Page.replace, or Page.push call:
+Page.replace, or Page.push calls:
 - build
-- handle
 
-### 3. Revived document - opening
+### 3. Prerendered document - opening
 
 DOM Ready on built document:
-- handle
+- setup
 
 
 Application behaviors
 ---------------------
 
-- route functions typically sets `state.data` (or anything else that does not
-conflict with existing properties)
-- the second time a chain is run on current document, `state.updating == true`
+### build functions - run once or multiple times
 
-### Reload or update
+Since build chain is always called on a Page.push or replace, build functions
+are expected to deal with being called multiple times.
 
-Both are characterized by `state.updating` being true.
+Some build functions only use `state.data` and will return early if that variable
+isn't set.
 
-When using Page.push or Page.replace, it is up to the application build and
-handle functions to deal with being run several times.
+Other build functions use `state.query` to fetch additional data and refresh
+parts of the document.
+
+Since `state.data` is supposed to be set by route functions, its presence means
+the document is still being prerendered in its initial phase.
+
+
+### setup non-webcomponents elements globally
+
+If a build function inserts node elements that need some initialization function
+to be called, it has to deal with properly setting up user interface listeners.
+
+It seems to be in contradiction with the idea of using 'setup' chain to do that;
+but it is not ! The right way to handle that situation is to delegate initialization
+by dispatching events from the build function to a setup function:
+
+```
+// runs on prerendered document
+Page.setup(function() {
+	$(document).on('dropdown', function() {
+		// initialize added dropdowns
+		$('.dropdown').dropdown();
+	});
+	// initialize prerendered dropdowns
+	$('.dropdown').dropdown();
+});
+
+// runs on initial document or on replaced document
+Page.build(function() {
+	$('#somenode').append('<div class="dropdown" />');
+	$(document).trigger('dropdown');
+});
+```
+
+Webcomponents setup themselves, so that kind of separation is implied by the
+fact webcomponents are not prerendered by Page.import - they are only rendered
+so they initialize only when the document is visible to the user.
 
 
 ### Open new url
@@ -183,6 +232,16 @@ Page.route(function(state) {
 
 In another js file:
 ```
+Page.setup(function(state) {
+	$('form').on('submit', function(e) {
+		e.preventDefault();
+		// push to history, triggers routers chain which in turn will call update()
+		state.query = $(this).form('get values');
+		// doesn't run routers chain because we're pushing an existing state with
+		// a document already set
+		Page.push(state);
+	});
+});
 Page.build(function(state) {
 	if (state.data) {
 		// application understands this as not updating the state
@@ -194,22 +253,11 @@ Page.build(function(state) {
 		myMergeUpdate(obj);
 	});
 });
-
-Page.handle(function(state) {
-	if (!state.updating) $('form').on('submit', function(e) {
-		e.preventDefault();
-		// push to history, triggers routers chain which in turn will call update()
-		state.query = $(this).form('get values');
-		// doesn't run routers chain because we're pushing an existing state with
-		// a document already set
-		Page.push(state);
-	});
-});
 ```
 
 
 License
 -------
 
-See LICENSE file.
+MIT, see LICENSE file.
 
