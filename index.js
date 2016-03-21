@@ -7,47 +7,6 @@ function WindowPage() {
 	this.name = "WindowPage";
 	this.window = window;
 
-	var QueryString = require('query-string');
-
-	this.parse = function(str) {
-		var dloc = this.window.document.location;
-		var loc = new URL(str || "", dloc.toString());
-		var obj = {
-			pathname: loc.pathname,
-			query: QueryString.parse(loc.search),
-			hash: loc.hash
-		};
-		if (obj.hash && obj.hash[0] == "#") obj.hash = obj.hash.substring(1);
-		if (loc.port != dloc.port || loc.hostname != dloc.hostname || loc.protocol != dloc.protocol) {
-			obj.port = loc.port;
-			obj.hostname = loc.hostname;
-			obj.protocol = loc.protocol;
-		}
-		return obj;
-	}.bind(this);
-
-	this.format = function(obj) {
-		var dloc = this.window.document.location;
-		if (obj.path) {
-			var parsedPath = this.parse(obj.path);
-			obj.pathname = parsedPath.pathname;
-			obj.query = parsedPath.query;
-			obj.hash = parsedPath.hash;
-			delete obj.path;
-		}
-		if (obj.protocol || obj.hostname || obj.port) {
-			var loc = new URL("", dloc.toString());
-			// copy only enumerable properties of a URL instance
-			for (var k in loc) if (obj[k] !== undefined) loc[k] = obj[k];
-			return loc.toString();
-		}
-		var str = obj.pathname || "";
-		var qs = QueryString.stringify(obj.query || {});
-		if (qs) str += '?' + qs;
-		if (obj.hash) str += '#' + obj.hash;
-		return str;
-	}.bind(this);
-
 	this.reset();
 
 	this.route = this.chainThenable.bind(this, "route");
@@ -63,6 +22,47 @@ function WindowPage() {
 	if (state.stage == "build") state.imported = true;
 	this.run(state);
 }
+
+WindowPage.QueryString = require('query-string');
+
+WindowPage.prototype.parse = function(str) {
+	var dloc = this.window.document.location;
+	var loc = new URL(str || "", dloc.toString());
+	var obj = {
+		pathname: loc.pathname,
+		query: WindowPage.QueryString.parse(loc.search),
+		hash: loc.hash
+	};
+	if (obj.hash && obj.hash[0] == "#") obj.hash = obj.hash.substring(1);
+	if (loc.port != dloc.port || loc.hostname != dloc.hostname || loc.protocol != dloc.protocol) {
+		obj.port = loc.port;
+		obj.hostname = loc.hostname;
+		obj.protocol = loc.protocol;
+	}
+	return obj;
+};
+
+WindowPage.prototype.format = function(obj) {
+	var dloc = this.window.document.location;
+	if (obj.path) {
+		var parsedPath = this.parse(obj.path);
+		obj.pathname = parsedPath.pathname;
+		obj.query = parsedPath.query;
+		obj.hash = parsedPath.hash;
+		delete obj.path;
+	}
+	if (obj.protocol || obj.hostname || obj.port) {
+		var loc = new URL("", dloc.toString());
+		// copy only enumerable properties of a URL instance
+		for (var k in loc) if (obj[k] !== undefined) loc[k] = obj[k];
+		return loc.toString();
+	}
+	var str = obj.pathname || "";
+	var qs = WindowPage.QueryString.stringify(obj.query || {});
+	if (qs) str += '?' + qs;
+	if (obj.hash) str += '#' + obj.hash;
+	return str;
+};
 
 WindowPage.prototype.run = function(state) {
 	this.format(state); // converts path if any
