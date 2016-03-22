@@ -12,10 +12,7 @@ function WindowPage() {
 	this.route = this.chainThenable.bind(this, "route");
 	this.build = this.chainThenable.bind(this, "build");
 	this.setup = this.chainThenable.bind(this, "setup");
-
-	this.importDocument = this.importDocument.bind(this);
-
-	this.waitUiReady = this.waitUiReady.bind(this);
+	this.format = this.format.bind(this);
 
 	var state = this.parse();
 	state.prerendered = document.documentElement.hasAttribute("prerendered");
