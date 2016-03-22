@@ -67,7 +67,16 @@ WindowPage.prototype.format = function(obj) {
 WindowPage.prototype.run = function(state) {
 	this.format(state); // converts path if any
 	var self = this;
-	return this.waitReady().then(function() {
+	if (this.queue) {
+		if (this.state && this.state.built && !this.state.setup) {
+			this.state.abort = true;
+		} else {
+			return this.queue.then(function() {
+				return self.run(state);
+			});
+		}
+	}
+	this.queue = this.waitReady().then(function() {
 		if (!state.imported) {
 			return self.runChain('route', state);
 		}
@@ -79,20 +88,27 @@ WindowPage.prototype.run = function(state) {
 		});
 	}).then(function() {
 		self.state = state; // this is the new current state
-		if (state.setup) return;
-		return self.waitUiReady(state).then(function() {
-			return self.runChain('setup', state).then(function() {
-				state.setup = true;
-			});
-		});
-	}).then(function() {
-		// do not run again if setup chain has not been run
+		// run only once if setup was never run
 		if (state.built && !state.setup) return;
 		return self.runChain('build', state).then(function() {
 			document.documentElement.setAttribute("prerendered", "true");
 			state.built = true;
 		});
+	}).then(function() {
+		if (state.setup) return;
+		return self.waitUiReady(state).then(function() {
+			if (state.abort) return Promise.reject("abort");
+			return self.runChain('setup', state).then(function() {
+				state.setup = true;
+			});
+		});
+	}).then(function() {
+		self.queue = null;
+	}).catch(function(err) {
+		delete state.abort;
+		if (err != "abort") console.error(err);
 	});
+	return this.queue;
 };
 
 WindowPage.prototype.reset = function() {
