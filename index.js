@@ -1,10 +1,19 @@
-function WindowPage() {
+(function() {
+var QueryString = require('query-string');
+
+var INIT = 0;
+var IMPORTED = 1;
+var BUILT = 2;
+var SETUP = 3;
+
+function PageClass() {
 	var inst = window.Page;
 	if (inst) {
-		// because using instanceof requires reference to the same WindowPage
-		if (inst.name == "WindowPage") return inst;
+		// because using instanceof requires reference to the same PageClass
+		if (inst.name == "PageClass") return inst;
+		else throw new Error("window.Page already exists");
 	}
-	this.name = "WindowPage";
+	this.name = "PageClass";
 	this.window = window;
 
 	this.reset();
@@ -15,22 +24,15 @@ function WindowPage() {
 	this.format = this.format.bind(this);
 
 	var state = this.parse();
-	state.prerendered = document.documentElement.hasAttribute("prerendered");
-	if (state.prerendered) {
-		state.imported = true;
-		state.built = true;
-	}
 	this.run(state);
 }
 
-WindowPage.QueryString = require('query-string');
-
-WindowPage.prototype.parse = function(str) {
+PageClass.prototype.parse = function(str) {
 	var dloc = this.window.document.location;
 	var loc = new URL(str || "", dloc.toString());
 	var obj = {
 		pathname: loc.pathname,
-		query: WindowPage.QueryString.parse(loc.search),
+		query: QueryString.parse(loc.search),
 		hash: loc.hash
 	};
 	if (obj.hash && obj.hash[0] == "#") obj.hash = obj.hash.substring(1);
@@ -49,7 +51,7 @@ WindowPage.prototype.parse = function(str) {
 	return obj;
 };
 
-WindowPage.prototype.format = function(obj) {
+PageClass.prototype.format = function(obj) {
 	var dloc = this.window.document.location;
 	if (obj.path) {
 		var parsedPath = this.parse(obj.path);
@@ -58,7 +60,7 @@ WindowPage.prototype.format = function(obj) {
 		obj.hash = parsedPath.hash;
 		delete obj.path;
 	}
-	var search = WindowPage.QueryString.stringify(obj.query || {});
+	var search = QueryString.stringify(obj.query || {});
 	if (search) obj.search = search;
 	if (obj.protocol || obj.hostname || obj.port) {
 		var loc = new URL("", dloc.toString());
@@ -72,11 +74,12 @@ WindowPage.prototype.format = function(obj) {
 	return str;
 };
 
-WindowPage.prototype.run = function(state) {
+PageClass.prototype.run = function(state) {
 	this.format(state); // converts path if any
+	state.stage = parseInt(document.documentElement.getAttribute("stage")) || INIT;
 	var self = this;
 	if (this.queue) {
-		if (this.state && this.state.built && !this.state.setup) {
+		if (this.state && this.state.stage == BUILT) {
 			this.state.abort = true;
 		} else {
 			return this.queue.then(function() {
@@ -85,29 +88,30 @@ WindowPage.prototype.run = function(state) {
 		}
 	}
 	this.queue = this.waitReady().then(function() {
-		if (!state.imported) {
+		if (state.stage == INIT) {
 			return self.runChain('route', state);
 		}
 	}).then(function() {
-		if (state.imported || !state.document) return;
+		if (state.stage >= IMPORTED || !state.document) return;
 		self.reset();
 		return self.importDocument(state.document).then(function() {
-			state.imported = true;
+			state.stage = IMPORTED;
 		});
 	}).then(function() {
 		self.state = state; // this is the new current state
 		// run only once if setup was never run
-		if (state.built && !state.setup) return;
+		if (state.stage == BUILT) return;
 		return self.runChain('build', state).then(function() {
-			document.documentElement.setAttribute("prerendered", "true");
-			state.built = true;
+			if (state.stage < BUILT) state.stage = BUILT;
+			document.documentElement.setAttribute("stage", state.stage);
 		});
 	}).then(function() {
-		if (state.setup) return;
+		if (state.stage >= SETUP) return;
 		return self.waitUiReady(state).then(function() {
 			if (state.abort) return Promise.reject("abort");
 			return self.runChain('setup', state).then(function() {
-				state.setup = true;
+				if (state.stage < SETUP) state.stage = SETUP;
+				document.documentElement.setAttribute("stage", state.stage);
 			});
 		});
 	}).then(function() {
@@ -119,7 +123,7 @@ WindowPage.prototype.run = function(state) {
 	return this.queue;
 };
 
-WindowPage.prototype.reset = function() {
+PageClass.prototype.reset = function() {
 	this.chains = {
 		route: {thenables: []},
 		build: {thenables: []},
@@ -127,7 +131,7 @@ WindowPage.prototype.reset = function() {
 	};
 };
 
-WindowPage.prototype.runChain = function(name, state) {
+PageClass.prototype.runChain = function(name, state) {
 	var chain = this.chains[name];
 	chain.promise = this.allFn(state, name, chain.thenables);
 	return chain.promise.then(function() {
@@ -135,7 +139,7 @@ WindowPage.prototype.runChain = function(name, state) {
 	});
 };
 
-WindowPage.prototype.chainThenable = function(name, fn) {
+PageClass.prototype.chainThenable = function(name, fn) {
 	var chain = this.chains[name];
 	chain.thenables.push(fn);
 	if (chain.promise) {
@@ -144,11 +148,11 @@ WindowPage.prototype.chainThenable = function(name, fn) {
 	return this;
 };
 
-WindowPage.prototype.catcher = function(name, err, fn) {
+PageClass.prototype.catcher = function(name, err, fn) {
 	console.error("Uncaught error during", name, err, fn);
 };
 
-WindowPage.prototype.oneFn = function(p, name, fn) {
+PageClass.prototype.oneFn = function(p, name, fn) {
 	var catcher = this.catcher.bind(this);
 	return p.then(function(state) {
 		return Promise.resolve(state).then(fn).catch(function(err) {
@@ -159,7 +163,7 @@ WindowPage.prototype.oneFn = function(p, name, fn) {
 	});
 };
 
-WindowPage.prototype.allFn = function(state, name, list) {
+PageClass.prototype.allFn = function(state, name, list) {
 	var p = Promise.resolve(state);
 	var self = this;
 	list.forEach(function(fn) {
@@ -168,7 +172,7 @@ WindowPage.prototype.allFn = function(state, name, list) {
 	return p;
 };
 
-WindowPage.prototype.waitUiReady = function(state) {
+PageClass.prototype.waitUiReady = function(state) {
 	if (document.visibilityState == "prerender") {
 		var solve, p = new Promise(function(resolve) { solve = resolve; });
 		function vizListener() {
@@ -223,7 +227,7 @@ WindowPage.prototype.waitUiReady = function(state) {
 	}
 };
 
-WindowPage.prototype.waitReady = function() {
+PageClass.prototype.waitReady = function() {
 	if (this.docReady) return Promise.resolve();
 	var solve;
 	var p = new Promise(function(resolve) {
@@ -249,7 +253,7 @@ WindowPage.prototype.waitReady = function() {
 	return p;
 };
 
-WindowPage.prototype.importDocument = function(doc) {
+PageClass.prototype.importDocument = function(doc) {
 	var scripts = Array.from(doc.querySelectorAll('script')).map(function(node) {
 		if (node.type && node.type != "text/javascript") return Promise.resolve({});
 		// make sure script is not loaded when inserted into document
@@ -301,17 +305,17 @@ WindowPage.prototype.importDocument = function(doc) {
 	});
 };
 
-WindowPage.prototype.push = function(state) {
+PageClass.prototype.push = function(state) {
 	return this.historyMethod('push', state);
 };
 
-WindowPage.prototype.replace = function(state) {
+PageClass.prototype.replace = function(state) {
 	return this.historyMethod('replace', state);
 };
 
-WindowPage.prototype.historyMethod = function(method, state) {
+PageClass.prototype.historyMethod = function(method, state) {
 	var copy = this.parse(typeof state == "string" ? state : this.format(state));
-	['document', 'data', 'imported', 'built', 'setup'].forEach(function(k) {
+	['document', 'data', 'stage'].forEach(function(k) {
 		if (state[k]) copy[k] = state[k];
 	});
 
@@ -339,7 +343,7 @@ WindowPage.prototype.historyMethod = function(method, state) {
 	}.bind(this));
 };
 
-WindowPage.prototype.stateTo = function(state) {
+PageClass.prototype.stateTo = function(state) {
 	var to = {
 		href: this.format(state)
 	};
@@ -348,7 +352,7 @@ WindowPage.prototype.stateTo = function(state) {
 	return to;
 };
 
-WindowPage.prototype.stateFrom = function(from) {
+PageClass.prototype.stateFrom = function(from) {
 	if (!from || !from.href) return;
 	var state = this.parse(from.href);
 	if (from.data) state.data = from.data;
@@ -358,11 +362,12 @@ WindowPage.prototype.stateFrom = function(from) {
 		doc.write(from.html);
 		doc.close();
 		state.document = doc;
+		state.stage = INIT;
 	} else {
-		state.imported = true;
+		state.stage = IMPORTED;
 	}
 	return state;
 };
 
-window.Page = new WindowPage();
-
+window.Page = new PageClass();
+})();
