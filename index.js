@@ -324,7 +324,9 @@ WindowPage.prototype.historyMethod = function(method, state) {
 		}.bind(this);
 		this.window.addEventListener('popstate', this.historyListener);
 		if (method == "push") {
+			// we want current location here
 			var to = this.stateTo(this.state);
+			to.href = document.location.toString();
 			this.window.history.replaceState(to, document.title, to.href);
 		}
 	}
