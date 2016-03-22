@@ -159,6 +159,9 @@ Page.replace, or Page.push calls:
 DOM Ready on built document:
 - setup
 
+The current construction stage of a document is saved into a documentElement
+attribute "stage". It is important to keep it when serializing the document.
+
 
 Application behaviors
 ---------------------
