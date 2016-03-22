@@ -34,11 +34,11 @@ WindowPage.prototype.parse = function(str) {
 		hash: loc.hash
 	};
 	if (obj.hash && obj.hash[0] == "#") obj.hash = obj.hash.substring(1);
-	if (loc.port != dloc.port || loc.hostname != dloc.hostname || loc.protocol != dloc.protocol) {
-		obj.port = loc.port;
-		obj.hostname = loc.hostname;
-		obj.protocol = loc.protocol;
-	}
+	if (!obj.port) obj.port = loc.port;
+	if (!obj.hostname) obj.hostname = loc.hostname;
+	if (!obj.protocol) obj.protocol = loc.protocol;
+	if (obj.port == "80") delete obj.port;
+	obj.crossDomain = obj.port != dloc.port || obj.hostname != dloc.hostname || obj.protocol != dloc.protocol;
 	return obj;
 };
 
