@@ -24,6 +24,7 @@ function PageClass() {
 	this.format = this.format.bind(this);
 
 	var state = this.parse();
+	state.stage = this.stage();
 	this.run(state);
 }
 
@@ -83,7 +84,7 @@ PageClass.prototype.format = function(obj) {
 
 PageClass.prototype.run = function(state) {
 	this.format(state); // converts path if any
-	state.stage = this.stage();
+	if (!state.stage) state.stage = INIT;
 	var self = this;
 	if (this.queue) {
 		if (this.state && this.state.stage == BUILT) {
@@ -110,16 +111,20 @@ PageClass.prototype.run = function(state) {
 		// run only once if setup was never run
 		if (state.stage == BUILT) return;
 		return self.runChain('build', state).then(function() {
-			if (state.stage < BUILT) state.stage = BUILT;
-			self.stage(BUILT);
+			if (state.stage < BUILT) {
+				state.stage = BUILT;
+				self.stage(BUILT);
+			}
 		});
 	}).then(function() {
 		if (state.stage >= SETUP) return;
 		return self.waitUiReady(state).then(function() {
 			if (state.abort) return Promise.reject("abort");
 			return self.runChain('setup', state).then(function() {
-				if (state.stage < SETUP) state.stage = SETUP;
-				self.stage(SETUP);
+				if (state.stage < SETUP) {
+					state.stage = SETUP;
+					self.stage(SETUP);
+				}
 			});
 		});
 	}).then(function() {
@@ -372,7 +377,8 @@ PageClass.prototype.stateFrom = function(from) {
 		state.document = doc;
 		state.stage = INIT;
 	} else {
-		state.stage = IMPORTED;
+		// same document, allow build only
+		state.stage = SETUP;
 	}
 	return state;
 };
