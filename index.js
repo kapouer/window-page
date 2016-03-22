@@ -34,11 +34,18 @@ WindowPage.prototype.parse = function(str) {
 		hash: loc.hash
 	};
 	if (obj.hash && obj.hash[0] == "#") obj.hash = obj.hash.substring(1);
-	if (!obj.port) obj.port = loc.port;
-	if (!obj.hostname) obj.hostname = loc.hostname;
-	if (!obj.protocol) obj.protocol = loc.protocol;
-	if (obj.port == "80") delete obj.port;
-	obj.crossDomain = obj.port != dloc.port || obj.hostname != dloc.hostname || obj.protocol != dloc.protocol;
+
+	var cross = loc.port != dloc.port || loc.hostname != dloc.hostname || loc.protocol != dloc.protocol;
+	if (cross) {
+		if (!obj.port) obj.port = loc.port;
+		if (!obj.hostname) obj.hostname = loc.hostname;
+		if (!obj.protocol) obj.protocol = loc.protocol;
+		if (obj.port == "80") delete obj.port;
+	} else {
+		delete obj.port;
+		delete obj.hostname;
+		delete obj.protocol;
+	}
 	return obj;
 };
 
@@ -51,6 +58,8 @@ WindowPage.prototype.format = function(obj) {
 		obj.hash = parsedPath.hash;
 		delete obj.path;
 	}
+	var search = WindowPage.QueryString.stringify(obj.query || {});
+	if (search) obj.search = search;
 	if (obj.protocol || obj.hostname || obj.port) {
 		var loc = new URL("", dloc.toString());
 		// copy only enumerable properties of a URL instance
@@ -58,8 +67,7 @@ WindowPage.prototype.format = function(obj) {
 		return loc.toString();
 	}
 	var str = obj.pathname || "";
-	var qs = WindowPage.QueryString.stringify(obj.query || {});
-	if (qs) str += '?' + qs;
+	if (search) str += '?' + search;
 	if (obj.hash) str += '#' + obj.hash;
 	return str;
 };
