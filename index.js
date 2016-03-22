@@ -27,6 +27,13 @@ function PageClass() {
 	this.run(state);
 }
 
+PageClass.prototype.stage = function(stage) {
+	var root = document.documentElement;
+	if (stage === undefined) return parseInt(root.getAttribute("stage")) || INIT;
+	else root.setAttribute("stage", stage);
+	return stage;
+};
+
 PageClass.prototype.parse = function(str) {
 	var dloc = this.window.document.location;
 	var loc = new URL(str || "", dloc.toString());
@@ -76,7 +83,7 @@ PageClass.prototype.format = function(obj) {
 
 PageClass.prototype.run = function(state) {
 	this.format(state); // converts path if any
-	state.stage = parseInt(document.documentElement.getAttribute("stage")) || INIT;
+	state.stage = this.stage();
 	var self = this;
 	if (this.queue) {
 		if (this.state && this.state.stage == BUILT) {
@@ -96,6 +103,7 @@ PageClass.prototype.run = function(state) {
 		self.reset();
 		return self.importDocument(state.document).then(function() {
 			state.stage = IMPORTED;
+			self.stage(IMPORTED);
 		});
 	}).then(function() {
 		self.state = state; // this is the new current state
@@ -103,7 +111,7 @@ PageClass.prototype.run = function(state) {
 		if (state.stage == BUILT) return;
 		return self.runChain('build', state).then(function() {
 			if (state.stage < BUILT) state.stage = BUILT;
-			document.documentElement.setAttribute("stage", state.stage);
+			self.stage(BUILT);
 		});
 	}).then(function() {
 		if (state.stage >= SETUP) return;
@@ -111,7 +119,7 @@ PageClass.prototype.run = function(state) {
 			if (state.abort) return Promise.reject("abort");
 			return self.runChain('setup', state).then(function() {
 				if (state.stage < SETUP) state.stage = SETUP;
-				document.documentElement.setAttribute("stage", state.stage);
+				self.stage(SETUP);
 			});
 		});
 	}).then(function() {
