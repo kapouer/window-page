@@ -4,8 +4,8 @@ window.Page
 A general, light, client page controller for running the:
 
 - route, matching url with document and data
-- setup, adding listeners on delegated events
 - build, filling the document using collected data
+- setup, adding listeners on delegated events and initializing global objects
 
 window.Page is designed to play well with:
 
@@ -43,18 +43,19 @@ Page.route(function(state) {
 	});
 });
 
-// initialize user interactions, called only once per imported document
+// merge data into DOM (can fetch more remote data) - no user interactions yet
+// maybe called several times per imported document
+Page.build(function(state) {
+	if (state.data) Domt.merge(document.body, state.data);
+});
+
+// initialize user interactions, called only once per instantiated document,
+// after route/import/build.
 Page.setup(function(state) {
 	// global, static ui elements can be initialized here
 	// if a build function adds more dropdowns, it is responsible for initializing
 	// them altogether.
 	$('.dropdown').dropdown();
-});
-
-// merge data into DOM (can fetch more remote data) - no user interactions yet
-// maybe called several times per imported document
-Page.build(function(state) {
-	if (state.data) Domt.merge(document.body, state.data);
 });
 
 ```
@@ -83,21 +84,17 @@ functions:
   route chain is finished it is imported into window.document before the build
   chain starts.
 
-* state.updating  
-  is set to true if the currently run chain function has already run once on
-  the current document instance.
-
 
 ### Chains
 
 * Page.route(fn)
-* Page.setup(fn)
 * Page.build(fn)
+* Page.setup(fn)
 
 The return values of the promises are ignored.
 
-All functions receive the same "state" parameter, which ends up being available
-as `Page.state`.
+All functions receive the same "state" parameter, which is available just before
+build chain as `Page.state`.
 
 
 ### History
@@ -124,10 +121,10 @@ as `Page.state`.
   converts obj.path to pathname, query then stringify query obj if any.
 
 
-Run chains
-----------
+Order of execution of chains
+----------------------------
 
-There are three chains (route, setup, build) that accepts thenables.
+There are three chains (route, build, setup) that accepts thenables.
 
 The first time the document is parsed into a DOM, it is in its 'initial' state,
 the second time it is 'prerendered'; meaning it has been built once, serialized,
@@ -139,16 +136,18 @@ When the route chain has finished, if state.document has not been imported,
 it is imported into current document, scripts and import links being loaded
 in order.
 
-The setup chain is not run when prerendering, and the build chain is not run
-when reopening a prerendered document (but it can be run again when push or replace
-methods are called).
+The build chain is not run when reopening a prerendered document
+(but it can be run again when push or replace methods are called).
+
+The setup chain is not run when prerendering.
+
 
 ### 1. Initial document - construction
 
 DOM Ready on new document, or state.document has not been imported:
 - route
-- setup (if not prerendering)
 - build
+- setup (if not prerendering)
 
 ### 2. Initial or prerendered document - navigation
 
@@ -189,6 +188,12 @@ but it is not ! The right way to handle that situation is to delegate initializa
 by dispatching events from the build function to a setup function:
 
 ```
+// runs on initial document or on replaced document
+Page.build(function() {
+	$('#somenode').append('<div class="dropdown" />');
+	$(document).trigger('dropdown');
+});
+
 // runs on prerendered document
 Page.setup(function() {
 	$(document).on('dropdown', function() {
@@ -197,12 +202,6 @@ Page.setup(function() {
 	});
 	// initialize prerendered dropdowns
 	$('.dropdown').dropdown();
-});
-
-// runs on initial document or on replaced document
-Page.build(function() {
-	$('#somenode').append('<div class="dropdown" />');
-	$(document).trigger('dropdown');
 });
 ```
 
@@ -232,16 +231,6 @@ Page.route(function(state) {
 
 In another js file:
 ```
-Page.setup(function(state) {
-	$('form').on('submit', function(e) {
-		e.preventDefault();
-		// push to history, triggers routers chain which in turn will call update()
-		state.query = $(this).form('get values');
-		// doesn't run routers chain because we're pushing an existing state with
-		// a document already set
-		Page.push(state);
-	});
-});
 Page.build(function(state) {
 	if (state.data) {
 		// application understands this as not updating the state
@@ -251,6 +240,17 @@ Page.build(function(state) {
 	var query = state.query;
 	GET({pathname: "/api/data", query: query}).then(function(obj) {
 		myMergeUpdate(obj);
+	});
+});
+
+Page.setup(function(state) {
+	$('form').on('submit', function(e) {
+		e.preventDefault();
+		// push to history, triggers routers chain which in turn will call update()
+		state.query = $(this).form('get values');
+		// doesn't run routers chain because we're pushing an existing state with
+		// a document already set
+		Page.push(state);
 	});
 });
 ```
