@@ -93,7 +93,12 @@ PageClass.prototype.samePath = function(a, b) {
 PageClass.prototype.sameDomain = function(a, b) {
 	if (typeof a == "string") a = this.parse(a);
 	if (typeof b == "string") b = this.parse(b);
-	return a.protocol == b.protocol && a.hostname == b.hostname && a.port == b.port;
+	var loc = document.location;
+	var pr = loc.protocol;
+	var hn = loc.hostname;
+	var po = loc.port;
+	return (a.protocol || pr) == (b.protocol || pr)
+		&& (a.hostname || hn) == (b.hostname || hn) && (a.port || po) == (b.port || po);
 };
 
 PageClass.prototype.run = function(state) {
