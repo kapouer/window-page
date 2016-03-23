@@ -298,6 +298,9 @@ PageClass.prototype.importDocument = function(doc) {
 	});
 
 	var root = document.documentElement;
+	while (root.attributes.length > 0) {
+		root.removeAttribute(root.attributes[0].name);
+	}
 	if (doc.attributes) for (var i=0; i < doc.attributes.length; i++) {
 		root.setAttribute(doc.attributes[i].name, doc.attributes[i].value);
 	}
