@@ -113,12 +113,18 @@ build chain as `Page.state`.
 ### Tools
 
 * Page.parse(url)  
-  parses a url and fill only properties that were defined in the url,  
-  parses the query string into an object if any.
+  parses a url into pathname, query object, hash; and protocol, hostname, port
+  if not the same domain as the document.
 
 * Page.format(obj)  
   format a parsed url to a string with only what was defined,  
   converts obj.path to pathname, query then stringify query obj if any.
+
+* Page.samePath(a, b)  
+  compare paths (pathname + querystring without hash) of two url or objects.
+
+* Page.sameDomain(a, b)  
+  compare domains (protocol + hostname + port) of two url or objects.
 
 
 Order of execution of chains

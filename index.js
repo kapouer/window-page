@@ -45,16 +45,15 @@ PageClass.prototype.parse = function(str) {
 	};
 	if (obj.hash && obj.hash[0] == "#") obj.hash = obj.hash.substring(1);
 
-	var cross = loc.port != dloc.port || loc.hostname != dloc.hostname || loc.protocol != dloc.protocol;
-	if (cross) {
+	if (this.sameDomain(loc, dloc)) {
+		delete obj.port;
+		delete obj.hostname;
+		delete obj.protocol;
+	} else {
 		if (!obj.port) obj.port = loc.port;
 		if (!obj.hostname) obj.hostname = loc.hostname;
 		if (!obj.protocol) obj.protocol = loc.protocol;
 		if (obj.port == "80") delete obj.port;
-	} else {
-		delete obj.port;
-		delete obj.hostname;
-		delete obj.protocol;
 	}
 	return obj;
 };
@@ -80,6 +79,19 @@ PageClass.prototype.format = function(obj) {
 	if (search) str += '?' + search;
 	if (obj.hash) str += '#' + obj.hash;
 	return str;
+};
+
+PageClass.prototype.samePath = function(a, b) {
+	if (typeof a == "string") a = this.parse(a);
+	if (typeof b == "string") b = this.parse(b);
+	return a.pathname == b.pathname &&
+		QueryString.stringify(a.query) == QueryString.stringify(b.query);
+};
+
+PageClass.prototype.sameDomain = function(a, b) {
+	if (typeof a == "string") a = this.parse(a);
+	if (typeof b == "string") b = this.parse(b);
+	return a.protocol == b.protocol && a.hostname == b.hostname && a.port == b.port;
 };
 
 PageClass.prototype.run = function(state) {
