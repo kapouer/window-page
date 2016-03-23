@@ -84,8 +84,10 @@ PageClass.prototype.format = function(obj) {
 PageClass.prototype.samePath = function(a, b) {
 	if (typeof a == "string") a = this.parse(a);
 	if (typeof b == "string") b = this.parse(b);
+	var aquery = a.query || QueryString.parse(a.search);
+	var bquery = b.query || QueryString.parse(b.search);
 	return a.pathname == b.pathname &&
-		QueryString.stringify(a.query) == QueryString.stringify(b.query);
+		QueryString.stringify(aquery) == QueryString.stringify(bquery);
 };
 
 PageClass.prototype.sameDomain = function(a, b) {
