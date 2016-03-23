@@ -85,6 +85,7 @@ PageClass.prototype.format = function(obj) {
 PageClass.prototype.run = function(state) {
 	this.format(state); // converts path if any
 	if (!state.stage) state.stage = INIT;
+	state.initialStage = state.stage;
 	var self = this;
 	if (this.queue) {
 		if (this.state && this.state.stage == BUILT) {
@@ -103,6 +104,7 @@ PageClass.prototype.run = function(state) {
 		if (state.stage >= IMPORTED || !state.document) return;
 		self.reset();
 		return self.importDocument(state.document).then(function() {
+			delete state.document;
 			var docStage = self.stage();
 			if (docStage == INIT) {
 				docStage = IMPORTED;
@@ -127,7 +129,6 @@ PageClass.prototype.run = function(state) {
 			return self.runChain('setup', state).then(function() {
 				if (state.stage < SETUP) {
 					state.stage = SETUP;
-					self.stage(SETUP);
 				}
 			});
 		});
@@ -365,9 +366,9 @@ PageClass.prototype.historyMethod = function(method, state) {
 
 PageClass.prototype.stateTo = function(state) {
 	var to = {
-		href: this.format(state)
+		href: this.format(state),
+		stage: state.initialStage
 	};
-	if (state.document) to.html = state.document.documentElement.outerHTML;
 	if (state.data) to.data = state.data;
 	return to;
 };
@@ -375,18 +376,8 @@ PageClass.prototype.stateTo = function(state) {
 PageClass.prototype.stateFrom = function(from) {
 	if (!from || !from.href) return;
 	var state = this.parse(from.href);
+	state.stage = from.stage;
 	if (from.data) state.data = from.data;
-	if (from.html) {
-		var doc = document.implementation.createHTMLDocument("");
-		doc.open();
-		doc.write(from.html);
-		doc.close();
-		state.document = doc;
-		state.stage = INIT;
-	} else {
-		// same document, allow build only
-		state.stage = SETUP;
-	}
 	return state;
 };
 
