@@ -103,8 +103,12 @@ PageClass.prototype.run = function(state) {
 		if (state.stage >= IMPORTED || !state.document) return;
 		self.reset();
 		return self.importDocument(state.document).then(function() {
-			state.stage = IMPORTED;
-			self.stage(IMPORTED);
+			var docStage = self.stage();
+			if (docStage == INIT) {
+				docStage = IMPORTED;
+				self.stage(IMPORTED);
+			}
+			state.stage = docStage;
 		});
 	}).then(function() {
 		self.state = state; // this is the new current state
