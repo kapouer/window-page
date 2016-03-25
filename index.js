@@ -23,6 +23,16 @@ function PageClass() {
 	this.setup = this.chainThenable.bind(this, "setup");
 	this.format = this.format.bind(this);
 
+	if (this.window.history && !this.historyListener) {
+		this.supportsHistory = true;
+		this.historyListener = function(e) {
+			var state = this.stateFrom(e.state);
+			if (!state) return;
+			this.run(state);
+		}.bind(this);
+		this.window.addEventListener('popstate', this.historyListener);
+	}
+
 	var state = this.parse();
 	state.stage = this.stage();
 	this.run(state);
@@ -359,31 +369,26 @@ PageClass.prototype.historyMethod = function(method, state) {
 		if (state[k]) copy[k] = state[k];
 	});
 
-	var supported = !!this.window.history;
-	if (supported && !this.historyListener) {
-		this.historyListener = function(e) {
-			var state = this.stateFrom(e.state);
-			if (!state) return;
-			this.run(state);
-		}.bind(this);
-		this.window.addEventListener('popstate', this.historyListener);
-		if (method == "push") {
-			// we want current location here
-			var to = this.stateTo(this.state);
-			to.href = document.location.toString();
-			this.window.history.replaceState(to, document.title, to.href);
-		}
+	if (this.supportsHistory && !state.saved && method == "push") {
+		// we want current location here
+		var to = this.stateTo(this.state);
+		// some kind of workaround
+		if (to.stage == BUILT) to.stage = SETUP;
+		to.href = this.format(this.parse(document.location.toString()));
+		this.window.history.replaceState(to, document.title, to.href);
 	}
+
 	return this.run(copy).then(function() {
 		this.state = copy;
 		var to = this.stateTo(copy);
-		if (supported) {
+		if (this.supportsHistory) {
 			this.window.history[method + 'State'](to, document.title, to.href);
 		}
 	}.bind(this));
 };
 
 PageClass.prototype.stateTo = function(state) {
+	state.saved = true;
 	var to = {
 		href: this.format(state),
 		stage: state.initialStage
@@ -397,6 +402,7 @@ PageClass.prototype.stateFrom = function(from) {
 	var state = this.parse(from.href);
 	state.stage = from.stage;
 	if (from.data) state.data = from.data;
+	state.saved = true;
 	return state;
 };
 
