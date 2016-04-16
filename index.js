@@ -232,7 +232,7 @@ PageClass.prototype.waitUiReady = function(state) {
 		return waitImports();
 	}
 	function waitImports() {
-		var imports = Array.from(document.querySelectorAll('link[rel="import"]'));
+		var imports = queryAll(document, 'link[rel="import"]');
 		var polyfill = window.HTMLImports;
 		var whenReady = (function() {
 			var promise;
@@ -301,7 +301,7 @@ PageClass.prototype.waitReady = function() {
 };
 
 PageClass.prototype.importDocument = function(doc) {
-	var scripts = Array.from(doc.querySelectorAll('script')).map(function(node) {
+	var scripts = queryAll(doc, 'script').map(function(node) {
 		if (node.type && node.type != "text/javascript") return Promise.resolve({});
 		// make sure script is not loaded when inserted into document
 		node.type = "text/plain";
@@ -317,7 +317,7 @@ PageClass.prototype.importDocument = function(doc) {
 		});
 	});
 
-	var imports = Array.from(doc.querySelectorAll('link[rel="import"]'));
+	var imports = queryAll(doc, 'link[rel="import"]');
 	var cursor;
 	imports.forEach(function(link) {
 		if (!cursor) {
@@ -405,6 +405,13 @@ PageClass.prototype.stateFrom = function(from) {
 	state.saved = true;
 	return state;
 };
+
+function queryAll(doc, selector) {
+	if (doc.queryAll) return doc.queryAll(selector);
+	var list = doc.querySelectorAll(selector);
+	if (Array.from) return Array.from(list);
+	return Array.prototype.slice.call(list);
+}
 
 window.Page = new PageClass();
 })();
