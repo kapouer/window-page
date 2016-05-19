@@ -7,12 +7,6 @@ var BUILT = 2;
 var SETUP = 3;
 
 function PageClass() {
-	var inst = window.Page;
-	if (inst) {
-		// because using instanceof requires reference to the same PageClass
-		if (inst.name == "PageClass") return inst;
-		else throw new Error("window.Page already exists");
-	}
 	this.name = "PageClass";
 	this.window = window;
 
@@ -413,5 +407,27 @@ function queryAll(doc, selector) {
 	return Array.prototype.slice.call(list);
 }
 
-window.Page = new PageClass();
+PageClass.init = function() {
+	var inst = window.Page;
+	var r, b, s;
+	if (inst) {
+		r = inst.route;
+		b = inst.build;
+		s = inst.setup;
+		// because using instanceof requires reference to the same PageClass
+		if (inst.name != "PageClass") {
+			if (!r && !b && !s) console.error("window.Page already exists");
+			else inst = null;
+		}
+	}
+	if (!inst) {
+		window.Page = inst = new PageClass();
+		if (r) inst.route(r);
+		if (b) inst.build(b);
+		if (s) inst.setup(s);
+	}
+};
+
+PageClass.init();
+
 })();
