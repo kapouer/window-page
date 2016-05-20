@@ -97,11 +97,9 @@ All functions receive the same "state" parameter, which is available just before
 build chain as `Page.state`.
 
 
-### Courtesy initialization
+### Events
 
-If Page initialization finds a previous `window.Page` object, that is not an
-instance of Page, and that has `route`, `build`, or `setup` functions, if will
-queue them in the corresponding chains.
+Page emits events "route", "build", "setup" on window.
 
 
 ### History

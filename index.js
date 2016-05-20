@@ -105,6 +105,12 @@ PageClass.prototype.sameDomain = function(a, b) {
 		&& (a.hostname || hn) == (b.hostname || hn) && (a.port || po) == (b.port || po);
 };
 
+PageClass.prototype.emit = function(name) {
+	var event = document.createEvent('Event');
+	event.initEvent(name, true, true);
+	window.dispatchEvent(event);
+};
+
 PageClass.prototype.run = function(state) {
 	this.format(state); // converts path if any
 	if (!state.stage) state.stage = INIT;
@@ -173,6 +179,7 @@ PageClass.prototype.reset = function() {
 };
 
 PageClass.prototype.runChain = function(name, state) {
+	this.emit(name);
 	var chain = this.chains[name];
 	chain.promise = this.allFn(state, name, chain.thenables);
 	return chain.promise.then(function() {
@@ -409,22 +416,10 @@ function queryAll(doc, selector) {
 
 PageClass.init = function() {
 	var inst = window.Page;
-	var r, b, s;
 	if (inst) {
-		r = inst.route;
-		b = inst.build;
-		s = inst.setup;
-		// because using instanceof requires reference to the same PageClass
-		if (inst.name != "PageClass") {
-			if (!r && !b && !s) console.error("window.Page already exists");
-			else inst = null;
-		}
-	}
-	if (!inst) {
-		window.Page = inst = new PageClass();
-		if (r) inst.route(r);
-		if (b) inst.build(b);
-		if (s) inst.setup(s);
+		if (inst.name != "PageClass") throw new Error("window.Page already exists");
+	} else {
+		window.Page = new PageClass();
 	}
 };
 
