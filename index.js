@@ -161,6 +161,7 @@ PageClass.prototype.run = function(state) {
 			return self.runChain('setup', state).then(function() {
 				if (state.stage < SETUP) {
 					state.stage = SETUP;
+					self.stage(SETUP);
 				}
 			});
 		});
