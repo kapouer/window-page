@@ -29,7 +29,6 @@ function PageClass() {
 	}
 
 	var state = this.parse();
-	state.stage = this.stage();
 	this.run(state);
 }
 
@@ -118,8 +117,6 @@ PageClass.prototype.emit = function(name) {
 
 PageClass.prototype.run = function(state) {
 	this.format(state); // converts path if any
-	if (!state.stage) state.stage = INIT;
-	state.initialStage = state.stage;
 	var self = this;
 	if (this.queue) {
 		if (this.state && this.state.stage == BUILT) {
@@ -131,6 +128,7 @@ PageClass.prototype.run = function(state) {
 		}
 	}
 	this.queue = this.waitReady().then(function() {
+		state.initialStage = state.stage = self.stage();
 		if (state.stage == INIT) {
 			return self.runChain('route', state);
 		}
