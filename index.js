@@ -8,6 +8,7 @@ var SETUP = 3;
 
 function PageClass() {
 	this.name = "PageClass";
+	this.attribute = 'data-page-stage';
 	this.window = window;
 
 	this.reset();
@@ -33,9 +34,10 @@ function PageClass() {
 }
 
 PageClass.prototype.stage = function(stage) {
-	var root = document.documentElement;
-	if (stage === undefined) return parseInt(root.getAttribute("stage")) || INIT;
-	else root.setAttribute("stage", stage);
+	var root = document.querySelector('['+this.attribute+']');
+	if (!root) root = document.documentElement;
+	if (stage === undefined) return parseInt(root.getAttribute(this.attribute)) || INIT;
+	else root.setAttribute(this.attribute, stage);
 	return stage;
 };
 

@@ -64,6 +64,14 @@ Page.setup(function(state) {
 API
 ---
 
+### stage serialization
+
+The current construction stage of a document is saved into the first node having
+a `data-page-stage` attribute, and defaults to documentElement if none is found.
+It is important to keep it around when serializing / reloading the document or
+parts of the document.
+
+
 ### state object
 
 The state object describes components of the url parsed with Page.parse()
@@ -169,9 +177,6 @@ Page.replace, or Page.push calls:
 
 DOM Ready on built document:
 - setup
-
-The current construction stage of a document is saved into a documentElement
-attribute "stage". It is important to keep it when serializing the document.
 
 
 Application behaviors
