@@ -64,12 +64,15 @@ Page.setup(function(state) {
 API
 ---
 
-### stage serialization
+### stage serialization, root node
 
 The current construction stage of a document is saved into the first node having
 a `data-page-stage` attribute, and defaults to documentElement if none is found.
-It is important to keep it around when serializing / reloading the document or
-parts of the document.
+
+This node is called the `root node`, and is accessible through `Page.root`.
+
+If one needs to export a part of the document, that part should carry that
+attribute, to ensure Page will be able to resume loading at the correct stage.
 
 
 ### state object

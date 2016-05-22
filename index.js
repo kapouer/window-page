@@ -34,8 +34,12 @@ function PageClass() {
 }
 
 PageClass.prototype.stage = function(stage) {
-	var root = document.querySelector('['+this.attribute+']');
-	if (!root) root = document.documentElement;
+	var root = this.root;
+	if (!root) {
+		root = document.querySelector('['+this.attribute+']');
+		if (!root) root = document.documentElement;
+		this.root = root;
+	}
 	if (stage === undefined) return parseInt(root.getAttribute(this.attribute)) || INIT;
 	else root.setAttribute(this.attribute, stage);
 	return stage;
