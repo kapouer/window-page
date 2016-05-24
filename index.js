@@ -130,6 +130,7 @@ PageClass.prototype.run = function(state) {
 	this.queue = this.waitReady().then(function() {
 		state.initialStage = state.stage = self.stage();
 		if (state.stage == INIT) {
+			self.emit("pageinit");
 			return self.runChain('route', state);
 		}
 	}).then(function() {
@@ -183,12 +184,12 @@ PageClass.prototype.reset = function() {
 };
 
 PageClass.prototype.runChain = function(name, state) {
-	this.emit(name);
 	var chain = this.chains[name];
 	chain.promise = this.allFn(state, name, chain.thenables);
 	return chain.promise.then(function() {
+		this.emit("page" + name);
 		return state;
-	});
+	}.bind(this));
 };
 
 PageClass.prototype.chainThenable = function(name, fn) {

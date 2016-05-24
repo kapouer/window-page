@@ -112,7 +112,8 @@ build chain as `Page.state`.
 
 ### Events
 
-Page emits events "route", "build", "setup" on window.
+Page emits events "pageinit", "pageroute", "pagebuild", "pagesetup" on window,
+the last three happening after the corresponding chain has run.
 
 
 ### History
