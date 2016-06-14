@@ -29,6 +29,7 @@ function PageClass() {
 	}
 
 	var state = this.parse();
+	state.data = {};
 	this.run(state);
 }
 
@@ -399,7 +400,7 @@ PageClass.prototype.stateTo = function(state) {
 		href: this.format(state),
 		stage: state.initialStage
 	};
-	if (state.data) to.data = state.data;
+	to.data = state.data;
 	return to;
 };
 
@@ -407,7 +408,7 @@ PageClass.prototype.stateFrom = function(from) {
 	if (!from || !from.href) return;
 	var state = this.parse(from.href);
 	state.stage = from.stage;
-	if (from.data) state.data = from.data;
+	state.data = from.data || {};
 	state.saved = true;
 	return state;
 };
