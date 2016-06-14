@@ -29,7 +29,6 @@ function PageClass() {
 	}
 
 	var state = this.parse();
-	state.data = {};
 	this.run(state);
 }
 
@@ -118,6 +117,7 @@ PageClass.prototype.emit = function(name) {
 
 PageClass.prototype.run = function(state) {
 	this.format(state); // converts path if any
+	if (!state.data) state.data = {};
 	var self = this;
 	if (this.queue) {
 		if (this.state && this.state.stage == BUILT) {
