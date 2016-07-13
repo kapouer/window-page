@@ -19,20 +19,29 @@ function PageClass() {
 	this.patch = this.chainThenable.bind(this, "patch");
 	this.setup = this.chainThenable.bind(this, "setup");
 	this.format = this.format.bind(this);
+	this.historyListener = this.historyListener.bind(this);
 
-	if (this.window.history && !this.historyListener) {
+	if (this.window.history) {
 		this.supportsHistory = true;
-		this.historyListener = function(e) {
-			var state = this.stateFrom(e.state);
-			if (!state) return;
-			this.run(state);
-		}.bind(this);
 		this.window.addEventListener('popstate', this.historyListener);
 	}
 
 	var state = this.parse();
 	this.run(state);
 }
+
+PageClass.prototype.historyListener = function(e) {
+	var state = this.stateFrom(e.state);
+	if (state) {
+		this.run(state);
+	} else {
+		var obj = this.parse();
+		if (this.samePath(this.state, obj) && this.state.hash != obj.hash) {
+			Page.state.hash = hash;
+			this.emit("pagehash");
+		}
+	}
+};
 
 PageClass.prototype.stage = function(stage) {
 	var root = document.querySelector('['+this.attribute+']');

@@ -117,6 +117,9 @@ build chain as `Page.state`.
 Page emits events "pageinit", "pageroute", "pagebuild", "pagepatch", "pagesetup"
 on window, the last four happening after the corresponding chain has run.
 
+In addition, a "pagehash" event is emitted when only the document hash changes,
+to be able to do stuff on hash links without interfering with history api.
+
 
 ### History
 
