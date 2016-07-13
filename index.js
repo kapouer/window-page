@@ -1,5 +1,6 @@
 (function() {
 var QueryString = require('query-string');
+require('window-agent');
 
 var INIT = 0;
 var IMPORTED = 1;

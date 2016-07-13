@@ -21,7 +21,8 @@
   "author": "Jérémy Lal <kapouer@melix.org>",
   "license": "MIT",
   "dependencies": {
-    "query-string": "^3.0.0"
+    "query-string": "^3.0.0",
+    "window-agent": "^1.0.0"
   },
   "bugs": {
     "url": "https://github.com/kapouer/window-page/issues"
