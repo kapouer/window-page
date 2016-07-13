@@ -15,6 +15,7 @@ function PageClass() {
 
 	this.route = this.chainThenable.bind(this, "route");
 	this.build = this.chainThenable.bind(this, "build");
+	this.patch = this.chainThenable.bind(this, "patch");
 	this.setup = this.chainThenable.bind(this, "setup");
 	this.format = this.format.bind(this);
 
@@ -148,7 +149,6 @@ PageClass.prototype.run = function(state) {
 		});
 	}).then(function() {
 		self.state = state; // this is the new current state
-		// run only once if setup was never run
 		if (state.stage >= BUILT) return;
 		return self.runChain('build', state).then(function() {
 			if (state.stage < BUILT) {
@@ -156,6 +156,11 @@ PageClass.prototype.run = function(state) {
 				self.stage(BUILT);
 			}
 		});
+	}).then(function() {
+		if (state.stage < BUILT) return;
+		var patchable = self.chains.patch.thenables.length;
+		if (!patchable && state.stage == BUILT) return;
+		return self.runChain(patchable ? 'patch' : 'build', state);
 	}).then(function() {
 		if (state.stage >= SETUP) return;
 		return self.waitUiReady(state).then(function() {
@@ -180,6 +185,7 @@ PageClass.prototype.reset = function() {
 	this.chains = {
 		route: {thenables: []},
 		build: {thenables: []},
+		patch: {thenables: []},
 		setup: {thenables: []}
 	};
 };
@@ -379,7 +385,7 @@ PageClass.prototype.historyMethod = function(method, state) {
 	if (this.supportsHistory && !state.saved && method == "push") {
 		// we want current location here
 		var to = this.stateTo(this.state);
-		// some kind of workaround
+		// ensure it calls patch or build chain
 		if (to.stage == BUILT) to.stage = SETUP;
 		to.href = this.format(this.parse(document.location.toString()));
 		this.window.history.replaceState(to, document.title, to.href);
