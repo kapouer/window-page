@@ -9,7 +9,7 @@ var SETUP = 3;
 
 function PageClass() {
 	this.name = "PageClass";
-	this.attribute = 'data-page-stage';
+	this.prefix = 'data-page-';
 	this.window = window;
 
 	this.reset();
@@ -43,15 +43,30 @@ PageClass.prototype.historyListener = function(e) {
 	}
 };
 
-PageClass.prototype.stage = function(stage) {
-	var root = document.querySelector('['+this.attribute+']');
-	if (!root) {
-		root = document.documentElement;
+PageClass.prototype.store = function(name, data) {
+	var storage = this.storage || {};
+	if (data === undefined) {
+		if (storage[name] !== undefined) return storage[name];
 	}
-	this.root = root;
-	if (stage === undefined) return parseInt(root.getAttribute(this.attribute)) || INIT;
-	else root.setAttribute(this.attribute, stage);
-	return stage;
+	var root = this.root;
+	if (!root) {
+		this.root = root = document.querySelector(
+			'[' + this.prefix + 'stage' + ']'
+		) || document.documentElement;
+	}
+	if (data === undefined) {
+		try {
+			this.storage[name] = JSON.parse(root.getAttribute(this.prefix + name));
+		} catch (ex) {}
+	} else {
+		this.storage[name] = data;
+		root.setAttribute(this.prefix + name, JSON.stringify(data));
+	}
+	return this.storage[name];
+};
+
+PageClass.prototype.stage = function(stage) {
+	return this.store('stage', stage) || INIT;
 };
 
 PageClass.prototype.parse = function(str) {

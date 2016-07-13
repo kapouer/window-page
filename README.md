@@ -77,6 +77,9 @@ The root node can be different after route chain imports a document.
 If one needs to export a part of the document, that part should carry that
 attribute, to ensure Page will be able to resume loading at the correct stage.
 
+The root node can also be used to store custom data with
+`Page.store(name, data)`: reads or writes JSON data.
+
 
 ### state object
 
