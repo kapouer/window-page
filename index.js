@@ -44,7 +44,8 @@ PageClass.prototype.historyListener = function(e) {
 };
 
 PageClass.prototype.store = function(name, data) {
-	var storage = this.storage || {};
+	var storage = this.storage;
+	if (!storage) this.storage = storage = {};
 	if (data === undefined) {
 		if (storage[name] !== undefined) return storage[name];
 	}
