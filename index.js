@@ -1,12 +1,12 @@
 (function() {
 var QueryString = require('query-string');
 
-function PageClass() {
-	this.INIT = 0;
-	this.IMPORTED = 1;
-	this.BUILT = 2;
-	this.SETUP = 3;
+var INIT = 0;
+var IMPORTED = 1;
+var BUILT = 2;
+var SETUP = 3;
 
+function PageClass() {
 	this.name = "PageClass";
 	this.attribute = 'data-page-stage';
 	this.window = window;
@@ -38,7 +38,7 @@ PageClass.prototype.stage = function(stage) {
 		root = document.documentElement;
 	}
 	this.root = root;
-	if (stage === undefined) return parseInt(root.getAttribute(this.attribute)) || this.INIT;
+	if (stage === undefined) return parseInt(root.getAttribute(this.attribute)) || INIT;
 	else root.setAttribute(this.attribute, stage);
 	return stage;
 };
@@ -120,7 +120,7 @@ PageClass.prototype.run = function(state) {
 	if (!state.data) state.data = {};
 	var self = this;
 	if (this.queue) {
-		if (this.state && this.state.stage == this.BUILT) {
+		if (this.state && this.state.stage == BUILT) {
 			this.state.abort = true;
 		} else {
 			return this.queue.then(function() {
@@ -130,40 +130,40 @@ PageClass.prototype.run = function(state) {
 	}
 	this.queue = this.waitReady().then(function() {
 		state.initialStage = state.stage = self.stage();
-		if (state.stage == self.INIT) {
+		if (state.stage == INIT) {
 			self.emit("pageinit");
 			return self.runChain('route', state);
 		}
 	}).then(function() {
-		if (state.stage >= self.IMPORTED || !state.document) return;
+		if (state.stage >= IMPORTED || !state.document) return;
 		self.reset();
 		return self.importDocument(state.document).then(function() {
 			delete state.document;
 			var docStage = self.stage();
-			if (docStage == self.INIT) {
-				docStage = self.IMPORTED;
-				self.stage(self.IMPORTED);
+			if (docStage == INIT) {
+				docStage = IMPORTED;
+				self.stage(IMPORTED);
 			}
 			state.stage = docStage;
 		});
 	}).then(function() {
 		self.state = state; // this is the new current state
 		// run only once if setup was never run
-		if (state.stage == self.BUILT) return;
+		if (state.stage >= BUILT) return;
 		return self.runChain('build', state).then(function() {
-			if (state.stage < self.BUILT) {
-				state.stage = self.BUILT;
-				self.stage(self.BUILT);
+			if (state.stage < BUILT) {
+				state.stage = BUILT;
+				self.stage(BUILT);
 			}
 		});
 	}).then(function() {
-		if (state.stage >= self.SETUP) return;
+		if (state.stage >= SETUP) return;
 		return self.waitUiReady(state).then(function() {
 			if (state.abort) return Promise.reject("abort");
 			return self.runChain('setup', state).then(function() {
-				if (state.stage < self.SETUP) {
-					state.stage = self.SETUP;
-					self.stage(self.SETUP);
+				if (state.stage < SETUP) {
+					state.stage = SETUP;
+					self.stage(SETUP);
 				}
 			});
 		});
@@ -380,7 +380,7 @@ PageClass.prototype.historyMethod = function(method, state) {
 		// we want current location here
 		var to = this.stateTo(this.state);
 		// some kind of workaround
-		if (to.stage == this.BUILT) to.stage = this.SETUP;
+		if (to.stage == BUILT) to.stage = SETUP;
 		to.href = this.format(this.parse(document.location.toString()));
 		this.window.history.replaceState(to, document.title, to.href);
 	}
