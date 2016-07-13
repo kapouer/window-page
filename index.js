@@ -351,9 +351,10 @@ PageClass.prototype.importDocument = function(doc) {
 	root.replaceChild(document.adoptNode(doc.body), document.body);
 
 	// execute all scripts in their original order as soon as they loaded
-	return scripts.reduce(function(sequence, scriptPromise) {
-		return sequence.then(function() {
-			return scriptPromise;
+	var chain = Promise.resolve();
+	scripts.forEach(function(prom) {
+		chain = chain.then(function() {
+			return prom;
 		}).then(function(obj) {
 			if (!obj.txt) return;
 			var script = document.createElement("script");
@@ -361,7 +362,8 @@ PageClass.prototype.importDocument = function(doc) {
 			document.head.appendChild(script).remove();
 			obj.node.type = "text/javascript";
 		});
-	}, Promise.resolve()).then(function() {
+	});
+	chain.then(function() {
 		imports.forEach(function(link) {
 			cursor.parentNode.insertBefore(link, cursor);
 		});
