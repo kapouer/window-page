@@ -1,10 +1,11 @@
 window.Page
 ===========
 
-A general, light, client page controller for running the:
+A general, light, client page controller for running promise-based chains:
 
 - route, matching url with document and data
 - build, filling the document using collected data
+- patch, optionally updating document
 - setup, adding listeners on delegated events and initializing global objects
 
 window.Page is designed to play well with:
@@ -102,6 +103,7 @@ functions:
 
 * Page.route(fn)
 * Page.build(fn)
+* Page.patch(fn)
 * Page.setup(fn)
 
 The return values of the promises are ignored.
@@ -112,8 +114,8 @@ build chain as `Page.state`.
 
 ### Events
 
-Page emits events "pageinit", "pageroute", "pagebuild", "pagesetup" on window,
-the last three happening after the corresponding chain has run.
+Page emits events "pageinit", "pageroute", "pagebuild", "pagepatch", "pagesetup"
+on window, the last four happening after the corresponding chain has run.
 
 
 ### History
@@ -149,7 +151,7 @@ the last three happening after the corresponding chain has run.
 Order of execution of chains
 ----------------------------
 
-There are three chains (route, build, setup) that accepts thenables.
+There are four chains (route, build, patch, setup) that accepts thenables.
 
 The first time the document is parsed into a DOM, it is in its 'initial' state,
 the second time it is 'prerendered'; meaning it has been built once, serialized,
@@ -161,10 +163,13 @@ When the route chain has finished, if state.document has not been imported,
 it is imported into current document, scripts and import links being loaded
 in order.
 
-The build chain is not run when reopening a prerendered document
-(but it can be run again when push or replace methods are called).
+The build chain is not run when reopening a prerendered document.
+
+The patch chain is run after the build chain the first time, and, if it is not
+empty, in place of the build chain in case of a document update.
 
 The setup chain is not run when prerendering.
+
 
 
 ### 1. Initial document - construction
@@ -172,12 +177,14 @@ The setup chain is not run when prerendering.
 DOM Ready on new document, or state.document has not been imported:
 - route
 - build
+- patch
 - setup (if not prerendering)
 
 ### 2. Initial or prerendered document - navigation
 
 Page.replace, or Page.push calls:
-- build
+- build, if the patch chain is empty
+- patch
 
 ### 3. Prerendered document - opening
 
@@ -190,8 +197,8 @@ Application behaviors
 
 ### build functions - run once or multiple times
 
-Since build chain is always called on a Page.push or replace, build functions
-are expected to deal with being called multiple times.
+If patch chain is empty, it is up to the build chain to deal with being called
+multiple times (typically after a Page.replace or Page.push call).
 
 Some build functions only use `state.data` and will return early if that variable
 isn't set.
@@ -246,24 +253,26 @@ Page.push(newHref)
 Example: update when query change
 ---------------------------------
 
-In a js file that deals with application routers:
+Optionally, some code deals with application routing and sets data
 
 ```
 Page.route(function(state) {
-	// GET(...) same usage as above
+	state.data = {articles: [...]};
 });
 ```
 
 In another js file:
 ```
 Page.build(function(state) {
-	if (state.data) {
-		// application understands this as not updating the state
-		myMerge(state.data.articles);
-	}
-	// the update part of the build
-	var query = state.query;
-	GET({pathname: "/api/data", query: query}).then(function(obj) {
+	// called once during prerendering, use already set data or fetch some
+	myMerge(state.data.articles);
+});
+
+Page.patch(function(state) {
+	GET({
+		pathname: "/api/data",
+		query: state.query
+	}).then(function(obj) {
 		myMergeUpdate(obj);
 	});
 });
