@@ -57,13 +57,16 @@ PageClass.prototype.store = function(name, data) {
 	}
 	if (data === undefined) {
 		try {
-			this.storage[name] = JSON.parse(root.getAttribute(this.prefix + name));
+			data = this.storage[name] = JSON.parse(root.getAttribute(this.prefix + name));
 		} catch (ex) {}
+	} else if (data == null) {
+		delete this.storage[name];
+		root.removeAttribute(this.prefix + name);
 	} else {
 		this.storage[name] = data;
 		root.setAttribute(this.prefix + name, JSON.stringify(data));
 	}
-	return this.storage[name];
+	return data;
 };
 
 PageClass.prototype.stage = function(stage) {
