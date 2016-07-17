@@ -180,19 +180,18 @@ PageClass.prototype.run = function(state) {
 		self.state = state; // this is the new current state
 		if (state.stage >= BUILT) return;
 		return self.runChain('build', state).then(function() {
+			return self.runChain('patch', state);
+		}).then(function() {
 			if (state.stage < BUILT) {
 				state.stage = BUILT;
 				self.stage(BUILT);
 			}
 		});
 	}).then(function() {
-		if (state.stage < BUILT) return;
-		var patchable = self.chains.patch.thenables.length;
-		if (!patchable && state.stage == BUILT) return;
-		return self.runChain(patchable ? 'patch' : 'build', state);
-	}).then(function() {
-		if (state.stage >= SETUP) return;
-		return self.waitUiReady(state).then(function() {
+		if (state.stage == SETUP) {
+			// run patch if any, or build
+			return self.runChain(self.chains.patch.thenables.length ? 'patch' : 'build', state);
+		} else return self.waitUiReady(state).then(function() {
 			if (state.abort) return Promise.reject("abort");
 			return self.runChain('setup', state).then(function() {
 				if (state.stage < SETUP) {
