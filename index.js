@@ -1,6 +1,5 @@
 (function() {
 var QueryString = require('query-string');
-require('window-agent');
 
 var INIT = 0;
 var IMPORTED = 1;
@@ -347,8 +346,12 @@ PageClass.prototype.importDocument = function(doc) {
 		// make sure script is not loaded when inserted into document
 		node.type = "text/plain";
 		// fetch script content ourselves
-		if (node.src) return GET(node.src).then(function(txt) {
-			return {src: node.src, txt: txt, node: node};
+		if (node.src) return pGet(node.src).then(function(txt) {
+			return {
+				src: node.src,
+				txt: txt,
+				node: node
+			};
 		}).catch(function(err) {
 			console.error("Error loading", node.src, err);
 			return {};
@@ -454,6 +457,20 @@ function queryAll(doc, selector) {
 	var list = doc.querySelectorAll(selector);
 	if (Array.from) return Array.from(list);
 	return Array.prototype.slice.call(list);
+}
+
+function pGet(url) {
+	return new Promise(function(resolve, reject) {
+		var xhr = new XMLHttpRequest();
+		xhr.open("GET", url, true);
+		xhr.onreadystatechange = function() {
+			if (this.readyState != 4) return;
+			var code = this.status;
+			if (code >= 200 && code < 400) resolve(this.responseText);
+			else reject(code);
+		};
+		xhr.send();
+	});
 }
 
 PageClass.init = function() {
