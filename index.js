@@ -394,7 +394,7 @@ PageClass.prototype.importDocument = function(doc) {
 			obj.node.type = "text/javascript";
 		});
 	});
-	chain.then(function() {
+	return chain.then(function() {
 		imports.forEach(function(link) {
 			cursor.parentNode.insertBefore(link, cursor);
 		});
