@@ -375,8 +375,9 @@ PageClass.prototype.importDocument = function(doc) {
 	while (root.attributes.length > 0) {
 		root.removeAttribute(root.attributes[0].name);
 	}
-	if (doc.attributes) for (var i=0; i < doc.attributes.length; i++) {
-		root.setAttribute(doc.attributes[i].name, doc.attributes[i].value);
+	var docRoot = doc.documentElement;
+	if (docRoot.attributes) for (var i=0; i < docRoot.attributes.length; i++) {
+		root.setAttribute(docRoot.attributes[i].name, docRoot.attributes[i].value);
 	}
 	root.replaceChild(document.adoptNode(doc.head), document.head);
 	root.replaceChild(document.adoptNode(doc.body), document.body);
