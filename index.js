@@ -346,20 +346,19 @@ PageClass.prototype.importDocument = function(doc) {
 		// make sure script is not loaded when inserted into document
 		node.type = "text/plain";
 		// fetch script content ourselves
-		if (node.src) return pGet(node.src).then(function(txt) {
-			return {
-				src: node.src,
-				txt: txt,
-				node: node
-			};
-		}).catch(function(err) {
-			console.error("Error loading", node.src, err);
-			return {
-				src: node.src,
-				node: node
-			};
-		});
-		else return Promise.resolve({
+		if (node.src) {
+			return pGet(node.src).then(function(txt) {
+				return {
+					src: node.src,
+					txt: txt,
+					node: node
+				};
+			}).catch(function(err) {
+				// let the script load on insertion - screw the ordering since this is remote anyway
+				node.type = "text/javascript";
+				return {};
+			});
+		} else return Promise.resolve({
 			src: "inline", txt: node.textContent, node: node
 		});
 	});
