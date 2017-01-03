@@ -27,6 +27,10 @@
     "url": "https://github.com/kapouer/window-page/issues"
   },
   "devDependencies": {
-    "browserify-lite": "^0.5.0"
+    "browserify-lite": "^0.5.0",
+    "expect.js": "^0.3.1",
+    "express": "^4.14.0",
+    "express-dom": "^5.5.1",
+    "mocha": "^3.2.0"
   }
 }
