@@ -354,7 +354,10 @@ PageClass.prototype.importDocument = function(doc) {
 			};
 		}).catch(function(err) {
 			console.error("Error loading", node.src, err);
-			return {};
+			return {
+				src: node.src,
+				node: node
+			};
 		});
 		else return Promise.resolve({
 			src: "inline", txt: node.textContent, node: node
@@ -388,11 +391,12 @@ PageClass.prototype.importDocument = function(doc) {
 		chain = chain.then(function() {
 			return prom;
 		}).then(function(obj) {
-			if (!obj.txt) return;
-			var script = document.createElement("script");
-			script.textContent = obj.txt;
-			document.head.appendChild(script).remove();
-			obj.node.type = "text/javascript";
+			if (obj.txt) {
+				var script = document.createElement("script");
+				script.textContent = obj.txt;
+				document.head.appendChild(script).remove();
+			}
+			if (obj.node) obj.node.type = "text/javascript";
 		});
 	});
 	return chain.then(function() {
