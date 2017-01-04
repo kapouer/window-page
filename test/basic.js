@@ -10,7 +10,7 @@ dom.settings.allow = 'all';
 dom.settings.timeout = 10000;
 dom.settings.console = true;
 
-describe("Build phase", function suite() {
+describe("Prerendering", function suite() {
 	this.timeout(3000);
 	var server, port;
 
@@ -34,10 +34,21 @@ describe("Build phase", function suite() {
 	});
 
 
-	it("should load a simple Html page", function(done) {
+	it("should run build but not setup", function(done) {
 		request({
 			method: 'GET',
-			url: host + ':' + port + '/sample.html'
+			url: host + ':' + port + '/build.html'
+		}, function(err, res, body) {
+			expect(res.statusCode).to.be(200);
+			expect(body.indexOf("I'm built")).to.be.greaterThan(0);
+			done();
+		});
+	});
+
+	it("should run route and build", function(done) {
+		request({
+			method: 'GET',
+			url: host + ':' + port + '/route.html'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
 			expect(body.indexOf("I'm built")).to.be.greaterThan(0);
