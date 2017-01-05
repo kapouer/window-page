@@ -29,7 +29,6 @@ describe("Two-phase rendering", function suite() {
 		app.get(/\/templates\/.+\.html$/, express.static(app.get('views')));
 		app.get(/\.html$/, dom().load());
 
-
 		server = app.listen(function(err) {
 			if (err) console.error(err);
 			port = server.address().port;
@@ -42,20 +41,20 @@ describe("Two-phase rendering", function suite() {
 		done();
 	});
 
-
 	it("should run build then setup", function(done) {
-		var buildUrl = host + ':' + port + '/build.html';
 		request({
 			method: 'GET',
-			url: buildUrl
+			url: host + ':' + port + '/build.html'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
 			expect(body.indexOf("I'm built")).to.be.greaterThan(0);
 			dom(body).load({
 				plugins: renderPlugins
-			})(buildUrl).then(function(state) {
+			})(res.request.uri.href).then(function(state) {
 				expect(state.body.indexOf("I'm setup")).to.be.greaterThan(0);
 				done();
+			}).catch(function(err) {
+				console.error(err);
 			});
 		});
 	});
@@ -66,9 +65,16 @@ describe("Two-phase rendering", function suite() {
 			url: host + ':' + port + '/route-import.html'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
-			expect(body.indexOf("I'm setup")).to.be.greaterThan(0);
-			expect(body.indexOf("your body")).to.be.greaterThan(0);
-			done();
+			expect(body.indexOf("I'm built0")).to.be.greaterThan(0);
+			expect(body.indexOf("your body0")).to.be.greaterThan(0);
+			dom(body).load({
+				plugins: renderPlugins
+			})(res.request.uri.href).then(function(state) {
+				expect(state.body.indexOf("I'm setup")).to.be.greaterThan(0);
+				done();
+			}).catch(function(err) {
+				console.error(err);
+			});
 		});
 	});
 
