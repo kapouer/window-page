@@ -400,7 +400,7 @@ PageClass.prototype.importDocument = function(doc) {
 			if (obj.txt) {
 				var script = document.createElement("script");
 				script.textContent = obj.txt;
-				document.head.appendChild(script).remove();
+				document.head.removeChild(document.head.appendChild(script));
 			}
 			if (obj.type) obj.node.type = obj.type;
 			else obj.node.removeAttribute('type');
