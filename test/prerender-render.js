@@ -54,7 +54,7 @@ describe("Two-phase rendering", function suite() {
 				expect(state.body.indexOf("I'm setup")).to.be.greaterThan(0);
 				done();
 			}).catch(function(err) {
-				console.error(err);
+				done(err);
 			});
 		});
 	});
@@ -73,7 +73,7 @@ describe("Two-phase rendering", function suite() {
 				expect(state.body.indexOf("I'm setup")).to.be.greaterThan(0);
 				done();
 			}).catch(function(err) {
-				console.error(err);
+				done(err);
 			});
 		});
 	});
