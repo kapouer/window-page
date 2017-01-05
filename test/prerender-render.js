@@ -11,8 +11,6 @@ dom.settings.timeout = 10000;
 dom.settings.console = true;
 
 var renderPlugins = [
-	dom.plugins.hide,
-	dom.plugins.nomedia,
 	dom.plugins.redirect,
 	dom.plugins.referrer,
 	dom.plugins.html
