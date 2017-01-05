@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Template page</title>
+	<script src="/window-page.js"></script>
+	<script src="/scripts/a.js"></script>
+	<script src="/scripts/b.js"></script>
+	<script src="/scripts/b.js"></script>
+	<script src="/scripts/a.js"></script>
+	<script src="/scripts/c.js"></script>
+	<script src="/scripts/c.js"></script>
+	<script src="/scripts/b.js"></script>
+	<script src="/scripts/a.js"></script>
+	<script src="/scripts/c.js"></script>
+	<script>
+var builds = 0;
+Page.build(function(state) {
+	document.querySelector('.status').innerHTML = "I'm built" + builds++;
+});
+var setups = 0;
+Page.setup(function(state) {
+	document.querySelector('.status').innerHTML = "I'm setup" + setups++;
+});
+	</script>
+</head>
+<body>
+<div class="status"></div>
+<div class="abc"></div>
+</body>
+</html>

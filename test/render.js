@@ -56,7 +56,7 @@ describe("Rendering", function suite() {
 	it("should run route and build and setup", function(done) {
 		request({
 			method: 'GET',
-			url: host + ':' + port + '/route.html'
+			url: host + ':' + port + '/route.html?template=build'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
 			expect(body.indexOf("I'm setup0")).to.be.greaterThan(0);
@@ -68,7 +68,7 @@ describe("Rendering", function suite() {
 	it("should run route and imports", function(done) {
 		request({
 			method: 'GET',
-			url: host + ':' + port + '/route-import.html'
+			url: host + ':' + port + '/route.html?template=import'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
 			expect(body.indexOf("I'm setup0")).to.be.greaterThan(0);

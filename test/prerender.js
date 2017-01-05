@@ -49,7 +49,7 @@ describe("Prerendering", function suite() {
 	it("should run route and build", function(done) {
 		request({
 			method: 'GET',
-			url: host + ':' + port + '/route.html'
+			url: host + ':' + port + '/route.html?template=build'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
 			expect(body.indexOf("I'm built0")).to.be.greaterThan(0);
@@ -60,11 +60,22 @@ describe("Prerendering", function suite() {
 	it("should run route and imports", function(done) {
 		request({
 			method: 'GET',
-			url: host + ':' + port + '/route-import.html'
+			url: host + ':' + port + '/route.html?template=import'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
 			expect(body.indexOf("I'm built0")).to.be.greaterThan(0);
 			expect(body.indexOf("your body0")).to.be.greaterThan(0);
+			done();
+		});
+	});
+
+	it("should run route and load scripts in correct order", function(done) {
+		request({
+			method: 'GET',
+			url: host + ':' + port + '/route.html?template=order-scripts'
+		}, function(err, res, body) {
+			expect(res.statusCode).to.be(200);
+			expect(body.indexOf("ABBACCBAC")).to.be.greaterThan(0);
 			done();
 		});
 	});

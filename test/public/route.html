@@ -6,8 +6,9 @@
 	<script src="/agent.js"></script>
 	<script>
 Page.route(function(state) {
+	if (!state.query.template) return Promise.reject("Missing template query parameter");
 	return GET({
-		url: 'templates/build.html',
+		url: 'templates/' + state.query.template + '.html',
 		type: 'html'
 	}).then(function(doc) {
 		state.document = doc;
