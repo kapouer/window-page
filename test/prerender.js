@@ -80,5 +80,16 @@ describe("Prerendering", function suite() {
 		});
 	});
 
+	it("should not load have stylesheets loaded by express-dom prerendering mode anyway", function(done) {
+		request({
+			method: 'GET',
+			url: host + ':' + port + '/route.html?template=stylesheets'
+		}, function(err, res, body) {
+			expect(res.statusCode).to.be(200);
+			expect(body.indexOf('<div class="status">squared0</div>')).to.not.be.greaterThan(0);
+			done();
+		});
+	});
+
 });
 

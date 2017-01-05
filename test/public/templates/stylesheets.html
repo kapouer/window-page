@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Template page</title>
+	<script src="/window-page.js"></script>
+	<link rel="stylesheet" href="/assets/square.css"></script>
+	<script>
+var calls = 0;
+Page.build(function(state) {
+	if (document.body.offsetWidth == 400) {
+		document.querySelector('.status').innerHTML = "squared" + calls++;
+	}
+});
+Page.setup(function(state) {
+	if (document.body.offsetWidth == 400) {
+		document.querySelector('.status').innerHTML = "squared" + calls++;
+	}
+});
+	</script>
+</head>
+<body>
+<div class="status"></div>
+<div class="abc"></div>
+</body>
+</html>

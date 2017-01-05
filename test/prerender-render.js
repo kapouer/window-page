@@ -76,5 +76,23 @@ describe("Two-phase rendering", function suite() {
 		});
 	});
 
+	it("should load stylesheet when rendering", function(done) {
+		request({
+			method: 'GET',
+			url: host + ':' + port + '/route.html?template=stylesheets'
+		}, function(err, res, body) {
+			expect(res.statusCode).to.be(200);
+			expect(body.indexOf('<div class="status">squared0</div>')).to.not.be.greaterThan(0);
+			dom(body).load({
+				plugins: renderPlugins
+			})(res.request.uri.href).then(function(state) {
+				expect(state.body.indexOf('<div class="status">squared0</div>')).to.be.greaterThan(0);
+				done();
+			}).catch(function(err) {
+				done(err);
+			});
+		});
+	});
+
 });
 
