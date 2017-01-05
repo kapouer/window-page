@@ -342,7 +342,8 @@ PageClass.prototype.waitReady = function() {
 
 PageClass.prototype.importDocument = function(doc) {
 	var scripts = queryAll(doc, 'script').map(function(node) {
-		if (node.type && node.type != "text/javascript") return Promise.resolve({});
+		var type = node.type;
+		if (type && type != "text/javascript") return Promise.resolve({});
 		// make sure script is not loaded when inserted into document
 		node.type = "text/plain";
 		// fetch script content ourselves
@@ -351,15 +352,20 @@ PageClass.prototype.importDocument = function(doc) {
 				return {
 					src: node.src,
 					txt: txt,
-					node: node
+					node: node,
+					type: type
 				};
 			}).catch(function(err) {
 				// let the script load on insertion - screw the ordering since this is remote anyway
-				node.type = "text/javascript";
+				if (type) node.type = type;
+				else node.removeAttribute('type');
 				return {};
 			});
 		} else return Promise.resolve({
-			src: "inline", txt: node.textContent, node: node
+			src: "inline",
+			txt: node.textContent,
+			node: node,
+			type: type
 		});
 	});
 
@@ -390,12 +396,14 @@ PageClass.prototype.importDocument = function(doc) {
 		chain = chain.then(function() {
 			return prom;
 		}).then(function(obj) {
+			if (!obj.node) return;
 			if (obj.txt) {
 				var script = document.createElement("script");
 				script.textContent = obj.txt;
 				document.head.appendChild(script).remove();
 			}
-			if (obj.node) obj.node.type = "text/javascript";
+			if (obj.type) obj.node.type = obj.type;
+			else obj.node.removeAttribute('type');
 		});
 	});
 	return chain.then(function() {
