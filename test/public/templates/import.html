@@ -2,8 +2,8 @@
 <html>
 <head>
 	<title>Sample page with import</title>
-	<script src="../HTMLImports.js"></script>
-	<script src="../window-page.js"></script>
+	<script src="/HTMLImports.js"></script>
+	<script src="/window-page.js"></script>
 	<script>
 var builds = 0;
 Page.build(function(state) {
@@ -14,7 +14,7 @@ Page.setup(function(state) {
 	document.querySelector('.status').innerHTML = "I'm setup" + setups++;
 });
 	</script>
-	<link rel="import" href="templates/element.html">
+	<link rel="import" href="/templates/element.html">
 </head>
 <body>
 <div class="status"></div>
