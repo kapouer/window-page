@@ -25,7 +25,8 @@ describe("Two-phase rendering", function suite() {
 	before(function(done) {
 		var app = express();
 		app.set('views', __dirname + '/public');
-		app.get(/\.(json|js|css|png)$/, express.static(app.get('views')));
+		app.get(/\.(json|js|css|png|templates)$/, express.static(app.get('views')));
+		app.get(/\/templates\/.+\.html$/, express.static(app.get('views')));
 		app.get(/\.html$/, dom().load());
 
 
@@ -59,6 +60,17 @@ describe("Two-phase rendering", function suite() {
 		});
 	});
 
+	it("should run route and imports", function(done) {
+		request({
+			method: 'GET',
+			url: host + ':' + port + '/route-import.html'
+		}, function(err, res, body) {
+			expect(res.statusCode).to.be(200);
+			expect(body.indexOf("I'm setup")).to.be.greaterThan(0);
+			expect(body.indexOf("your body")).to.be.greaterThan(0);
+			done();
+		});
+	});
 
 });
 

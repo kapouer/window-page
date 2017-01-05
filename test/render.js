@@ -10,7 +10,7 @@ dom.settings.allow = 'all';
 dom.settings.timeout = 10000;
 dom.settings.console = true;
 
-dom.settings.load.plugins = [
+var loadPlugins = [
 	dom.plugins.hide,
 	dom.plugins.redirect,
 	dom.plugins.referrer,
@@ -24,8 +24,9 @@ describe("Rendering", function suite() {
 	before(function(done) {
 		var app = express();
 		app.set('views', __dirname + '/public');
-		app.get(/\.(json|js|css|png)$/, express.static(app.get('views')));
-		app.get(/\.html$/, dom().load());
+		app.get(/\.(json|js|css|png|templates)$/, express.static(app.get('views')));
+		app.get(/\/templates\/.+\.html$/, express.static(app.get('views')));
+		app.get(/\.html$/, dom().load({plugins: loadPlugins}));
 
 
 		server = app.listen(function(err) {
@@ -47,7 +48,7 @@ describe("Rendering", function suite() {
 			url: host + ':' + port + '/build.html'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
-			expect(body.indexOf("I'm setup")).to.be.greaterThan(0);
+			expect(body.indexOf("I'm setup0")).to.be.greaterThan(0);
 			done();
 		});
 	});
@@ -58,10 +59,22 @@ describe("Rendering", function suite() {
 			url: host + ':' + port + '/route.html'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
-			expect(body.indexOf("I'm setup")).to.be.greaterThan(0);
+			expect(body.indexOf("I'm setup0")).to.be.greaterThan(0);
 			done();
 		});
 	});
 
+
+	it("should run route and imports", function(done) {
+		request({
+			method: 'GET',
+			url: host + ':' + port + '/route-import.html'
+		}, function(err, res, body) {
+			expect(res.statusCode).to.be(200);
+			expect(body.indexOf("I'm setup0")).to.be.greaterThan(0);
+			expect(body.indexOf("your body0")).to.be.greaterThan(0);
+			done();
+		});
+	});
 });
 

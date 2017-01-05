@@ -1,15 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Sample page</title>
+	<title>Sample build page</title>
 	<script src="window-page.js"></script>
 	<script>
+	var builds = 0;
 Page.build(function(state) {
-	document.body.innerHTML = "I'm built";
+	document.body.innerHTML = "I'm built" + builds++;
 });
-
+var setups = 0;
 Page.setup(function(state) {
-	document.body.innerHTML = "I'm setup";
+	document.body.innerHTML = "I'm setup" + setups++;
 });
 	</script>
 </head>

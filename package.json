@@ -32,6 +32,7 @@
     "express": "^4.14.0",
     "express-dom": "^5.6.0",
     "mocha": "^3.2.0",
+    "webcomponents.js": "^0.7.23",
     "window-agent": "^1.0.0"
   }
 }

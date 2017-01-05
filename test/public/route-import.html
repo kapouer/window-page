@@ -7,7 +7,7 @@
 	<script>
 Page.route(function(state) {
 	return GET({
-		url: 'templates/build.html',
+		url: 'templates/import.html',
 		type: 'html'
 	}).then(function(doc) {
 		state.document = doc;
@@ -16,6 +16,6 @@ Page.route(function(state) {
 	</script>
 </head>
 <body>
-Sample
+Will be overwritten
 </body>
 </html>
