@@ -94,5 +94,23 @@ describe("Two-phase rendering", function suite() {
 		});
 	});
 
+	it("should load stylesheet before inline script when rendering", function(done) {
+		request({
+			method: 'GET',
+			url: host + ':' + port + '/route.html?template=order-stylesheets'
+		}, function(err, res, body) {
+			expect(res.statusCode).to.be(200);
+			expect(body.indexOf('<div class="status">squared</div>')).to.not.be.greaterThan(0);
+			dom(body).load({
+				plugins: renderPlugins
+			})(res.request.uri.href).then(function(state) {
+				expect(state.body.indexOf('<div class="status">squared</div>')).to.be.greaterThan(0);
+				done();
+			}).catch(function(err) {
+				done(err);
+			});
+		});
+	});
+
 });
 
