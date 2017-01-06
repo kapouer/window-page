@@ -376,7 +376,7 @@ PageClass.prototype.importDocument = function(doc) {
 			cursor = doc.createTextNode("");
 			link.parentNode.insertBefore(cursor, link);
 		}
-		link.remove();
+		link.parentNode.removeChild(link);
 	});
 
 	var root = document.documentElement;
