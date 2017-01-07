@@ -10,6 +10,7 @@ function PageClass() {
 	this.name = "PageClass";
 	this.prefix = 'data-page-';
 	this.window = window;
+	this.debug = 1;
 
 	this.reset();
 
@@ -332,75 +333,66 @@ PageClass.prototype.waitReady = function() {
 };
 
 PageClass.prototype.importDocument = function(doc) {
-	var scripts = queryAll(doc, 'script').map(function(node) {
-		var type = node.type;
-		if (type && type != "text/javascript") return Promise.resolve({});
-		// make sure script is not loaded when inserted into document
-		node.type = "text/plain";
-		// fetch script content ourselves
-		if (node.src) {
-			return pGet(node.src).then(function(txt) {
-				return {
-					src: node.src,
-					txt: txt,
-					node: node,
-					type: type
-				};
-			}).catch(function(err) {
-				// let the script load on insertion - screw the ordering since this is remote anyway
-				if (type) node.type = type;
-				else node.removeAttribute('type');
-				return {};
-			});
-		} else return Promise.resolve({
-			src: "inline",
-			txt: node.textContent,
-			node: node,
-			type: type
+	var assets = {};
+	return Promise.all(queryAll(doc, 'script,link[rel="stylesheet"],link[rel="import"]').map(function(node) {
+		// just preload everything
+		var src = node.src || node.href;
+		if (!src) return;
+		var prerendering = document.visibilityState == "prerender";
+		if (src) return pGet(src).then(function() {
+			// just insert tag: it should load synchronously
+			assets[src] = true;
+		}).catch(function(err) {
+			// insert tag and wait for it to load only if not prerendering,
+			// else just insert tag and ignore the fact it won't load
+			if (!prerendering) assets[src] = false;
+			else assets[src] = true;
 		});
-	});
-
-	var imports = queryAll(doc, 'link[rel="import"]');
-	var cursor;
-	imports.forEach(function(link) {
-		if (!cursor) {
-			cursor = doc.createTextNode("");
-			link.parentNode.insertBefore(cursor, link);
+	})).then(function() {
+		var root = document.documentElement;
+		// while (root.attributes.length > 0) {
+		// 	root.removeAttribute(root.attributes[0].name);
+		// }
+		var docRoot = doc.documentElement;
+		if (docRoot.attributes) for (var i=0; i < docRoot.attributes.length; i++) {
+			root.setAttribute(docRoot.attributes[i].name, docRoot.attributes[i].value);
 		}
-		link.parentNode.removeChild(link);
-	});
 
-	var root = document.documentElement;
-	while (root.attributes.length > 0) {
-		root.removeAttribute(root.attributes[0].name);
-	}
-	var docRoot = doc.documentElement;
-	if (docRoot.attributes) for (var i=0; i < docRoot.attributes.length; i++) {
-		root.setAttribute(docRoot.attributes[i].name, docRoot.attributes[i].value);
-	}
-	root.replaceChild(document.adoptNode(doc.head), document.head);
-	root.replaceChild(document.adoptNode(doc.body), document.body);
-
-	// execute all scripts in their original order as soon as they loaded
-	var chain = Promise.resolve();
-	scripts.forEach(function(prom) {
-		chain = chain.then(function() {
-			return prom;
-		}).then(function(obj) {
-			if (!obj.node) return;
-			if (obj.txt) {
-				var script = document.createElement("script");
-				script.textContent = obj.txt;
-				document.head.removeChild(document.head.appendChild(script));
-			}
-			if (obj.type) obj.node.type = obj.type;
-			else obj.node.removeAttribute('type');
+		root.replaceChild(document.adoptNode(doc.head), document.head);
+		root.replaceChild(document.adoptNode(doc.body), document.body);
+		var chain = Promise.resolve();
+		queryAll(document, 'script,link[rel="stylesheet"]').forEach(function(node) {
+			chain = chain.then(function() {
+				var cursor = document.createTextNode("");
+				var parent = node.parentNode;
+				parent.insertBefore(cursor, node);
+				parent.removeChild(node);
+				var copy = document.createElement(node.nodeName);
+				for (var i=0; i < node.attributes.length; i++) {
+					copy.setAttribute(node.attributes[i].name, node.attributes[i].value);
+				}
+				if (node.textContent) copy.textContent = node.textContent;
+				var src = copy.src || copy.href;
+				if (src) status = assets[src];
+				var p;
+				if (status === false) {
+					debug("async node loading", src);
+					p = readyNode(copy); // this is BAD because readyNode cannot be tracked by idle event
+				} else if (status === true) {
+					// do nothing
+					debug("sync node loading", src);
+				} else {
+					debug("inline node loading");
+					p = new Promise(function(resolve) {
+						setTimeout(resolve);
+					});
+				}
+				parent.insertBefore(copy, cursor);
+				parent.removeChild(cursor);
+				if (p) return p;
+			});
 		});
-	});
-	return chain.then(function() {
-		imports.forEach(function(link) {
-			cursor.parentNode.insertBefore(link, cursor);
-		});
+		return chain;
 	});
 };
 
