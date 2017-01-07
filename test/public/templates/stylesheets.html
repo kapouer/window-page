@@ -9,6 +9,8 @@ var calls = 0;
 Page.build(function(state) {
 	if (document.body.offsetWidth == 400) {
 		document.querySelector('.status').innerHTML = "squared" + calls++;
+	} else {
+		document.querySelector('.status').innerHTML = "hidden" + calls++;
 	}
 });
 Page.setup(function(state) {

@@ -47,6 +47,7 @@ describe("Rendering", function suite() {
 			url: host + ':' + port + '/build.html'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
+			expect(body.indexOf('data-page-stage="3"')).to.be.greaterThan(0);
 			expect(body.indexOf("I'm setup0")).to.be.greaterThan(0);
 			done();
 		});
@@ -58,6 +59,7 @@ describe("Rendering", function suite() {
 			url: host + ':' + port + '/route.html?template=build'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
+			expect(body.indexOf('data-page-stage="3"')).to.be.greaterThan(0);
 			expect(body.indexOf("I'm setup0")).to.be.greaterThan(0);
 			done();
 		});
@@ -70,8 +72,20 @@ describe("Rendering", function suite() {
 			url: host + ':' + port + '/route.html?template=import'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
+			expect(body.indexOf('data-page-stage="3"')).to.be.greaterThan(0);
 			expect(body.indexOf("I'm setup0")).to.be.greaterThan(0);
 			expect(body.indexOf("your body0")).to.be.greaterThan(0);
+			done();
+		});
+	});
+
+	it("should render doc with stylesheet and script", function(done) {
+		request({
+			method: 'GET',
+			url: host + ':' + port + '/order-stylesheets-scripts.html'
+		}, function(err, res, body) {
+			expect(res.statusCode).to.be(200);
+			expect(body.indexOf('<div class="status">squared</div>')).to.be.greaterThan(0);
 			done();
 		});
 	});
@@ -82,6 +96,7 @@ describe("Rendering", function suite() {
 			url: host + ':' + port + '/route.html?template=order-stylesheets-scripts'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
+			expect(body.indexOf('data-page-stage="3"')).to.be.greaterThan(0);
 			expect(body.indexOf('<div class="status">squared</div>')).to.be.greaterThan(0);
 			done();
 		});
