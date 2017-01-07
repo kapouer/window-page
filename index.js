@@ -167,6 +167,7 @@ PageClass.prototype.run = function(state) {
 		if (state.stage >= IMPORTED || !state.document) return;
 		self.reset();
 		return self.importDocument(state.document).then(function() {
+			debug("importDocument done");
 			delete state.document;
 			var docStage = self.stage();
 			if (docStage == INIT) {
@@ -218,6 +219,7 @@ PageClass.prototype.reset = function() {
 };
 
 PageClass.prototype.runChain = function(name, state) {
+	debug("run chain", name);
 	var chain = this.chains[name];
 	chain.promise = this.allFn(state, name, chain.thenables);
 	return chain.promise.then(function() {
@@ -296,18 +298,7 @@ PageClass.prototype.waitUiReady = function(state) {
 				return whenReady();
 			}
 
-			return new Promise(function(resolve, reject) {
-				function loadListener() {
-					link.removeEventListener('load', loadListener);
-					resolve();
-				}
-				function errorListener() {
-					link.removeEventListener('error', errorListener);
-					resolve();
-				}
-				link.addEventListener('load', loadListener);
-				link.addEventListener('error', errorListener);
-			});
+			return readyNode(link);
 		})).then(function() {
 			return state;
 		});
@@ -483,6 +474,22 @@ function pGet(url) {
 		};
 		xhr.send();
 	});
+}
+
+function readyNode(node) {
+	return new Promise(function(resolve, reject) {
+		function done() {
+			node.removeEventListener('load', done);
+			node.removeEventListener('error', done);
+			resolve();
+		}
+		node.addEventListener('load', done);
+		node.addEventListener('error', done);
+	});
+}
+
+function debug() {
+	if (window.Page.debug) console.info.apply(console, Array.prototype.slice.call(arguments));
 }
 
 PageClass.init = function() {
