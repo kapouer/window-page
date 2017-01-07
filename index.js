@@ -10,8 +10,7 @@ function PageClass() {
 	this.name = "PageClass";
 	this.prefix = 'data-page-';
 	this.window = window;
-	this.debug = 1;
-
+	this.debug = false;
 	this.reset();
 
 	this.route = this.chainThenable.bind(this, "route");
