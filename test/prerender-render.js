@@ -70,7 +70,7 @@ describe("Two-phase rendering", function suite() {
 				plugins: renderPlugins
 			})(res.request.uri.href).then(function(state) {
 				expect(state.body.indexOf('data-page-stage="3"')).to.be.greaterThan(0);
-				expect(state.body.indexOf("I'm setup")).to.be.greaterThan(0);
+				expect(state.body.indexOf("I'm setup0")).to.be.greaterThan(0);
 				done();
 			}).catch(function(err) {
 				done(err);
