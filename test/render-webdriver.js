@@ -98,7 +98,6 @@ describe("Rendering", function suite() {
 
 	it("should render doc with stylesheet and script", function() {
 		return testPageForStrings(this.browser, base + '/order-stylesheets-scripts.html', [
-			'data-page-stage="3"',
 			'<div class="status">squared</div>'
 		]);
 	});
