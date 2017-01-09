@@ -60,12 +60,8 @@ describe("Rendering", function suite() {
 	it("should run build and setup", function() {
 		var browser = this.browser;
 		return browser.get(base + '/build.html').then(function() {
-			console.log("got html file");
-			return browser.wait(until.elementTextIs(By.css('body'), "I'm setup0"), 1000).then(function() {
-				console.log("got body content");
-			}).catch(function(err) {
-				console.error("got err", err);
-				throw err;
+			return browser.wait(until.elementLocated(By.css('body')), 1000).then(function(body) {
+				expect(body.getText()).to.be("I'm setup0");
 			});
 		});
 		// expect(body.indexOf('data-page-stage="3"')).to.be.greaterThan(0);
