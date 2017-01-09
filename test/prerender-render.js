@@ -1,27 +1,28 @@
+if (process.env.SAUCE_USERNAME) {
+	console.info("Running only selenium tests, skipping this one");
+	return;
+}
+
 var expect = require('expect.js');
 var request = require('request');
 var express = require('express');
+var dom = require('express-dom');
+
+dom.settings.stall = 5000;
+dom.settings.allow = 'all';
+dom.settings.timeout = 10000;
+dom.settings.console = true;
+
+var renderPlugins = [
+	dom.plugins.redirect,
+	dom.plugins.referrer,
+	dom.plugins.html
+];
 
 var host = "http://localhost";
 
 
 describe("Two-phase rendering", function suite() {
-	if (process.env.SAUCE_USERNAME) {
-		console.info("Running only selenium tests, skipping this one");
-		return;
-	}
-	var dom = require('express-dom');
-	dom.settings.stall = 5000;
-	dom.settings.allow = 'all';
-	dom.settings.timeout = 10000;
-	dom.settings.console = true;
-
-	var renderPlugins = [
-		dom.plugins.redirect,
-		dom.plugins.referrer,
-		dom.plugins.html
-	];
-
 	this.timeout(3000);
 	var server, port;
 

@@ -1,11 +1,16 @@
+if (!process.env.SAUCE_USERNAME) {
+	console.info("No SAUCE_USERNAME, skipping this test");
+	return;
+}
+
 var expect = require('expect.js');
 var express = require('express');
+var webdriver = require("selenium-webdriver");
 
 var host = "http://localhost";
 
 function getBrowser() {
 	var browser;
-	var webdriver = require("selenium-webdriver");
 	var prefs = new webdriver.logging.Preferences();
 	prefs.setLevel(webdriver.logging.Type.BROWSER, webdriver.logging.Level.ERROR);
 	return new webdriver.Builder()
@@ -34,10 +39,6 @@ function testPageForStrings(browser, url, strings) {
 }
 
 describe("Rendering", function suite() {
-	if (!process.env.SAUCE_USERNAME) {
-		console.info("No SAUCE_USERNAME, skipping this test");
-		return;
-	}
 	this.timeout(15000);
 	var server, base;
 
