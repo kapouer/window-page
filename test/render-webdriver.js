@@ -39,7 +39,7 @@ function testPageForStrings(browser, url, strings) {
 }
 
 describe("Rendering", function suite() {
-	this.timeout(15000);
+	this.timeout(60000); // getBrowser can be slow
 	var server, base;
 
 	before(function(done) {
