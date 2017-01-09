@@ -31,7 +31,10 @@ describe("Rendering", function suite() {
 	before(function(done) {
 		var app = express();
 		app.set('views', __dirname + '/public');
-		app.get('*', express.static(app.get('views')));
+		app.get('*', function(req, res, next) {
+			console.log("Serving local file", req.url);
+			next();
+		}, express.static(app.get('views')));
 
 
 		server = app.listen(function(err) {
@@ -60,10 +63,13 @@ describe("Rendering", function suite() {
 	it("should run build and setup", function() {
 		var browser = this.browser;
 		return browser.get(base + '/build.html').then(function() {
-			return browser.wait(until.elementLocated(By.css('body')), 1000).then(function(body) {
-				return body.getText().then(function(txt) {
-					expect(txt).to.be("I'm setup0");
-				});
+			return browser.sleep(5000).then(function() {
+				console.log("Checking body for text content");
+				return browser.findElement(By.css('body'));
+			}).then(function(body) {
+				return body.getText();
+			}).then(function(txt) {
+				expect(txt).to.be("I'm setup0");
 			});
 		});
 		// expect(body.indexOf('data-page-stage="3"')).to.be.greaterThan(0);
