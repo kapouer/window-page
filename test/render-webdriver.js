@@ -24,18 +24,14 @@ function getBrowser() {
 	return browser;
 }
 
-function testStrings(html, strings) {
-	strings.forEach(function(str) {
-		expect(html.indexOf(str)).to.be.greaterThan(0);
-	});
-}
-
 function testPageForStrings(browser, url, strings) {
-	return browser.get(base + url).then(function() {
+	return browser.get(url).then(function() {
 		return browser.sleep(5000).then(function() {
 			return browser.getPageSource();
-		}).then(function(body) {
-			testString(body, strings);
+		}).then(function(html) {
+			strings.forEach(function(str) {
+				expect(html.indexOf(str)).to.be.greaterThan(0);
+			});
 		});
 	});
 }
@@ -47,12 +43,7 @@ describe("Rendering", function suite() {
 	before(function(done) {
 		var app = express();
 		app.set('views', __dirname + '/public');
-		app.get('*', function(req, res, next) {
-			// TODO install a logger for errors !
-			console.log("Serving local file", req.url);
-			next();
-		}, express.static(app.get('views')));
-
+		app.get('*', express.static(app.get('views')));
 
 		server = app.listen(function(err) {
 			if (err) console.error(err);
@@ -78,12 +69,40 @@ describe("Rendering", function suite() {
 
 
 	it("should run build and setup", function() {
-		return testPageForStrings(this.browser, '/build.html', [
+		return testPageForStrings(this.browser, base + '/build.html', [
+			'data-page-stage="3"',
+			"I'm setup0"
+		]);
+	});
+
+	it("should run route and build and setup", function() {
+		return testPageForStrings(this.browser, base + '/route.html?template=build', [
 			'data-page-stage="3"',
 			"I'm setup0"
 		]);
 	});
 
 
+	it("should run route and imports", function() {
+		return testPageForStrings(this.browser, base + '/route.html?template=import', [
+			'data-page-stage="3"',
+			"I'm setup0",
+			"your body0"
+		]);
+	});
+
+	it("should render doc with stylesheet and script", function() {
+		return testPageForStrings(this.browser, base + '/order-stylesheets-scripts.html', [
+			'data-page-stage="3"',
+			'<div class="status">squared</div>'
+		]);
+	});
+
+	it("should load stylesheet before remote script when rendering", function() {
+		return testPageForStrings(this.browser, base + '/route.html?template=order-stylesheets-scripts', [
+			'data-page-stage="3"',
+			'<div class="status">squared</div>'
+		]);
+	});
 });
 
