@@ -12,7 +12,7 @@ var host = "http://localhost";
 function getBrowser() {
 	var browser;
 	var prefs = new webdriver.logging.Preferences();
-	prefs.setLevel(webdriver.logging.Type.BROWSER, webdriver.logging.Level.ERROR);
+	prefs.setLevel(webdriver.logging.Type.BROWSER, webdriver.logging.Level.DEBUG);
 	return new webdriver.Builder()
 	.usingServer('http://'+ process.env.SAUCE_USERNAME+':'+process.env.SAUCE_ACCESS_KEY+'@ondemand.saucelabs.com:80/wd/hub')
 	.withCapabilities({
