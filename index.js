@@ -74,7 +74,8 @@ PageClass.prototype.stage = function(stage) {
 
 PageClass.prototype.parse = function(str) {
 	var dloc = this.window.document.location;
-	var loc = new URL(str || "", dloc.toString());
+	var dlocs = dloc.toString();
+	var loc = new URL(str || dlocs, dlocs);
 	var obj = {
 		pathname: loc.pathname,
 		query: QueryString.parse(loc.search),
@@ -107,7 +108,8 @@ PageClass.prototype.format = function(obj) {
 	var search = QueryString.stringify(obj.query || {});
 	if (search) obj.search = search;
 	if (obj.protocol || obj.hostname || obj.port) {
-		var loc = new URL("", dloc.toString());
+		var dlocs = dloc.toString();
+		var loc = new URL(dlocs, dlocs);
 		// copy only enumerable properties of a URL instance
 		for (var k in loc) if (obj[k] !== undefined) loc[k] = obj[k];
 		return loc.toString();
