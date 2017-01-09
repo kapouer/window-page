@@ -3,20 +3,24 @@ var request = require('request');
 var express = require('express');
 
 var host = "http://localhost";
-var dom = require('express-dom');
-
-dom.settings.stall = 5000;
-dom.settings.allow = 'all';
-dom.settings.timeout = 10000;
-dom.settings.console = true;
-
-var loadPlugins = [
-	dom.plugins.redirect,
-	dom.plugins.referrer,
-	dom.plugins.html
-];
 
 describe("Rendering", function suite() {
+	if (process.env.SAUCE_USERNAME) {
+		console.info("Running only selenium tests, skipping this one");
+		return;
+	}
+	var dom = require('express-dom');
+
+	dom.settings.stall = 5000;
+	dom.settings.allow = 'all';
+	dom.settings.timeout = 10000;
+	dom.settings.console = true;
+
+	var loadPlugins = [
+		dom.plugins.redirect,
+		dom.plugins.referrer,
+		dom.plugins.html
+	];
 	this.timeout(3000);
 	var server, port;
 

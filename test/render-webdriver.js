@@ -2,36 +2,28 @@ var expect = require('expect.js');
 var express = require('express');
 
 var host = "http://localhost";
-var webdriver = require("selenium-webdriver");
-var until = webdriver.until;
-var By = webdriver.By;
-var logging = webdriver.logging;
 
 function getBrowser() {
 	var browser;
-	var prefs = new logging.Preferences();
-	prefs.setLevel(logging.Type.BROWSER, logging.Level.DEBUG);
-	if (process.env.SAUCE_USERNAME != undefined) {
-		browser = new webdriver.Builder()
-		.usingServer('http://'+ process.env.SAUCE_USERNAME+':'+process.env.SAUCE_ACCESS_KEY+'@ondemand.saucelabs.com:80/wd/hub')
-		.withCapabilities({
-			browserName: "chrome",
-			'tunnel-identifier': process.env.TRAVIS_JOB_NUMBER,
-			build: process.env.TRAVIS_BUILD_NUMBER,
-			username: process.env.SAUCE_USERNAME,
-			accessKey: process.env.SAUCE_ACCESS_KEY
-		})
-		.setLoggingPrefs(prefs)
-		.build();
-	} else {
-		browser = new webdriver.Builder().build();
-	}
-	return browser;
+	var webdriver = require("selenium-webdriver");
+	var prefs = new webdriver.logging.Preferences();
+	prefs.setLevel(webdriver.logging.Type.BROWSER, webdriver.logging.Level.ERROR);
+	return new webdriver.Builder()
+	.usingServer('http://'+ process.env.SAUCE_USERNAME+':'+process.env.SAUCE_ACCESS_KEY+'@ondemand.saucelabs.com:80/wd/hub')
+	.withCapabilities({
+		browserName: "chrome",
+		'tunnel-identifier': process.env.TRAVIS_JOB_NUMBER,
+		build: process.env.TRAVIS_BUILD_NUMBER,
+		username: process.env.SAUCE_USERNAME,
+		accessKey: process.env.SAUCE_ACCESS_KEY
+	})
+	.setLoggingPrefs(prefs)
+	.build();
 }
 
 function testPageForStrings(browser, url, strings) {
 	return browser.get(url).then(function() {
-		return browser.sleep(5000).then(function() {
+		return browser.sleep(500).then(function() {
 			return browser.getPageSource();
 		}).then(function(html) {
 			strings.forEach(function(str) {
@@ -42,6 +34,10 @@ function testPageForStrings(browser, url, strings) {
 }
 
 describe("Rendering", function suite() {
+	if (!process.env.SAUCE_USERNAME) {
+		console.info("No SAUCE_USERNAME, skipping this test");
+		return;
+	}
 	this.timeout(15000);
 	var server, base;
 

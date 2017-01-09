@@ -4,7 +4,7 @@
   "description": "Route, setup, and build web pages",
   "main": "index.js",
   "scripts": {
-    "test": "mocha test/render-webdriver.js",
+    "test": "mocha",
     "prepublish": "browserify-lite $PWD/index.js --outfile $PWD/window-page.js"
   },
   "repository": {
