@@ -58,10 +58,10 @@ describe("Rendering", function suite() {
 
 
 	it("should run build and setup", function() {
-		return this.browser.get(base + '/build.html').wait(
-			until.elementTextIs(By.css('body'), "I'm setup0"),
-			1000
-		);
+		var browser = this.browser;
+		return browser.get(base + '/build.html').then(function() {
+			return browser.wait(until.elementTextIs(By.css('body'), "I'm setup0"), 1000);
+		});
 		// expect(body.indexOf('data-page-stage="3"')).to.be.greaterThan(0);
 	});
 
