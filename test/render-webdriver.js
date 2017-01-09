@@ -16,7 +16,8 @@ function getBrowser() {
 	return new webdriver.Builder()
 	.usingServer('http://'+ process.env.SAUCE_USERNAME+':'+process.env.SAUCE_ACCESS_KEY+'@ondemand.saucelabs.com:80/wd/hub')
 	.withCapabilities({
-		browserName: "chrome",
+		browserName: process.env.WEBDRIVER_BROWSER_NAME || 'chrome',
+		version: process.env.WEBDRIVER_BROWSER_VERSION || '',
 		'tunnel-identifier': process.env.TRAVIS_JOB_NUMBER,
 		build: process.env.TRAVIS_BUILD_NUMBER,
 		username: process.env.SAUCE_USERNAME,
