@@ -4,7 +4,7 @@
   "description": "Route, setup, and build web pages",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha",
     "prepublish": "browserify-lite $PWD/index.js --outfile $PWD/window-page.js"
   },
   "repository": {
