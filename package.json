@@ -33,6 +33,7 @@
     "express-dom": "^5.6.0",
     "mocha": "^3.2.0",
     "request": "^2.79.0",
+    "selenium-webdriver": "^3.0.1",
     "webcomponents.js": "^0.7.23",
     "webkitgtk": "^4.4.6",
     "window-agent": "^1.0.0"
