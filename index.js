@@ -349,9 +349,9 @@ PageClass.prototype.importDocument = function(doc) {
 		});
 	})).then(function() {
 		var root = document.documentElement;
-		// while (root.attributes.length > 0) {
-		// 	root.removeAttribute(root.attributes[0].name);
-		// }
+		while (root.attributes.length > 0) {
+			root.removeAttribute(root.attributes[0].name);
+		}
 		var docRoot = doc.documentElement;
 		if (docRoot.attributes) for (var i=0; i < docRoot.attributes.length; i++) {
 			root.setAttribute(docRoot.attributes[i].name, docRoot.attributes[i].value);
