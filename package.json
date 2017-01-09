@@ -4,7 +4,7 @@
   "description": "Route, setup, and build web pages",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha test/render-webdriver.js",
     "prepublish": "browserify-lite $PWD/index.js --outfile $PWD/window-page.js"
   },
   "repository": {
@@ -31,9 +31,10 @@
     "expect.js": "^0.3.1",
     "express": "^4.14.0",
     "express-dom": "^5.6.0",
-    "webkitgtk": "^4.4.6",
     "mocha": "^3.2.0",
+    "selenium-webdriver": "^3.0.1",
     "webcomponents.js": "^0.7.23",
+    "webkitgtk": "^4.4.6",
     "window-agent": "^1.0.0"
   }
 }
