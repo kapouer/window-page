@@ -5,9 +5,12 @@ var host = "http://localhost";
 var webdriver = require("selenium-webdriver");
 var until = webdriver.until;
 var By = webdriver.By;
+var logging = webdriver.logging;
 
 function getBrowser() {
 	var browser;
+	var prefs = new logging.Preferences();
+	prefs.setLevel(logging.Type.BROWSER, logging.Level.DEBUG);
 	if (process.env.SAUCE_USERNAME != undefined) {
 		browser = new webdriver.Builder()
 		.usingServer('http://'+ process.env.SAUCE_USERNAME+':'+process.env.SAUCE_ACCESS_KEY+'@ondemand.saucelabs.com:80/wd/hub')
@@ -17,7 +20,9 @@ function getBrowser() {
 			build: process.env.TRAVIS_BUILD_NUMBER,
 			username: process.env.SAUCE_USERNAME,
 			accessKey: process.env.SAUCE_ACCESS_KEY
-		}).build();
+		})
+		.setLoggingPrefs(prefs)
+		.build();
 	} else {
 		browser = new webdriver.Builder().build();
 	}
