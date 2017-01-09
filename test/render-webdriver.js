@@ -1,5 +1,4 @@
 var expect = require('expect.js');
-var request = require('request');
 var express = require('express');
 
 var host = "http://localhost";
