@@ -61,7 +61,9 @@ describe("Rendering", function suite() {
 		var browser = this.browser;
 		return browser.get(base + '/build.html').then(function() {
 			return browser.wait(until.elementLocated(By.css('body')), 1000).then(function(body) {
-				expect(body.getText()).to.be("I'm setup0");
+				return body.getText().then(function(txt) {
+					expect(txt).to.be("I'm setup0");
+				});
 			});
 		});
 		// expect(body.indexOf('data-page-stage="3"')).to.be.greaterThan(0);
