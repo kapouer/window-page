@@ -24,6 +24,22 @@ function getBrowser() {
 	return browser;
 }
 
+function testStrings(html, strings) {
+	strings.forEach(function(str) {
+		expect(html.indexOf(str)).to.be.greaterThan(0);
+	});
+}
+
+function testPageForStrings(browser, url, strings) {
+	return browser.get(base + url).then(function() {
+		return browser.sleep(5000).then(function() {
+			return browser.getPageSource();
+		}).then(function(body) {
+			testString(body, strings);
+		});
+	});
+}
+
 describe("Rendering", function suite() {
 	this.timeout(15000);
 	var server, base;
@@ -32,6 +48,7 @@ describe("Rendering", function suite() {
 		var app = express();
 		app.set('views', __dirname + '/public');
 		app.get('*', function(req, res, next) {
+			// TODO install a logger for errors !
 			console.log("Serving local file", req.url);
 			next();
 		}, express.static(app.get('views')));
@@ -61,18 +78,10 @@ describe("Rendering", function suite() {
 
 
 	it("should run build and setup", function() {
-		var browser = this.browser;
-		return browser.get(base + '/build.html').then(function() {
-			return browser.sleep(5000).then(function() {
-				console.log("Checking body for text content");
-				return browser.findElement(By.css('body'));
-			}).then(function(body) {
-				return body.getText();
-			}).then(function(txt) {
-				expect(txt).to.be("I'm setup0");
-			});
-		});
-		// expect(body.indexOf('data-page-stage="3"')).to.be.greaterThan(0);
+		return testPageForStrings(this.browser, '/build.html', [
+			'data-page-stage="3"',
+			"I'm setup0"
+		]);
 	});
 
 
