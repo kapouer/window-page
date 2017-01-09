@@ -25,7 +25,7 @@ function getBrowser() {
 }
 
 describe("Rendering", function suite() {
-	this.timeout(3000);
+	this.timeout(15000);
 	var server, base;
 
 	before(function(done) {
@@ -60,7 +60,13 @@ describe("Rendering", function suite() {
 	it("should run build and setup", function() {
 		var browser = this.browser;
 		return browser.get(base + '/build.html').then(function() {
-			return browser.wait(until.elementTextIs(By.css('body'), "I'm setup0"), 1000);
+			console.log("got html file");
+			return browser.wait(until.elementTextIs(By.css('body'), "I'm setup0"), 1000).then(function() {
+				console.log("got body content");
+			}).catch(function(err) {
+				console.error("got err", err);
+				throw err;
+			});
 		});
 		// expect(body.indexOf('data-page-stage="3"')).to.be.greaterThan(0);
 	});
