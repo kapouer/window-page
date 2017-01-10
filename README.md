@@ -17,6 +17,23 @@ window.Page is designed to play well with:
 and degrades gracefully when these features are not supported on client.
 
 
+Browser support
+---------------
+
+[![Build Status](https://travis-ci.org/kapouer/window-page.svg?branch=master)](https://travis-ci.org/kapouer/window-page)
+
+Native: recent versions of
+- chrome
+- firefox
+- safari
+- edge
+
+With polyfills (URL and promise, up to the client to add them):
+- IE 10 and 11
+- maybe IE9 but tests rely on HTML in XMLHttpRequest feature
+- old versions of other browsers
+
+
 Install
 -------
 
