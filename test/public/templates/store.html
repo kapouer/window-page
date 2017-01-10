@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Template page</title>
+	<script src="/polyfills/url.js"></script>
+	<script src="/polyfills/promise.js"></script>
+	<script src="/window-page.js"></script>
+	<script>
+var builds = 0;
+Page.build(function(state) {
+	document.body.innerHTML = "I'm built" + builds++ + " with thing=" + Page.store('thing');
+});
+	</script>
+</head>
+<body>
+Sample
+</body>
+</html>

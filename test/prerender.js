@@ -62,14 +62,14 @@ describe("Prerendering", function suite() {
 		});
 	});
 
-	it("should store data, run route and build, and keep stored data", function(done) {
+	it("should read and store data before route, and read it during build", function(done) {
 		request({
 			method: 'GET',
-			url: host + ':' + port + '/store.html?template=build'
+			url: host + ':' + port + '/store.html?template=store'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
-			expect(body.indexOf("I'm built0")).to.be.greaterThan(0);
-			expect(body.indexOf('data-page-thing="1"')).to.be.greaterThan(0);
+			expect(body.indexOf("I'm built0 with thing=1")).to.be.greaterThan(0);
+			expect(body.indexOf('data-page-thing="1"')).to.not.be.greaterThan(0);
 			done();
 		});
 	});
