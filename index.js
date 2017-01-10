@@ -58,7 +58,7 @@ PageClass.prototype.store = function(name, data) {
 		try {
 			data = this.storage[name] = JSON.parse(root.getAttribute(this.prefix + name));
 		} catch (ex) {}
-	} else if (data == null) {
+	} else if (data === null) {
 		delete this.storage[name];
 		root.removeAttribute(this.prefix + name);
 	} else {
@@ -136,8 +136,7 @@ PageClass.prototype.sameDomain = function(a, b) {
 	var pr = loc.protocol;
 	var hn = loc.hostname;
 	var po = loc.port;
-	return (a.protocol || pr) == (b.protocol || pr)
-		&& (a.hostname || hn) == (b.hostname || hn) && (a.port || po) == (b.port || po);
+	return (a.protocol || pr) == (b.protocol || pr) && (a.hostname || hn) == (b.hostname || hn) && (a.port || po) == (b.port || po);
 };
 
 PageClass.prototype.emit = function(name) {
