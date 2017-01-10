@@ -68,7 +68,7 @@ describe("Prerendering", function suite() {
 			url: host + ':' + port + '/store.html?template=store'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
-			expect(body.indexOf("I'm built0 with thing=1")).to.be.greaterThan(0);
+			expect(body.indexOf("I'm built0 with thing=1 and data.template=store")).to.be.greaterThan(0);
 			expect(body.indexOf('data-page-thing="1"')).to.not.be.greaterThan(0);
 			done();
 		});

@@ -8,7 +8,7 @@
 	<script>
 var builds = 0;
 Page.build(function(state) {
-	document.body.innerHTML = "I'm built" + builds++ + " with thing=" + Page.store('thing');
+	document.body.innerHTML = "I'm built" + builds++ + " with thing=" + Page.store('thing') + " and data.template=" + state.data.template;
 });
 	</script>
 </head>
