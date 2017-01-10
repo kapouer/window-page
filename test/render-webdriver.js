@@ -41,7 +41,7 @@ function testPageForStrings(browser, url, strings) {
 
 describe("Rendering", function suite() {
 	this.timeout(180000); // some browser VM can be slow
-	var server, base;
+	var server, base, browser;
 
 	before(function(done) {
 		var app = express();
@@ -53,33 +53,24 @@ describe("Rendering", function suite() {
 			base = host + ':' + server.address().port;
 			done();
 		});
+		browser = getBrowser();
 	});
 
 	after(function(done) {
+		browser.quit();
 		server.close();
 		done();
 	});
 
-	beforeEach(function() {
-		this.browser = getBrowser();
-	});
-
-	afterEach(function() {
-		this.browser.quit();
-	});
-
-
-
-
 	it("should run build and setup", function() {
-		return testPageForStrings(this.browser, base + '/build.html', [
+		return testPageForStrings(browser, base + '/build.html', [
 			'data-page-stage="3"',
 			"I'm setup0"
 		]);
 	});
 
 	it("should run route and build and setup", function() {
-		return testPageForStrings(this.browser, base + '/route.html?template=build', [
+		return testPageForStrings(browser, base + '/route.html?template=build', [
 			'data-page-stage="3"',
 			"I'm setup0"
 		]);
@@ -87,7 +78,7 @@ describe("Rendering", function suite() {
 
 
 	it("should run route and imports", function() {
-		return testPageForStrings(this.browser, base + '/route.html?template=import', [
+		return testPageForStrings(browser, base + '/route.html?template=import', [
 			'data-page-stage="3"',
 			"I'm setup0",
 			"your body0"
@@ -95,13 +86,13 @@ describe("Rendering", function suite() {
 	});
 
 	it("should render doc with stylesheet and script", function() {
-		return testPageForStrings(this.browser, base + '/order-stylesheets-scripts.html', [
+		return testPageForStrings(browser, base + '/order-stylesheets-scripts.html', [
 			'<div class="status">squared</div>'
 		]);
 	});
 
 	it("should load stylesheet before remote script when rendering", function() {
-		return testPageForStrings(this.browser, base + '/route.html?template=order-stylesheets-scripts', [
+		return testPageForStrings(browser, base + '/route.html?template=order-stylesheets-scripts', [
 			'data-page-stage="3"',
 			'<div class="status">squared</div>'
 		]);
