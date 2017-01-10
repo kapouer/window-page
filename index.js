@@ -339,14 +339,10 @@ PageClass.prototype.importDocument = function(doc) {
 		var src = node.src || node.href;
 		if (!src) return;
 		var prerendering = document.visibilityState == "prerender";
-		if (src) return pGet(src).then(function() {
-			// just insert tag: it should load synchronously
-			assets[src] = true;
+		if (src && src.slice(0, 5) != 'data:') return pGet(src).then(function() {
+			debug("preloaded", src);
 		}).catch(function(err) {
-			// insert tag and wait for it to load only if not prerendering,
-			// else just insert tag and ignore the fact it won't load
-			if (!prerendering) assets[src] = false;
-			else assets[src] = true;
+			debug("error preloading", src, err);
 		});
 	})).then(function() {
 		var root = document.documentElement;
@@ -373,14 +369,10 @@ PageClass.prototype.importDocument = function(doc) {
 				}
 				if (node.textContent) copy.textContent = node.textContent;
 				var src = copy.src || copy.href;
-				var status = src ? assets[src] : null;
 				var p;
-				if (status === false) {
+				if (src) {
 					debug("async node loading", src);
-					p = readyNode(copy); // this is BAD because readyNode cannot be tracked by idle event
-				} else if (status === true) {
-					// do nothing
-					debug("sync node loading", src);
+					p = readyNode(copy);
 				} else {
 					debug("inline node loading");
 					p = new Promise(function(resolve) {

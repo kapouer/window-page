@@ -37,7 +37,7 @@
     "selenium-webdriver": "^3.0.1",
     "url-polyfill": "github:webcomponents/URL",
     "webcomponents.js": "^0.7.23",
-    "webkitgtk": "^4.4.6",
+    "webkitgtk": "^4.4.7",
     "window-agent": "^1.0.0"
   }
 }
