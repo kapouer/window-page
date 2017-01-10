@@ -374,7 +374,7 @@ PageClass.prototype.importDocument = function(doc) {
 				}
 				if (node.textContent) copy.textContent = node.textContent;
 				var src = copy.src || copy.href;
-				if (src) status = assets[src];
+				var status = src ? assets[src] : null;
 				var p;
 				if (status === false) {
 					debug("async node loading", src);
