@@ -29,7 +29,7 @@ function getBrowser() {
 
 function testPageForStrings(browser, url, strings) {
 	return browser.get(url).then(function() {
-		return browser.sleep(500).then(function() {
+		return browser.sleep(3000).then(function() {
 			return browser.getPageSource();
 		}).then(function(html) {
 			strings.forEach(function(str) {
