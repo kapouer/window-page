@@ -73,6 +73,7 @@ PageClass.prototype.stage = function(stage) {
 };
 
 PageClass.prototype.parse = function(str) {
+	var dloc = this.window.document.location;
 	// do NOT change loc in this function, or parse dloc.toString() again
 	var loc = str ? new URL(str, dloc.toString()) : dloc;
 	var obj = {
