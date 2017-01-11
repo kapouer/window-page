@@ -6,6 +6,7 @@ if (!process.env.WEBDRIVER_SERVER) {
 var expect = require('expect.js');
 var express = require('express');
 var webdriver = require("selenium-webdriver");
+var project = require('../package.json').name;
 
 var host = "http://localhost";
 
@@ -19,7 +20,11 @@ function getBrowser() {
 		browserName: process.env.WEBDRIVER_BROWSER_NAME || 'chrome',
 		version: process.env.WEBDRIVER_BROWSER_VERSION || '',
 		'tunnel-identifier': process.env.TRAVIS_JOB_NUMBER,
-		build: process.env.TRAVIS_BUILD_NUMBER
+		build: process.env.TRAVIS_BUILD_NUMBER,
+		acceptSslCerts: true,
+		project: project,
+		"browserstack.debug": true,
+		"browserstack.video": false
 	})
 	.setLoggingPrefs(prefs)
 	.build();
