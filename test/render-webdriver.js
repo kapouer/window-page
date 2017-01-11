@@ -1,5 +1,5 @@
-if (!process.env.SAUCE_USERNAME) {
-	console.info("No SAUCE_USERNAME, skipping this test");
+if (!process.env.WEBDRIVER_USERNAME) {
+	console.info("No WEBDRIVER_USERNAME, skipping this test");
 	return;
 }
 
@@ -14,14 +14,14 @@ function getBrowser() {
 	var prefs = new webdriver.logging.Preferences();
 	prefs.setLevel(webdriver.logging.Type.BROWSER, webdriver.logging.Level.DEBUG);
 	return new webdriver.Builder()
-	.usingServer('http://'+ process.env.SAUCE_USERNAME+':'+process.env.SAUCE_ACCESS_KEY+'@ondemand.saucelabs.com:80/wd/hub')
+	.usingServer('http://'+ process.env.WEBDRIVER_USERNAME+':'+process.env.WEBDRIVER_ACCESS_KEY+'@'+WEBDRIVER_HOST)
 	.withCapabilities({
 		browserName: process.env.WEBDRIVER_BROWSER_NAME || 'chrome',
 		version: process.env.WEBDRIVER_BROWSER_VERSION || '',
 		'tunnel-identifier': process.env.TRAVIS_JOB_NUMBER,
 		build: process.env.TRAVIS_BUILD_NUMBER,
-		username: process.env.SAUCE_USERNAME,
-		accessKey: process.env.SAUCE_ACCESS_KEY
+		username: process.env.WEBDRIVER_USERNAME,
+		accessKey: process.env.WEBDRIVER_ACCESS_KEY
 	})
 	.setLoggingPrefs(prefs)
 	.build();

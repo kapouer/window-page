@@ -1,4 +1,4 @@
-if (process.env.SAUCE_USERNAME) {
+if (process.env.WEBDRIVER_USERNAME) {
 	console.info("Running only selenium tests, skipping this one");
 	return;
 }
