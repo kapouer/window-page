@@ -336,7 +336,17 @@ PageClass.prototype.importDocument = function(doc) {
 	// document to be imported will have some nodes with custom props
 	// and before it is actually imported these props are removed
 	var assets = {};
-	queryAll(doc, 'script,link[rel="stylesheet"],link[rel="import"]').map(function(node) {
+	var nodes = queryAll(doc, 'script,link[rel="stylesheet"],link[rel="import"]');
+
+	// if there is no HTMLImports support, some loaded script might contain
+	// the HTMLImports polyfill itself, which will load imports however it likes
+	// so it's hard to decide which order is good, and it's also impossible to know
+	// if that polyfill will be available - so importDocument does not preload
+	// imports nor does it let them run on insert
+	// if there is native support then it's like other resources.
+
+	// first make sure nodes won't load when inserted into live document
+	nodes.map(function(node) {
 		// just preload everything
 		if (node.nodeName == "SCRIPT") {
 			node._type = node.type;
@@ -347,15 +357,8 @@ PageClass.prototype.importDocument = function(doc) {
 			node.setAttribute('rel', 'none');
 			node.removeAttribute('href');
 		}
-		var src = node.src || node.href;
-		if (!src) return;
-		var prerendering = document.visibilityState == "prerender";
-		if (src && src.slice(0, 5) != 'data:') node._loader = pGet(src).then(function() {
-			debug("preloaded", src);
-		}).catch(function(err) {
-			debug("error preloading", src, err);
-		});
 	});
+	// then import
 	var root = document.documentElement;
 	while (root.attributes.length > 0) {
 		root.removeAttribute(root.attributes[0].name);
@@ -367,6 +370,23 @@ PageClass.prototype.importDocument = function(doc) {
 
 	root.replaceChild(document.adoptNode(doc.head), document.head);
 	root.replaceChild(document.adoptNode(doc.body), document.body);
+
+	var nativeImports = 'import' in document.createElement('link');
+	// load all
+	nodes.forEach(function(node) {
+		var src = node.src || node.href;
+		if (!src) return;
+		// not imports if there is no native support
+		if (!nativeImports && node.nodeName == "LINK" && node._rel == "import") return;
+		// not data-uri
+		if (src.slice(0, 5) == 'data:') return;
+		node._loader = pGet(src).then(function() {
+			debug("preloaded", src);
+		}).catch(function(err) {
+			debug("error preloading", src, err);
+		});
+	});
+
 	var chain = Promise.resolve();
 	queryAll(document, 'script[type="none"],link[rel="none"]').forEach(function(node) {
 		if (node._loader) {
@@ -390,7 +410,12 @@ PageClass.prototype.importDocument = function(doc) {
 			var p;
 			if (src) {
 				debug("async node loading", src);
-				p = readyNode(copy);
+				var nativeImports = 'import' in document.createElement('link');
+				if (!nativeImports && !window.HTMLImports && node.nodeName == "LINK" && node.rel == "import") {
+					// no deal
+				} else {
+					p = readyNode(copy);
+				}
 			} else {
 				debug("inline node loading");
 				p = new Promise(function(resolve) {
