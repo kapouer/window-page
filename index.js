@@ -333,59 +333,76 @@ PageClass.prototype.waitReady = function() {
 };
 
 PageClass.prototype.importDocument = function(doc) {
+	// document to be imported will have some nodes with custom props
+	// and before it is actually imported these props are removed
 	var assets = {};
-	return Promise.all(queryAll(doc, 'script,link[rel="stylesheet"],link[rel="import"]').map(function(node) {
+	queryAll(doc, 'script,link[rel="stylesheet"],link[rel="import"]').map(function(node) {
 		// just preload everything
+		if (node.nodeName == "SCRIPT") {
+			node._type = node.type;
+			node.setAttribute('type', "none");
+		} else if (node.nodeName == "LINK") {
+			node._rel = node.getAttribute('rel');
+			node._href = node.getAttribute('href');
+			node.setAttribute('rel', 'none');
+			node.removeAttribute('href');
+		}
 		var src = node.src || node.href;
 		if (!src) return;
 		var prerendering = document.visibilityState == "prerender";
-		if (src && src.slice(0, 5) != 'data:') return pGet(src).then(function() {
+		if (src && src.slice(0, 5) != 'data:') node._loader = pGet(src).then(function() {
 			debug("preloaded", src);
 		}).catch(function(err) {
 			debug("error preloading", src, err);
 		});
-	})).then(function() {
-		var root = document.documentElement;
-		while (root.attributes.length > 0) {
-			root.removeAttribute(root.attributes[0].name);
-		}
-		var docRoot = doc.documentElement;
-		if (docRoot.attributes) for (var i=0; i < docRoot.attributes.length; i++) {
-			root.setAttribute(docRoot.attributes[i].name, docRoot.attributes[i].value);
-		}
-
-		root.replaceChild(document.adoptNode(doc.head), document.head);
-		root.replaceChild(document.adoptNode(doc.body), document.body);
-		var chain = Promise.resolve();
-		queryAll(document, 'script,link[rel="stylesheet"]').forEach(function(node) {
-			chain = chain.then(function() {
-				var cursor = document.createTextNode("");
-				var parent = node.parentNode;
-				parent.insertBefore(cursor, node);
-				parent.removeChild(node);
-				var copy = document.createElement(node.nodeName);
-				for (var i=0; i < node.attributes.length; i++) {
-					copy.setAttribute(node.attributes[i].name, node.attributes[i].value);
-				}
-				if (node.textContent) copy.textContent = node.textContent;
-				var src = copy.src || copy.href;
-				var p;
-				if (src) {
-					debug("async node loading", src);
-					p = readyNode(copy);
-				} else {
-					debug("inline node loading");
-					p = new Promise(function(resolve) {
-						setTimeout(resolve);
-					});
-				}
-				parent.insertBefore(copy, cursor);
-				parent.removeChild(cursor);
-				if (p) return p;
-			});
-		});
-		return chain;
 	});
+	var root = document.documentElement;
+	while (root.attributes.length > 0) {
+		root.removeAttribute(root.attributes[0].name);
+	}
+	var docRoot = doc.documentElement;
+	if (docRoot.attributes) for (var i=0; i < docRoot.attributes.length; i++) {
+		root.setAttribute(docRoot.attributes[i].name, docRoot.attributes[i].value);
+	}
+
+	root.replaceChild(document.adoptNode(doc.head), document.head);
+	root.replaceChild(document.adoptNode(doc.body), document.body);
+	var chain = Promise.resolve();
+	queryAll(document, 'script[type="none"],link[rel="none"]').forEach(function(node) {
+		if (node._loader) {
+			chain = chain.then(node._loader);
+			delete node._loader;
+		}
+		chain = chain.then(function() {
+			var cursor = document.createTextNode("");
+			var parent = node.parentNode;
+			parent.insertBefore(cursor, node);
+			parent.removeChild(node);
+			restoreAttr(node, 'rel');
+			restoreAttr(node, 'href');
+			restoreAttr(node, 'type');
+			var copy = document.createElement(node.nodeName);
+			for (var i=0; i < node.attributes.length; i++) {
+				copy.setAttribute(node.attributes[i].name, node.attributes[i].value);
+			}
+			if (node.textContent) copy.textContent = node.textContent;
+			var src = copy.src || copy.href;
+			var p;
+			if (src) {
+				debug("async node loading", src);
+				p = readyNode(copy);
+			} else {
+				debug("inline node loading");
+				p = new Promise(function(resolve) {
+					setTimeout(resolve);
+				});
+			}
+			parent.insertBefore(copy, cursor);
+			parent.removeChild(cursor);
+			if (p) return p;
+		});
+	});
+	return chain;
 };
 
 PageClass.prototype.push = function(state) {
@@ -438,6 +455,14 @@ PageClass.prototype.stateFrom = function(from) {
 	state.saved = true;
 	return state;
 };
+
+function restoreAttr(node, attr) {
+	var val = node['_' + attr];
+	if (val === undefined) return;
+	delete node['_' + attr];
+	if (val) node.setAttribute(attr, val);
+	else node.removeAttribute(attr);
+}
 
 function queryAll(doc, selector) {
 	if (doc.queryAll) return doc.queryAll(selector);
