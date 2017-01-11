@@ -107,5 +107,18 @@ describe("Rendering", function suite() {
 			done();
 		});
 	});
+
+	it("should run route and load script before import", function(done) {
+		request({
+			method: 'GET',
+			url: host + ':' + port + '/route.html?template=import-depending-on-script'
+		}, function(err, res, body) {
+			expect(res.statusCode).to.be(200);
+			expect(body.indexOf('data-page-stage="3"')).to.be.greaterThan(0);
+			expect(body.indexOf("I'm setup0")).to.be.greaterThan(0);
+			expect(body.indexOf("your body770")).to.be.greaterThan(0);
+			done();
+		});
+	});
 });
 

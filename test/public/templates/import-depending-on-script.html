@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Sample page with import</title>
+	<script src="/polyfills/url.js"></script>
+	<script src="/polyfills/promise.js"></script>
+	<script src="/polyfills/HTMLImports.js"></script>
+	<script src="/window-page.js"></script>
+	<script>
+var builds = 0;
+Page.build(function(state) {
+	document.querySelector('.status').innerHTML = "I'm built" + builds++;
+});
+var setups = 0;
+Page.setup(function(state) {
+	document.querySelector('.status').innerHTML = "I'm setup" + setups++;
+});
+	</script>
+	<script src="/assets/lib.js"></script>
+	<link rel="import" href="/templates/element-using-lib.html">
+</head>
+<body>
+<div class="status"></div>
+<div class="from-import"></div>
+</body>
+</html>

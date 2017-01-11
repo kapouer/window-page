@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Sample import</title>
+</head>
+<body>
+<div id="ref">Your body, my body. everybody import your body</div>
+<script>
+if (!window.importCounter) window.importCounter = 0;
+(function() {
+	var ownDoc = (document._currentScript || document.currentScript).ownerDocument;
+	document.querySelector('.from-import').innerHTML = window.mylib(ownDoc.getElementById('ref').innerHTML) + window.importCounter++;
+})();
+</script>
+</body>
+</html>

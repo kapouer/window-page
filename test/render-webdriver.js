@@ -97,5 +97,13 @@ describe("Rendering", function suite() {
 			'<div class="status">squared</div>'
 		]);
 	});
+
+	it("should run route and load script before import", function() {
+		return testPageForStrings(browser, base + '/route.html?template=import-depending-on-script', [
+			'data-page-stage="3"',
+			"I'm setup0",
+			"your body770"
+		]);
+	});
 });
 
