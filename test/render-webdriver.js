@@ -1,5 +1,5 @@
-if (!process.env.WEBDRIVER_USERNAME) {
-	console.info("No WEBDRIVER_USERNAME, skipping this test");
+if (!process.env.WEBDRIVER_SERVER) {
+	console.info("No WEBDRIVER_SERVER, skipping this test");
 	return;
 }
 
@@ -19,9 +19,7 @@ function getBrowser() {
 		browserName: process.env.WEBDRIVER_BROWSER_NAME || 'chrome',
 		version: process.env.WEBDRIVER_BROWSER_VERSION || '',
 		'tunnel-identifier': process.env.TRAVIS_JOB_NUMBER,
-		build: process.env.TRAVIS_BUILD_NUMBER,
-		username: process.env.WEBDRIVER_USERNAME,
-		accessKey: process.env.WEBDRIVER_ACCESS_KEY
+		build: process.env.TRAVIS_BUILD_NUMBER
 	})
 	.setLoggingPrefs(prefs)
 	.build();
