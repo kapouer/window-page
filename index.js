@@ -371,13 +371,12 @@ PageClass.prototype.importDocument = function(doc) {
 	root.replaceChild(document.adoptNode(doc.head), document.head);
 	root.replaceChild(document.adoptNode(doc.body), document.body);
 
-	var nativeImports = 'import' in document.createElement('link');
 	// load all
 	nodes.forEach(function(node) {
 		var src = node.src || node.href;
 		if (!src) return;
 		// not imports if there is no native support
-		if (!nativeImports && node.nodeName == "LINK" && node._rel == "import") return;
+		if (node.nodeName == "LINK" && node._rel == "import" && !node.import) return;
 		// not data-uri
 		if (src.slice(0, 5) == 'data:') return;
 		node._loader = pGet(src).then(function() {
@@ -410,9 +409,8 @@ PageClass.prototype.importDocument = function(doc) {
 			var p;
 			if (src) {
 				debug("async node loading", src);
-				var nativeImports = 'import' in document.createElement('link');
-				if (!nativeImports && !window.HTMLImports && node.nodeName == "LINK" && node.rel == "import") {
-					// no deal
+				if (node.nodeName == "LINK" && node.rel == "import" && !node.import) {
+					debug("not loading import", src);
 				} else {
 					p = readyNode(copy);
 				}
