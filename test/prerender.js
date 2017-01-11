@@ -86,6 +86,18 @@ describe("Prerendering", function suite() {
 		});
 	});
 
+	it("should run route and ignore imports", function(done) {
+		request({
+			method: 'GET',
+			url: host + ':' + port + '/route.html?template=import-ignore'
+		}, function(err, res, body) {
+			expect(res.statusCode).to.be(200);
+			expect(body.indexOf("I'm built0")).to.be.greaterThan(0);
+			expect(body.indexOf('<div class="from-import">77</div>')).to.be.greaterThan(0);
+			done();
+		});
+	});
+
 	it("should run route and load scripts in correct order", function(done) {
 		request({
 			method: 'GET',
