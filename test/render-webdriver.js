@@ -14,7 +14,7 @@ function getBrowser() {
 	var prefs = new webdriver.logging.Preferences();
 	prefs.setLevel(webdriver.logging.Type.BROWSER, webdriver.logging.Level.DEBUG);
 	return new webdriver.Builder()
-	.usingServer(WEBDRIVER_SERVER)
+	.usingServer(process.env.WEBDRIVER_SERVER)
 	.withCapabilities({
 		browserName: process.env.WEBDRIVER_BROWSER_NAME || 'chrome',
 		version: process.env.WEBDRIVER_BROWSER_VERSION || '',
