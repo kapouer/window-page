@@ -24,7 +24,9 @@ function getBrowser() {
 		acceptSslCerts: true,
 		project: project,
 		"browserstack.debug": true,
-		"browserstack.video": false
+		"browserstack.local": true,
+		"browserstack.video": false,
+		"browserstack.localIdentifier": process.env.BROWSERSTACK_LOCAL_IDENTIFIER
 	})
 	.setLoggingPrefs(prefs)
 	.build();
