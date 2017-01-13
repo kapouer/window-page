@@ -7,6 +7,7 @@ var expect = require('expect.js');
 var express = require('express');
 var webdriver = require("selenium-webdriver");
 var project = require('../package.json').name;
+var getPort = require('gport');
 
 var host = "http://localhost";
 
@@ -53,16 +54,19 @@ describe("Rendering", function suite() {
 	var server, base, browser;
 
 	before(function(done) {
+		browser = getBrowser();
 		var app = express();
 		app.set('views', __dirname + '/public');
 		app.get('*', express.static(app.get('views')));
-
-		server = app.listen(function(err) {
-			if (err) console.error(err);
-			base = host + ':' + server.address().port;
-			done();
+		getPort(9901, function(port) {
+			if (port > 9999) return done(new Error("Test might fail on Safari because port is "
+				+ port + ", see\nhttps://www.browserstack.com/question/664"));
+			server = app.listen(port, function(err) {
+				if (err) console.error(err);
+				base = host + ':' + server.address().port;
+				done();
+			});
 		});
-		browser = getBrowser();
 	});
 
 	after(function() {
