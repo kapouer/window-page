@@ -20,6 +20,7 @@ function getBrowser() {
 		browserName: process.env.WEBDRIVER_BROWSER_NAME || 'chrome',
 		version: process.env.WEBDRIVER_BROWSER_VERSION || '',
 		device: process.env.WEBDRIVER_DEVICE || '',
+		platform: process.env.WEBDRIVER_PLATFORM || '',
 		'tunnel-identifier': process.env.TRAVIS_JOB_NUMBER,
 		build: process.env.TRAVIS_BUILD_NUMBER,
 		acceptSslCerts: true,
