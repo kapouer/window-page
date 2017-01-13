@@ -61,10 +61,9 @@ describe("Rendering", function suite() {
 		browser = getBrowser();
 	});
 
-	after(function(done) {
-		browser.quit();
+	after(function() {
 		server.close();
-		done();
+		return browser.quit();
 	});
 
 	it("should run build and setup", function() {
