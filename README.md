@@ -34,6 +34,13 @@ With polyfills (URL and promise, up to the client to add them):
 - old versions of other browsers
 
 
+### BrowserStack
+
+This project runs its tests on multiple desktop and mobile browsers using [travis BrowserStack addon](https://docs.travis-ci.com/user/browserstack/), sponsored by [BrowserStack](browserstack.com).
+
+[![Browser Stack Logo](https://www.browserstack.com/images/layout/browserstack-logo-600x315.png)](https://www.browserstack.com/)
+
+
 Install
 -------
 
