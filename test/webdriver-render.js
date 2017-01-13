@@ -26,7 +26,8 @@ function getBrowser() {
 		"browserstack.debug": true,
 		"browserstack.local": true,
 		"browserstack.video": false,
-		"browserstack.localIdentifier": process.env.BROWSERSTACK_LOCAL_IDENTIFIER
+		"browserstack.localIdentifier": process.env.BROWSERSTACK_LOCAL_IDENTIFIER,
+		"browserstack.browserConnectionEnabled": true
 	})
 	.setLoggingPrefs(prefs)
 	.build();
