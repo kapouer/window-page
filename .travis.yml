@@ -17,6 +17,7 @@ addons:
 
 # use https://www.browserstack.com/automate/node#setting-os-and-browser
 env:
+  - WEBDRIVER_BROWSER_NAME=="iPhone" WEBDRIVER_DEVICE="iPhone 6" WEBDRIVER_PLATFORM="MAC"
   - WEBDRIVER_BROWSER_NAME="chrome"
   - WEBDRIVER_BROWSER_NAME="internet explorer" WEBDRIVER_BROWSER_VERSION="10"
   - WEBDRIVER_BROWSER_NAME="internet explorer" WEBDRIVER_BROWSER_VERSION="11"
