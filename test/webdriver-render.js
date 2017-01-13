@@ -22,12 +22,12 @@ function getBrowser() {
 		'tunnel-identifier': process.env.TRAVIS_JOB_NUMBER,
 		build: process.env.TRAVIS_BUILD_NUMBER,
 		acceptSslCerts: true,
+		browserConnectionEnabled: true,
 		project: project,
 		"browserstack.debug": true,
 		"browserstack.local": true,
 		"browserstack.video": false,
-		"browserstack.localIdentifier": process.env.BROWSERSTACK_LOCAL_IDENTIFIER,
-		"browserstack.browserConnectionEnabled": true
+		"browserstack.localIdentifier": process.env.BROWSERSTACK_LOCAL_IDENTIFIER
 	})
 	.setLoggingPrefs(prefs)
 	.build();
