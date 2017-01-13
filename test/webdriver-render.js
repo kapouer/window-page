@@ -25,6 +25,7 @@ function getBrowser() {
 		build: process.env.TRAVIS_BUILD_NUMBER,
 		acceptSslCerts: true,
 		browserConnectionEnabled: true,
+		newtworkConnectionEnabled: true,
 		project: project,
 		"browserstack.debug": true,
 		"browserstack.local": true,
