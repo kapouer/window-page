@@ -22,16 +22,16 @@ Browser support
 
 [![Build Status](https://travis-ci.org/kapouer/window-page.svg?branch=master)](https://travis-ci.org/kapouer/window-page)
 
-Native: recent versions of
-- chrome
-- firefox
-- safari
-- edge
+Tested on:
 
-With polyfills (URL and promise, up to the client to add them):
-- IE 10 and 11
-- maybe IE9 but tests rely on HTML in XMLHttpRequest feature
-- old versions of other browsers
+- latest versions of Chrome, Firefox, Safari
+- iPhone >= 5
+- IE >= 10 (with URL and Promise polyfills)
+- Edge >= 13
+- android browser (on Samsung Galaxy S5)
+
+It might work on IE9, but tests rely on a feature not available there
+(getting a DOM document from XHR request).
 
 
 ### BrowserStack
