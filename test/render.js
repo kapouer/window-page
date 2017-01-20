@@ -74,6 +74,36 @@ describe("Rendering", function suite() {
 		});
 	});
 
+	it("should run build and patch and setup, call replace and run patch again", function(done) {
+		request({
+			method: 'GET',
+			url: host + ':' + port + '/replace.html'
+		}, function(err, res, body) {
+			expect(res.statusCode).to.be(200);
+			expect(body.indexOf('data-page-stage="3"')).to.be.greaterThan(0);
+			expect(body.indexOf('<div class="build">0</div>')).to.be.greaterThan(0);
+			expect(body.indexOf('<div class="patch">1</div>')).to.be.greaterThan(0);
+			expect(body.indexOf('<div class="setup">0</div>')).to.be.greaterThan(0);
+			expect(body.indexOf('<div class="url">/replace.html?toto=1</div>')).to.be.greaterThan(0);
+			done();
+		});
+	});
+
+	it("should run build and patch and setup, call push and run patch again", function(done) {
+		request({
+			method: 'GET',
+			url: host + ':' + port + '/push.html'
+		}, function(err, res, body) {
+			expect(res.statusCode).to.be(200);
+			expect(body.indexOf('data-page-stage="3"')).to.be.greaterThan(0);
+			expect(body.indexOf('<div class="build">0</div>')).to.be.greaterThan(0);
+			expect(body.indexOf('<div class="patch">1</div>')).to.be.greaterThan(0);
+			expect(body.indexOf('<div class="setup">0</div>')).to.be.greaterThan(0);
+			expect(body.indexOf('<div class="url">/push.html?toto=1</div>')).to.be.greaterThan(0);
+			done();
+		});
+	});
+
 	it("should run route and build and setup", function(done) {
 		request({
 			method: 'GET',

@@ -82,6 +82,25 @@ describe("Rendering", function suite() {
 		]);
 	});
 
+	it("should run build and patch and setup", function() {
+		return testPageForStrings(browser, base + '/patch.html', [
+			'data-page-stage="3"',
+			'<div class="build">0</div>',
+			'<div class="patch">0</div>',
+			'<div class="setup">0</div>'
+		]);
+	});
+
+	it("should run build and patch and setup, call replace and run patch again", function() {
+		return testPageForStrings(browser, base + '/replace.html', [
+			'data-page-stage="3"',
+			'<div class="build">0</div>',
+			'<div class="patch">1</div>',
+			'<div class="setup">0</div>',
+			'<div class="url">/replace.html?toto=1</div>'
+		]);
+	});
+
 	it("should run route and build and setup", function() {
 		return testPageForStrings(browser, base + '/route.html?template=build', [
 			'data-page-stage="3"',
@@ -90,7 +109,6 @@ describe("Rendering", function suite() {
 			'<div class="setup">0</div>'
 		]);
 	});
-
 
 	it("should run route and imports", function() {
 		return testPageForStrings(browser, base + '/route.html?template=import', [

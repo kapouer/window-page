@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Sample replace page</title>
+	<script src="/polyfills/url.js"></script>
+	<script src="/polyfills/promise.js"></script>
+	<script src="/window-page.js"></script>
+	<script>
+var builds = 0;
+Page.build(function(state) {
+	document.querySelector('.build').innerHTML = builds++;
+});
+var patchs = 0;
+Page.patch(function(state) {
+	document.querySelector('.patch').innerHTML = patchs++;
+	if (state.query.toto) document.querySelector('.url').innerHTML = Page.format(state);
+});
+var setups = 0;
+Page.setup(function(state) {
+	document.querySelector('.setup').innerHTML = setups++;
+	setTimeout(function() {
+		state.query.toto = 1;
+		Page.replace(state);
+	}, 50);
+});
+
+	</script>
+</head>
+<body>
+<div class="build"></div>
+<div class="patch"></div>
+<div class="setup"></div>
+<div class="url"></div>
+</body>
+</html>
