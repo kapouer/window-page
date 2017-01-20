@@ -29,7 +29,7 @@ function getBrowser() {
 		newtworkConnectionEnabled: true,
 		project: project,
 		"browserstack.debug": true,
-		"browserstack.local": true,
+		"browserstack.local": process.env.BROWSERSTACK_LOCAL,
 		"browserstack.video": false,
 		"browserstack.localIdentifier": process.env.BROWSERSTACK_LOCAL_IDENTIFIER
 	})
@@ -77,14 +77,17 @@ describe("Rendering", function suite() {
 	it("should run build and setup", function() {
 		return testPageForStrings(browser, base + '/build.html', [
 			'data-page-stage="3"',
-			"I'm setup0"
+			'<div class="build">0</div>',
+			'<div class="setup">0</div>'
 		]);
 	});
 
 	it("should run route and build and setup", function() {
 		return testPageForStrings(browser, base + '/route.html?template=build', [
 			'data-page-stage="3"',
-			"I'm setup0"
+			'<div class="build">0</div>',
+			'<div class="patch">0</div>',
+			'<div class="setup">0</div>'
 		]);
 	});
 

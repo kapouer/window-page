@@ -51,11 +51,33 @@ describe("Two-phase rendering", function suite() {
 			url: host + ':' + port + '/build.html'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
-			expect(body.indexOf("I'm built")).to.be.greaterThan(0);
+			expect(body.indexOf('<div class="build">0</div>')).to.be.greaterThan(0);
 			dom(body).load({
 				plugins: renderPlugins
 			})(res.request.uri.href).then(function(state) {
-				expect(state.body.indexOf("I'm setup")).to.be.greaterThan(0);
+				expect(state.body.indexOf('<div class="build">0</div>')).to.be.greaterThan(0);
+				expect(state.body.indexOf('<div class="setup">0</div>')).to.be.greaterThan(0);
+				done();
+			}).catch(function(err) {
+				done(err);
+			});
+		});
+	});
+
+	it("should run build and patch then setup", function(done) {
+		request({
+			method: 'GET',
+			url: host + ':' + port + '/patch.html'
+		}, function(err, res, body) {
+			expect(res.statusCode).to.be(200);
+			expect(body.indexOf('<div class="build">0</div>')).to.be.greaterThan(0);
+			expect(body.indexOf('<div class="patch">0</div>')).to.be.greaterThan(0);
+			dom(body).load({
+				plugins: renderPlugins
+			})(res.request.uri.href).then(function(state) {
+				expect(state.body.indexOf('<div class="build">0</div>')).to.be.greaterThan(0);
+				expect(state.body.indexOf('<div class="patch">0</div>')).to.be.greaterThan(0);
+				expect(state.body.indexOf('<div class="setup">0</div>')).to.be.greaterThan(0);
 				done();
 			}).catch(function(err) {
 				done(err);
