@@ -101,6 +101,16 @@ describe("Rendering", function suite() {
 		]);
 	});
 
+	it("should run build and patch and setup, call push and run patch again", function() {
+		return testPageForStrings(browser, base + '/push.html', [
+			'data-page-stage="3"',
+			'<div class="build">0</div>',
+			'<div class="patch">1</div>',
+			'<div class="setup">0</div>',
+			'<div class="url">/push.html?toto=1</div>'
+		]);
+	});
+
 	it("should run route and build and setup", function() {
 		return testPageForStrings(browser, base + '/route.html?template=build', [
 			'data-page-stage="3"',
