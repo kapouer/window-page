@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Sample build page</title>
+	<script src="/polyfills/url.js"></script>
+	<script src="/polyfills/promise.js"></script>
+	<script src="/window-page.js"></script>
+	<script>
+var builds = 0;
+Page.build(function(state) {
+	document.body.innerHTML = "I'm built" + builds++;
+});
+var patches = 0;
+Page.patch(function(state) {
+	document.body.innerHTML = "I'm patched" + patches++;
+});
+var setups = 0;
+Page.setup(function(state) {
+	document.body.innerHTML = "I'm setup" + setups++;
+});
+	</script>
+</head>
+<body>
+Sample
+</body>
+</html>
