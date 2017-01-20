@@ -6,17 +6,18 @@
 	<script src="/polyfills/promise.js"></script>
 	<script src="/window-page.js"></script>
 	<script>
-	var builds = 0;
+var builds = 0;
 Page.build(function(state) {
-	document.body.innerHTML = "I'm built" + builds++;
+	document.querySelector('.build').innerHTML = builds++;
 });
 var setups = 0;
 Page.setup(function(state) {
-	document.body.innerHTML = "I'm setup" + setups++;
+	document.querySelector('.setup').innerHTML = setups++;
 });
 	</script>
 </head>
 <body>
-Sample
+<div class="build"></div>
+<div class="setup"></div>
 </body>
 </html>

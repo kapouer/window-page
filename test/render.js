@@ -54,7 +54,22 @@ describe("Rendering", function suite() {
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
 			expect(body.indexOf('data-page-stage="3"')).to.be.greaterThan(0);
-			expect(body.indexOf("I'm setup0")).to.be.greaterThan(0);
+			expect(body.indexOf('<div class="build">0</div>')).to.be.greaterThan(0);
+			expect(body.indexOf('<div class="setup">0</div>')).to.be.greaterThan(0);
+			done();
+		});
+	});
+
+	it("should run build and patch and setup", function(done) {
+		request({
+			method: 'GET',
+			url: host + ':' + port + '/patch.html'
+		}, function(err, res, body) {
+			expect(res.statusCode).to.be(200);
+			expect(body.indexOf('data-page-stage="3"')).to.be.greaterThan(0);
+			expect(body.indexOf('<div class="build">0</div>')).to.be.greaterThan(0);
+			expect(body.indexOf('<div class="patch">0</div>')).to.be.greaterThan(0);
+			expect(body.indexOf('<div class="setup">0</div>')).to.be.greaterThan(0);
 			done();
 		});
 	});
