@@ -115,7 +115,6 @@ describe("Rendering", function suite() {
 		return testPageForStrings(browser, base + '/route.html?template=build', [
 			'data-page-stage="3"',
 			'<div class="build">0</div>',
-			'<div class="patch">0</div>',
 			'<div class="setup">0</div>'
 		]);
 	});

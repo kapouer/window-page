@@ -47,6 +47,7 @@ describe("Prerendering", function suite() {
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
 			expect(body.indexOf('<div class="build">0</div>')).to.be.greaterThan(0);
+			expect(body.indexOf('<div class="setup"></div>')).to.be.greaterThan(0);
 			done();
 		});
 	});
@@ -57,7 +58,9 @@ describe("Prerendering", function suite() {
 			url: host + ':' + port + '/patch.html'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
+			expect(body.indexOf('<div class="build">0</div>')).to.be.greaterThan(0);
 			expect(body.indexOf('<div class="patch">0</div>')).to.be.greaterThan(0);
+			expect(body.indexOf('<div class="setup"></div>')).to.be.greaterThan(0);
 			done();
 		});
 	});
@@ -68,7 +71,8 @@ describe("Prerendering", function suite() {
 			url: host + ':' + port + '/route.html?template=build'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
-			expect(body.indexOf("I'm built0")).to.be.greaterThan(0);
+			expect(body.indexOf('<div class="build">0</div>')).to.be.greaterThan(0);
+			expect(body.indexOf('<div class="setup"></div>')).to.be.greaterThan(0);
 			done();
 		});
 	});
