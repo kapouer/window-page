@@ -52,6 +52,7 @@ describe("Two-phase rendering", function suite() {
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
 			expect(body.indexOf('<div class="build">0</div>')).to.be.greaterThan(0);
+			expect(body.indexOf('<div class="setup"></div>')).to.be.greaterThan(0);
 			dom(body).load({
 				plugins: renderPlugins
 			})(res.request.uri.href).then(function(state) {
@@ -72,6 +73,7 @@ describe("Two-phase rendering", function suite() {
 			expect(res.statusCode).to.be(200);
 			expect(body.indexOf('<div class="build">0</div>')).to.be.greaterThan(0);
 			expect(body.indexOf('<div class="patch">0</div>')).to.be.greaterThan(0);
+			expect(body.indexOf('<div class="setup"></div>')).to.be.greaterThan(0);
 			dom(body).load({
 				plugins: renderPlugins
 			})(res.request.uri.href).then(function(state) {
