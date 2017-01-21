@@ -46,8 +46,8 @@ describe("Prerendering", function suite() {
 			url: host + ':' + port + '/build.html'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
-			expect(body.indexOf('<div class="build">0</div>')).to.be.greaterThan(0);
-			expect(body.indexOf('<div class="setup"></div>')).to.be.greaterThan(0);
+			expect(body).to.contain('<div class="build">0</div>');
+			expect(body).to.contain('<div class="setup"></div>');
 			done();
 		});
 	});
@@ -58,9 +58,9 @@ describe("Prerendering", function suite() {
 			url: host + ':' + port + '/patch.html'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
-			expect(body.indexOf('<div class="build">0</div>')).to.be.greaterThan(0);
-			expect(body.indexOf('<div class="patch">0</div>')).to.be.greaterThan(0);
-			expect(body.indexOf('<div class="setup"></div>')).to.be.greaterThan(0);
+			expect(body).to.contain('<div class="build">0</div>');
+			expect(body).to.contain('<div class="patch">0</div>');
+			expect(body).to.contain('<div class="setup"></div>');
 			done();
 		});
 	});
@@ -71,8 +71,8 @@ describe("Prerendering", function suite() {
 			url: host + ':' + port + '/route.html?template=build'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
-			expect(body.indexOf('<div class="build">0</div>')).to.be.greaterThan(0);
-			expect(body.indexOf('<div class="setup"></div>')).to.be.greaterThan(0);
+			expect(body).to.contain('<div class="build">0</div>');
+			expect(body).to.contain('<div class="setup"></div>');
 			done();
 		});
 	});
@@ -83,8 +83,8 @@ describe("Prerendering", function suite() {
 			url: host + ':' + port + '/store.html?template=store'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
-			expect(body.indexOf("I'm built0 with thing=1 and data.template=store")).to.be.greaterThan(0);
-			expect(body.indexOf('data-page-thing="1"')).to.not.be.greaterThan(0);
+			expect(body).to.contain("I'm built0 with thing=1 and data.template=store");
+			expect(body).to.not.contain('data-page-thing="1"');
 			done();
 		});
 	});
@@ -95,9 +95,9 @@ describe("Prerendering", function suite() {
 			url: host + ':' + port + '/route.html?template=import'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
-			expect(body.indexOf('data-page-stage="2"')).to.be.greaterThan(0);
-			expect(body.indexOf("I'm built0")).to.be.greaterThan(0);
-			expect(body.indexOf("your body0")).to.be.greaterThan(0);
+			expect(body).to.contain('data-page-stage="2"');
+			expect(body).to.contain("I'm built0");
+			expect(body).to.contain("your body0");
 			done();
 		});
 	});
@@ -108,9 +108,9 @@ describe("Prerendering", function suite() {
 			url: host + ':' + port + '/route.html?template=import-ignore'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
-			expect(body.indexOf('data-page-stage="2"')).to.be.greaterThan(0);
-			expect(body.indexOf("I'm built0")).to.be.greaterThan(0);
-			expect(body.indexOf('<div class="from-import">77</div>')).to.be.greaterThan(0);
+			expect(body).to.contain('data-page-stage="2"');
+			expect(body).to.contain("I'm built0");
+			expect(body).to.contain('<div class="from-import">77</div>');
 			done();
 		});
 	});
@@ -121,7 +121,7 @@ describe("Prerendering", function suite() {
 			url: host + ':' + port + '/route.html?template=order-scripts'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
-			expect(body.indexOf("ABBACCBAC")).to.be.greaterThan(0);
+			expect(body).to.contain("ABBACCBAC");
 			done();
 		});
 	});
@@ -132,7 +132,7 @@ describe("Prerendering", function suite() {
 			url: host + ':' + port + '/route.html?template=stylesheets'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
-			expect(body.indexOf('<div class="status">squared0</div>')).to.not.be.greaterThan(0);
+			expect(body).to.not.contain('<div class="status">squared0</div>');
 			done();
 		});
 	});

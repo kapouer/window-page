@@ -43,7 +43,7 @@ function testPageForStrings(browser, url, strings) {
 			return browser.getPageSource();
 		}).then(function(html) {
 			strings.forEach(function(str) {
-				expect(html.indexOf(str)).to.be.greaterThan(0);
+				expect(html).to.contain(str);
 			});
 		});
 	});
