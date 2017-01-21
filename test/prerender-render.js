@@ -51,13 +51,13 @@ describe("Two-phase rendering", function suite() {
 			url: host + ':' + port + '/build.html'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
-			expect(body.indexOf('<div class="build">0</div>')).to.be.greaterThan(0);
-			expect(body.indexOf('<div class="setup"></div>')).to.be.greaterThan(0);
+			expect(body).to.contain('<div class="build">0</div>');
+			expect(body).to.contain('<div class="setup"></div>');
 			dom(body).load({
 				plugins: renderPlugins
 			})(res.request.uri.href).then(function(state) {
-				expect(state.body.indexOf('<div class="build">0</div>')).to.be.greaterThan(0);
-				expect(state.body.indexOf('<div class="setup">0</div>')).to.be.greaterThan(0);
+				expect(state.body).to.contain('<div class="build">0</div>');
+				expect(state.body).to.contain('<div class="setup">0</div>');
 				done();
 			}).catch(function(err) {
 				done(err);
@@ -71,15 +71,15 @@ describe("Two-phase rendering", function suite() {
 			url: host + ':' + port + '/patch.html'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
-			expect(body.indexOf('<div class="build">0</div>')).to.be.greaterThan(0);
-			expect(body.indexOf('<div class="patch">0</div>')).to.be.greaterThan(0);
-			expect(body.indexOf('<div class="setup"></div>')).to.be.greaterThan(0);
+			expect(body).to.contain('<div class="build">0</div>');
+			expect(body).to.contain('<div class="patch">0</div>');
+			expect(body).to.contain('<div class="setup"></div>');
 			dom(body).load({
 				plugins: renderPlugins
 			})(res.request.uri.href).then(function(state) {
-				expect(state.body.indexOf('<div class="build">0</div>')).to.be.greaterThan(0);
-				expect(state.body.indexOf('<div class="patch">0</div>')).to.be.greaterThan(0);
-				expect(state.body.indexOf('<div class="setup">0</div>')).to.be.greaterThan(0);
+				expect(state.body).to.contain('<div class="build">0</div>');
+				expect(state.body).to.contain('<div class="patch">0</div>');
+				expect(state.body).to.contain('<div class="setup">0</div>');
 				done();
 			}).catch(function(err) {
 				done(err);
@@ -93,14 +93,14 @@ describe("Two-phase rendering", function suite() {
 			url: host + ':' + port + '/route.html?template=import'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
-			expect(body.indexOf('data-page-stage="2"')).to.be.greaterThan(0);
-			expect(body.indexOf("I'm built0")).to.be.greaterThan(0);
-			expect(body.indexOf("your body0")).to.be.greaterThan(0);
+			expect(body).to.contain('data-page-stage="2"');
+			expect(body).to.contain("I'm built0");
+			expect(body).to.contain("your body0");
 			dom(body).load({
 				plugins: renderPlugins
 			})(res.request.uri.href).then(function(state) {
-				expect(state.body.indexOf('data-page-stage="3"')).to.be.greaterThan(0);
-				expect(state.body.indexOf("I'm setup0")).to.be.greaterThan(0);
+				expect(state.body).to.contain('data-page-stage="3"');
+				expect(state.body).to.contain("I'm setup0");
 				done();
 			}).catch(function(err) {
 				done(err);
@@ -114,11 +114,11 @@ describe("Two-phase rendering", function suite() {
 			url: host + ':' + port + '/route.html?template=stylesheets'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
-			expect(body.indexOf('<div class="status">hidden0</div>')).to.be.greaterThan(0);
+			expect(body).to.contain('<div class="status">hidden0</div>');
 			dom(body).load({
 				plugins: renderPlugins
 			})(res.request.uri.href).then(function(state) {
-				expect(state.body.indexOf('<div class="status">squared0</div>')).to.be.greaterThan(0);
+				expect(state.body).to.contain('<div class="status">squared0</div>');
 				done();
 			}).catch(function(err) {
 				done(err);
@@ -132,11 +132,11 @@ describe("Two-phase rendering", function suite() {
 			url: host + ':' + port + '/route.html?template=order-stylesheets'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
-			expect(body.indexOf('<div class="status">squared</div>')).to.not.be.greaterThan(0);
+			expect(body).to.not.contain('<div class="status">squared</div>');
 			dom(body).load({
 				plugins: renderPlugins
 			})(res.request.uri.href).then(function(state) {
-				expect(state.body.indexOf('<div class="status">squared</div>')).to.be.greaterThan(0);
+				expect(state.body).to.contain('<div class="status">squared</div>');
 				done();
 			}).catch(function(err) {
 				done(err);
