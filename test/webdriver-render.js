@@ -15,7 +15,7 @@ function getEnvCaps() {
 	var envCaps = process.env.WEBDRIVER;
 	if (!envCaps) return {};
 	try {
-		envCaps = eval('{' + envCaps + '}');
+		envCaps = eval('(function() { return {' + envCaps + '};})();');
 	} catch(ex) {
 		console.error("Cannot use WEBDRIVER env caps", envCaps);
 		return {};
