@@ -1,5 +1,5 @@
-if (!process.env.WEBDRIVER_SERVER) {
-	console.info("No WEBDRIVER_SERVER, skipping this test");
+if (!process.env.WEBDRIVER) {
+	console.info("No WEBDRIVER, skipping this test");
 	return;
 }
 
@@ -11,17 +11,28 @@ var getPort = require('gport');
 
 var host = "http://localhost";
 
+function getEnvCaps() {
+	var envCaps = process.env.WEBDRIVER;
+	if (!envCaps) return {};
+	try {
+		envCaps = eval('{' + envCaps + '}');
+	} catch(ex) {
+		console.error("Cannot use WEBDRIVER env caps", envCaps);
+		return {};
+	}
+	return envCaps;
+}
+
 function getBrowser() {
 	var browser;
 	var prefs = new webdriver.logging.Preferences();
 	prefs.setLevel(webdriver.logging.Type.BROWSER, webdriver.logging.Level.DEBUG);
+
 	return new webdriver.Builder()
-	.usingServer(process.env.WEBDRIVER_SERVER)
-	.withCapabilities({
-		browserName: process.env.WEBDRIVER_BROWSER_NAME || 'chrome',
-		version: process.env.WEBDRIVER_BROWSER_VERSION || '',
-		device: process.env.WEBDRIVER_DEVICE || '',
-		platform: process.env.WEBDRIVER_PLATFORM || '',
+	.usingServer(process.env.WEBDRIVER_SERVER || 'http://hub-cloud.browserstack.com/wd/hub')
+	.withCapabilities(Object.assign({
+		'browserstack.user': process.env.BROWSERSTACK_USER,
+		'browserstack.key': process.env.BROWSERSTACK_ACCESS_KEY,
 		'tunnel-identifier': process.env.TRAVIS_JOB_NUMBER,
 		build: process.env.TRAVIS_BUILD_NUMBER,
 		acceptSslCerts: true,
@@ -32,7 +43,7 @@ function getBrowser() {
 		"browserstack.local": process.env.BROWSERSTACK_LOCAL,
 		"browserstack.video": false,
 		"browserstack.localIdentifier": process.env.BROWSERSTACK_LOCAL_IDENTIFIER
-	})
+	}, getEnvCaps()))
 	.setLoggingPrefs(prefs)
 	.build();
 }
