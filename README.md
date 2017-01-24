@@ -38,7 +38,7 @@ It might work on IE9, but tests rely on a feature not available there
 
 This project runs its tests on multiple desktop and mobile browsers using [travis BrowserStack addon](https://docs.travis-ci.com/user/browserstack/), sponsored by [BrowserStack](browserstack.com).
 
-[![Browser Stack Logo](https://raw.githubusercontent.com/kapouer/window-page/master/browserstack.png)](https://www.browserstack.com/)
+[![Browser Stack Logo](https://cloud.githubusercontent.com/assets/131406/22254315/87f2c136-e254-11e6-9a25-587b2247cc30.png)](https://www.browserstack.com/)
 
 
 Install
