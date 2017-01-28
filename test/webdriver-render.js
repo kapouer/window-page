@@ -8,6 +8,7 @@ var express = require('express');
 var webdriver = require("selenium-webdriver");
 var project = require('../package.json').name;
 var getPort = require('gport');
+var request = require('request');
 
 var host = "http://localhost";
 
@@ -83,6 +84,35 @@ describe("Rendering", function suite() {
 	after(function() {
 		server.close();
 		return browser.quit();
+	});
+
+	after(function() {
+		var status = this.test.parent.tests.every(function(test) {
+			return test.state == "passed";
+		}) ? "completed" : "error";
+		server.close();
+		return browser.getSession().then(function(sessionData) {
+			var sessionId = sessionData.getId();
+			return new Promise(function(resolve, reject) {
+				request.put({
+					url: `https://www.browserstack.com/automate/sessions/${sessionId}.json`,
+					json: true,
+					body: {
+						status: status,
+						reason: ''
+					},
+					auth: {
+						user: process.env.BROWSERSTACK_USER,
+						pass: process.env.BROWSERSTACK_ACCESS_KEY
+					}
+				}, function(err) {
+					if (err) console.error(err);
+					resolve();
+				});
+			})
+		}).then(function() {
+			return browser.quit();
+		});
 	});
 
 	it("should run build and setup", function() {
