@@ -82,11 +82,6 @@ describe("Rendering", function suite() {
 	});
 
 	after(function() {
-		server.close();
-		return browser.quit();
-	});
-
-	after(function() {
 		var status = this.test.parent.tests.every(function(test) {
 			return test.state == "passed";
 		}) ? "completed" : "error";
