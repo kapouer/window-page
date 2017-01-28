@@ -91,11 +91,12 @@ describe("Rendering", function suite() {
 			return test.state == "passed";
 		}) ? "completed" : "error";
 		server.close();
-		return browser.getSession().then(function(sessionData) {
-			var sessionId = sessionData.getId();
+		return browser.getSession().then(function(session) {
+			var bsUrl = `https://www.browserstack.com/automate/sessions/${session.getId()}.json`;
 			return new Promise(function(resolve, reject) {
+				console.info("Notifying browserstack", status, bsUrl);
 				request.put({
-					url: `https://www.browserstack.com/automate/sessions/${sessionId}.json`,
+					url: bsUrl,
 					json: true,
 					body: {
 						status: status,
@@ -105,7 +106,8 @@ describe("Rendering", function suite() {
 						user: process.env.BROWSERSTACK_USER,
 						pass: process.env.BROWSERSTACK_ACCESS_KEY
 					}
-				}, function(err) {
+				}, function(err, res, body) {
+					console.info("Response", res.statusCode, body);
 					if (err) console.error(err);
 					resolve();
 				});
