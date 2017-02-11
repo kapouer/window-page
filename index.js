@@ -36,8 +36,8 @@ PageClass.prototype.historyListener = function(e) {
 	} else {
 		var obj = this.parse();
 		if (this.samePath(this.state, obj) && this.state.hash != obj.hash) {
-			Page.state.hash = hash;
-			this.emit("pagehash");
+			this.emit("pagehash", this.state);
+			this.state.hash = hash;
 		}
 	}
 };
@@ -139,9 +139,10 @@ PageClass.prototype.sameDomain = function(a, b) {
 	return (a.protocol || pr) == (b.protocol || pr) && (a.hostname || hn) == (b.hostname || hn) && (a.port || po) == (b.port || po);
 };
 
-PageClass.prototype.emit = function(name) {
+PageClass.prototype.emit = function(name, state) {
 	var event = document.createEvent('Event');
 	event.initEvent(name, true, true);
+	event.state = state;
 	window.dispatchEvent(event);
 };
 
@@ -161,7 +162,7 @@ PageClass.prototype.run = function(state) {
 	this.queue = this.waitReady().then(function() {
 		state.initialStage = state.stage = self.stage();
 		if (state.stage == INIT) {
-			self.emit("pageinit");
+			self.emit("pageinit", state);
 			return self.runChain('route', state);
 		}
 	}).then(function() {
@@ -178,7 +179,6 @@ PageClass.prototype.run = function(state) {
 			state.stage = docStage;
 		});
 	}).then(function() {
-		self.state = state; // this is the new current state
 		if (state.stage >= BUILT) return;
 		return self.runChain('build', state).then(function() {
 			return self.runChain('patch', state);
@@ -202,10 +202,14 @@ PageClass.prototype.run = function(state) {
 			});
 		});
 	}).then(function() {
+		self.state = state;
 		self.queue = null;
 	}).catch(function(err) {
 		delete state.abort;
-		if (err != "abort") console.error(err);
+		if (err != "abort") {
+			console.error(err);
+			self.emit("pageerror", state);
+		}
 	});
 	return this.queue;
 };
@@ -224,7 +228,7 @@ PageClass.prototype.runChain = function(name, state) {
 	var chain = this.chains[name];
 	chain.promise = this.allFn(state, name, chain.thenables);
 	return chain.promise.then(function() {
-		this.emit("page" + name);
+		this.emit("page" + name, state);
 		return state;
 	}.bind(this));
 };
@@ -452,7 +456,6 @@ PageClass.prototype.historyMethod = function(method, state) {
 	}
 
 	return this.run(copy).then(function() {
-		this.state = copy;
 		var to = this.stateTo(copy);
 		if (this.supportsHistory) {
 			this.window.history[method + 'State'](to, document.title, to.href);

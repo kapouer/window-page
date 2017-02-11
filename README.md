@@ -136,17 +136,26 @@ functions:
 
 The return values of the promises are ignored.
 
-All functions receive the same "state" parameter, which is available just before
-build chain as `Page.state`.
+All functions receive the same "state" parameter.
+
+A successful run of the chains updates Page.state to the new state (new in
+window-page 2).
 
 
 ### Events
 
-Page emits events "pageinit", "pageroute", "pagebuild", "pagepatch", "pagesetup"
-on window, the last four happening after the corresponding chain has run.
+Page emits these window events:
 
-In addition, a "pagehash" event is emitted when only the document hash changes,
-to be able to do stuff on hash links without interfering with history api.
+- pageinit (before initial run)
+- pageroute (after route chain)
+- pagebuild (after build chain)
+- pagepatch (after patch chain)
+- pagesetup (after setup chain)
+- pageerror (in case of error during run)
+- pagehash (document hash has changed)
+
+Listeners receive an event object with a `state` property being the current
+state (which can be different from Page.state - this is new in window-page 2).
 
 
 ### History
@@ -155,7 +164,7 @@ to be able to do stuff on hash links without interfering with history api.
   change history of which window, default to `window`
 
 * Page.state  
-  the current state
+  the last successful state
 
 * Page.push(state or url)
 
