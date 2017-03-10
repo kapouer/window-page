@@ -12,6 +12,7 @@ var dom = require('express-dom');
 dom.settings.stall = 5000;
 dom.settings.allow = 'all';
 dom.settings.timeout = 10000;
+dom.settings.stallTimeout = 1000;
 dom.settings.console = true;
 
 var loadPlugins = [
@@ -97,9 +98,10 @@ describe("Rendering", function suite() {
 			expect(res.statusCode).to.be(200);
 			expect(body).to.contain('data-page-stage="3"');
 			expect(body).to.contain('<div class="build">0</div>');
-			expect(body).to.contain('<div class="patch">1</div>');
+			expect(body).to.contain('<div class="patch">2</div>');
 			expect(body).to.contain('<div class="setup">0</div>');
-			expect(body).to.contain('<div class="url">/push.html?toto=1</div>');
+			expect(body).to.contain('<div class="url">/push.html?toto=2</div>');
+			expect(body).to.contain('<div class="location">/push.html?toto=2</div>');
 			done();
 		});
 	});
