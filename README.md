@@ -113,6 +113,9 @@ The state object describes components of the url parsed with Page.parse()
 * state.pathname, state.query, state.hash  
   see also Page.format(state)
 
+*Important*: it is a bad idea to mutate those properties. Use `Page.parse()` to
+get a copy, or pass an object with partial properties to `Page.push` or `Page.replace`.
+
 The state object is also the place to keep application data, if any
 
 * state.data    
