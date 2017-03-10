@@ -192,7 +192,7 @@ PageClass.prototype.run = function(state) {
 		if (state.stage == SETUP) {
 			// run patch if any, or build
 			return self.runChain(self.chains.patch.thenables.length ? 'patch' : 'build', state);
-		} else return self.waitUiReady(state).then(function() {
+		} else return self.waitUiReady().then(function() {
 			if (state.abort) return Promise.reject("abort");
 			return self.runChain('setup', state).then(function() {
 				if (state.stage < SETUP) {
@@ -266,7 +266,7 @@ PageClass.prototype.allFn = function(state, name, list) {
 	return p;
 };
 
-PageClass.prototype.waitUiReady = function(state) {
+PageClass.prototype.waitUiReady = function() {
 	if (document.visibilityState == "prerender") {
 		var solve, p = new Promise(function(resolve) { solve = resolve; });
 		function vizListener() {
@@ -274,41 +274,40 @@ PageClass.prototype.waitUiReady = function(state) {
 			solve();
 		}
 		document.addEventListener('visibilitychange', vizListener, false);
-		return p.then(waitImports);
 	} else {
-		return waitImports();
+		p = Promise.resolve();
 	}
-	function waitImports() {
-		var imports = queryAll(document, 'link[rel="import"]');
-		var polyfill = window.HTMLImports;
-		var whenReady = (function() {
-			var promise;
-			return function() {
-				if (!promise) promise = new Promise(function(resolve) {
-					polyfill.whenReady(function() {
-						setTimeout(resolve);
-					});
-				});
-				return promise;
-			};
-		})();
-
-		return Promise.all(imports.map(function(link) {
-			if (link.import && link.import.readyState == "complete") {
-				// no need to wait, wether native or polyfill
-				return Promise.resolve();
-			}
-			if (polyfill) {
-				// link.onload cannot be trusted
-				return whenReady();
-			}
-
-			return readyNode(link);
-		})).then(function() {
-			return state;
-		});
-	}
+	return p;
 };
+
+PageClass.prototype.waitImports = function() {
+	var imports = queryAll(document, 'link[rel="import"]');
+	var polyfill = window.HTMLImports;
+	var whenReady = (function() {
+		var promise;
+		return function() {
+			if (!promise) promise = new Promise(function(resolve) {
+				polyfill.whenReady(function() {
+					setTimeout(resolve);
+				});
+			});
+			return promise;
+		};
+	})();
+
+	return Promise.all(imports.map(function(link) {
+		if (link.import && link.import.readyState == "complete") {
+			// no need to wait, wether native or polyfill
+			return Promise.resolve();
+		}
+		if (polyfill) {
+			// link.onload cannot be trusted
+			return whenReady();
+		}
+
+		return readyNode(link);
+	}));
+}
 
 PageClass.prototype.waitReady = function() {
 	if (this.docReady) return Promise.resolve();
@@ -333,7 +332,7 @@ PageClass.prototype.waitReady = function() {
 	}
 	document.addEventListener('DOMContentLoaded', listener);
 	window.addEventListener('load', listener);
-	return p;
+	return p.then(this.waitImports);
 };
 
 PageClass.prototype.importDocument = function(doc) {
