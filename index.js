@@ -439,13 +439,16 @@ PageClass.prototype.replace = function(state) {
 	return this.historyMethod('replace', state);
 };
 
-PageClass.prototype.historyMethod = function(method, state) {
-	var copy = this.parse(typeof state == "string" ? state : this.format(state));
-	['document', 'data', 'stage'].forEach(function(k) {
-		if (state[k]) copy[k] = state[k];
-	});
+PageClass.prototype.historyMethod = function(method, obj) {
+	var copy = this.parse(typeof obj == "string" ? obj : this.format(obj));
+	if (this.state) {
+		if (this.state.data != null) copy.data = this.state.data;
+		copy.stage = this.state.stage;
+	}
 
-	if (this.supportsHistory && !state.saved && method == "push") {
+	if (this.supportsHistory && !this.initializedHistory && method == "push") {
+		// to be able to go back, the initial state must be set in history
+		this.initializedHistory = true;
 		// we want current location here
 		var to = this.stateTo(this.state);
 		// ensure it calls patch or build chain
@@ -463,13 +466,11 @@ PageClass.prototype.historyMethod = function(method, state) {
 };
 
 PageClass.prototype.stateTo = function(state) {
-	state.saved = true;
-	var to = {
+	return {
 		href: this.format(state),
-		stage: state.initialStage
+		stage: state.initialStage,
+		data: state.data
 	};
-	to.data = state.data;
-	return to;
 };
 
 PageClass.prototype.stateFrom = function(from) {
@@ -477,7 +478,6 @@ PageClass.prototype.stateFrom = function(from) {
 	var state = this.parse(from.href);
 	state.stage = from.stage;
 	state.data = from.data || {};
-	state.saved = true;
 	return state;
 };
 
