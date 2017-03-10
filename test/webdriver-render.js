@@ -143,9 +143,10 @@ describe("Rendering", function suite() {
 		return testPageForStrings(browser, base + '/push.html', [
 			'data-page-stage="3"',
 			'<div class="build">0</div>',
-			'<div class="patch">1</div>',
+			'<div class="patch">2</div>',
 			'<div class="setup">0</div>',
-			'<div class="url">/push.html?toto=1</div>'
+			'<div class="url">/push.html?toto=2</div>',
+			'<div class="location">/push.html?toto=2</div>'
 		]);
 	});
 
