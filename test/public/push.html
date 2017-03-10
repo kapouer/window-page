@@ -13,15 +13,20 @@ Page.build(function(state) {
 var patchs = 0;
 Page.patch(function(state) {
 	document.querySelector('.patch').innerHTML = patchs++;
-	if (state.query.toto) document.querySelector('.url').innerHTML = Page.format(state);
+	if (state.query.toto) {
+		document.querySelector('.url').innerHTML = Page.format(state);
+		setTimeout(function() {
+			document.querySelector('.location').innerHTML = document.location.pathname + document.location.search;
+			if (state.query.toto == 1) Page.push("?toto=2");
+		}, 300);
+	}
 });
 var setups = 0;
 Page.setup(function(state) {
 	document.querySelector('.setup').innerHTML = setups++;
 	setTimeout(function() {
-		state.query.toto = 1;
-		Page.push(state);
-	}, 50);
+		Page.push({query: {toto:1}});
+	}, 300);
 });
 
 	</script>
@@ -31,5 +36,6 @@ Page.setup(function(state) {
 <div class="patch"></div>
 <div class="setup"></div>
 <div class="url"></div>
+<div class="location"></div>
 </body>
 </html>
