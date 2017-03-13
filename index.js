@@ -34,10 +34,10 @@ PageClass.prototype.historyListener = function(e) {
 	if (state) {
 		this.run(state);
 	} else {
-		var obj = this.parse();
-		if (this.samePath(this.state, obj) && this.state.hash != obj.hash) {
-			this.emit("pagehash", this.state);
-			this.state.hash = hash;
+		var state = this.parse();
+		if (this.samePath(this.state, state) && this.state.hash != state.hash) {
+			this.emit("pagehash", state);
+			this.state.hash = state.hash;
 		}
 	}
 };
