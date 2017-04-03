@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Template page</title>
+	<script src="/polyfills/url.js"></script>
+	<script src="/polyfills/promise.js"></script>
+	<script src="/agent.js"></script>
+	<script>
+Page.build(function(state) {
+	document.querySelector('.mymark').innerHTML = GET._mymark;
+});
+	</script>
+</head>
+<body>
+<div class="mymark"></div>
+</body>
+</html>

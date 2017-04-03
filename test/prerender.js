@@ -137,5 +137,16 @@ describe("Prerendering", function suite() {
 		});
 	});
 
+	it("should run route and not load already loaded scripts", function(done) {
+		request({
+			method: 'GET',
+			url: host + ':' + port + '/route.html?template=already-loaded'
+		}, function(err, res, body) {
+			expect(res.statusCode).to.be(200);
+			expect(body).to.contain('<div class="mymark">1</div>');
+			done();
+		});
+	});
+
 });
 
