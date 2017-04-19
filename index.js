@@ -36,7 +36,7 @@ PageClass.prototype.historyListener = function(e) {
 	} else {
 		var obj = this.parse();
 		if (this.samePath(this.state, obj) && this.state.hash != obj.hash) {
-			Page.state.hash = hash;
+			Page.state.hash = obj.hash;
 			this.emit("pagehash");
 		}
 	}
