@@ -335,12 +335,7 @@ PageClass.prototype.waitReady = function() {
 PageClass.prototype.importDocument = function(doc) {
 	// document to be imported will have some nodes with custom props
 	// and before it is actually imported these props are removed
-	var states = {};
-	queryAll(document, 'script,link[rel="stylesheet"],link[rel="import"]').forEach(function(node) {
-		var src = node.src || node.href;
-		if (src) states[src] = true;
-	});
-
+	var assets = {};
 	var nodes = queryAll(doc, 'script,link[rel="stylesheet"],link[rel="import"]');
 
 	// if there is no HTMLImports support, some loaded script might contain
@@ -380,12 +375,11 @@ PageClass.prototype.importDocument = function(doc) {
 	nodes.forEach(function(node) {
 		var src = node.src || node.href;
 		if (!src) return;
-		if (states[src] === true) return;
-		// not imports if there is no native support because polyfill already do preloading
+		// not imports if there is no native support
 		if (node.nodeName == "LINK" && node._rel == "import" && !node.import) return;
 		// not data-uri
 		if (src.slice(0, 5) == 'data:') return;
-		states[src] = pGet(src).then(function() {
+		node._loader = pGet(src).then(function() {
 			debug("preloaded", src);
 		}).catch(function(err) {
 			debug("error preloading", src, err);
@@ -394,30 +388,24 @@ PageClass.prototype.importDocument = function(doc) {
 
 	var chain = Promise.resolve();
 	queryAll(document, 'script[type="none"],link[rel="none"]').forEach(function(node) {
-		var src = node.src || node.href;
-		var state = states[src];
-		var old = state === true;
-		var loader = !old && state;
-		if (loader) {
-			chain = chain.then(loader);
+		if (node._loader) {
+			chain = chain.then(node._loader);
+			delete node._loader;
 		}
 		chain = chain.then(function() {
+			var cursor = document.createTextNode("");
 			var parent = node.parentNode;
-			var cursor;
-			if (!old) {
-				cursor = document.createTextNode("");
-				parent.insertBefore(cursor, node);
-				parent.removeChild(node);
-			}
+			parent.insertBefore(cursor, node);
+			parent.removeChild(node);
 			restoreAttr(node, 'rel');
 			restoreAttr(node, 'href');
 			restoreAttr(node, 'type');
-			if (old) return;
 			var copy = document.createElement(node.nodeName);
 			for (var i=0; i < node.attributes.length; i++) {
 				copy.setAttribute(node.attributes[i].name, node.attributes[i].value);
 			}
 			if (node.textContent) copy.textContent = node.textContent;
+			var src = copy.src || copy.href;
 			var p;
 			if (src) {
 				debug("async node loading", src);
