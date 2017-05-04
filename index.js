@@ -107,11 +107,14 @@ PageClass.prototype.format = function(obj) {
 	}
 	var search = QueryString.stringify(obj.query || {});
 	if (search) obj.search = search;
+	else obj.search = "";
 	if (obj.protocol || obj.hostname || obj.port) {
 		var dlocs = dloc.toString();
 		var loc = new URL(dlocs, dlocs);
-		// copy only enumerable properties of a URL instance
-		for (var k in loc) if (obj[k] !== undefined) loc[k] = obj[k];
+		// overwrite specified components from enumerable properties
+		for (var k in loc) if (obj.hasOwnProperty(k)) {
+			loc[k] = obj[k];
+		}
 		return loc.toString();
 	}
 	var str = obj.pathname || "";
