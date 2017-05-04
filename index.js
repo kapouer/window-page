@@ -6,6 +6,8 @@ var IMPORTED = 1;
 var BUILT = 2;
 var SETUP = 3;
 
+var urlHelper = document.createElement('a');
+
 function PageClass() {
 	this.name = "PageClass";
 	this.prefix = 'data-page-';
@@ -74,8 +76,8 @@ PageClass.prototype.stage = function(stage) {
 
 PageClass.prototype.parse = function(str) {
 	var dloc = this.window.document.location;
-	// do NOT change loc in this function, or parse dloc.toString() again
-	var loc = str ? new URL(str, dloc.toString()) : dloc;
+	var loc = urlHelper;
+	loc.href = str || "";
 	var obj = {
 		pathname: loc.pathname,
 		query: QueryString.parse(loc.search),
@@ -88,16 +90,19 @@ PageClass.prototype.parse = function(str) {
 		delete obj.hostname;
 		delete obj.protocol;
 	} else {
-		if (!obj.port) obj.port = loc.port;
-		if (!obj.hostname) obj.hostname = loc.hostname;
+		if (!obj.hostname) {
+			obj.hostname = loc.hostname;
+			if (!obj.port) obj.port = loc.port;
+		}
 		if (!obj.protocol) obj.protocol = loc.protocol;
-		if (obj.port == "80") delete obj.port;
+		if (!obj.port || obj.port == "80") delete obj.port;
 	}
 	return obj;
 };
 
 PageClass.prototype.format = function(obj) {
 	var dloc = this.window.document.location;
+	obj = Object.assign({}, obj);
 	if (obj.path) {
 		var parsedPath = this.parse(obj.path);
 		obj.pathname = parsedPath.pathname;
@@ -106,20 +111,26 @@ PageClass.prototype.format = function(obj) {
 		delete obj.path;
 	}
 	var search = QueryString.stringify(obj.query || {});
-	if (search) obj.search = search;
-	else obj.search = "";
-	if (obj.protocol || obj.hostname || obj.port) {
-		var dlocs = dloc.toString();
-		var loc = new URL(dlocs, dlocs);
-		// overwrite specified components from enumerable properties
-		for (var k in loc) if (obj.hasOwnProperty(k)) {
-			loc[k] = obj[k];
-		}
-		return loc.toString();
+	obj.search = search || "";
+
+	var keys = ["pathname", "search", "hash"];
+	var relative = !obj.protocol && !obj.hostname && !obj.port;
+	if (!relative) keys.unshift("protocol", "hostname", "port");
+
+	var key;
+	for (var i=0; i < keys.length; i++) {
+		key = keys[i];
+		if (obj[key] == null) obj[key] = dloc[key];
+		else break;
 	}
+
 	var str = obj.pathname || "";
 	if (search) str += '?' + search;
 	if (obj.hash) str += '#' + obj.hash;
+	if (!relative) {
+		var port = (obj.port && obj.port != 80) ? ":" + obj.port : "";
+		str = obj.protocol + '//' + obj.hostname + port + str;
+	}
 	return str;
 };
 
