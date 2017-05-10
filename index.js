@@ -350,6 +350,7 @@ PageClass.prototype.waitReady = function() {
 };
 
 PageClass.prototype.importDocument = function(doc) {
+	if (doc == document) return Promise.resolve();
 	// document to be imported will have some nodes with custom props
 	// and before it is actually imported these props are removed
 	var states = {};
