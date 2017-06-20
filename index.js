@@ -349,7 +349,7 @@ PageClass.prototype.waitReady = function() {
 	return p.then(this.waitImports);
 };
 
-PageClass.prototype.importDocument = function(doc) {
+PageClass.prototype.importDocument = function(doc, noload) {
 	if (doc == document) return Promise.resolve();
 	// document to be imported will have some nodes with custom props
 	// and before it is actually imported these props are removed
@@ -398,6 +398,7 @@ PageClass.prototype.importDocument = function(doc) {
 	nodes.forEach(function(node) {
 		var src = node.src || node.href;
 		if (!src) return;
+		if (noload) states[src] = true;
 		if (states[src] === true) return;
 		// not imports if there is no native support because polyfill already do preloading
 		if (node.nodeName == "LINK" && node._rel == "import" && !node.import) return;
