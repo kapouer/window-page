@@ -1,12 +1,13 @@
 {
   "name": "window-page",
-  "version": "2.0.0-alpha.2",
+  "version": "2.0.0-alpha.3",
   "description": "Route, setup, and build web pages",
   "main": "index.js",
   "scripts": {
     "test": "mocha",
     "prepublish": "browserify-lite $PWD/index.js --outfile $PWD/window-page.js"
   },
+  "files": ["window-page.js"],
   "repository": {
     "type": "git",
     "url": "https://github.com/kapouer/window-page.git"
