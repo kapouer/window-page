@@ -7,7 +7,9 @@
     "test": "mocha",
     "prepublish": "browserify-lite $PWD/index.js --outfile $PWD/window-page.js"
   },
-  "files": ["window-page.js"],
+  "files": [
+    "window-page.js"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/kapouer/window-page.git"
