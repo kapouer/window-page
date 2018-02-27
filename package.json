@@ -24,7 +24,7 @@
   "author": "Jérémy Lal <kapouer@melix.org>",
   "license": "MIT",
   "dependencies": {
-    "query-string": "^4.2.3"
+    "query-string": "^5.1.0"
   },
   "bugs": {
     "url": "https://github.com/kapouer/window-page/issues"
@@ -33,7 +33,7 @@
     "browserify-lite": "^0.5.0",
     "expect.js": "^0.3.1",
     "express": "^4.14.0",
-    "express-dom": "^5.6.0",
+    "express-dom": "^5.9.3",
     "gport": "^1.1.0",
     "mocha": "^3.2.0",
     "promise-polyfill": "^6.0.2",
@@ -41,7 +41,7 @@
     "selenium-webdriver": "^3.0.1",
     "url-polyfill": "github:webcomponents/URL",
     "webcomponents.js": "^0.7.23",
-    "webkitgtk": "^4.4.8",
+    "webkitgtk": "^4.7.0",
     "window-agent": "^1.0.1"
   }
 }
