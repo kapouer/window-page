@@ -161,7 +161,7 @@ PageClass.prototype.emit = function(name, state) {
 };
 
 PageClass.prototype.run = function(state) {
-	this.format(state); // converts path if any
+	var url = this.format(state); // converts path if any
 	if (!state.data) state.data = {};
 	var self = this;
 	if (this.queue) {
@@ -176,8 +176,25 @@ PageClass.prototype.run = function(state) {
 	this.queue = this.waitReady().then(function() {
 		state.initialStage = state.stage = self.stage();
 		if (state.stage == INIT) {
+			var curState = self.state || self.parse();
+			if (!self.sameDomain(curState, state)) {
+				throw new Error("Cannot route to a different domain:\n" + url);
+			}
 			self.emit("pageinit", state);
-			return self.runChain('route', state);
+			return Promise.resolve().then(function() {
+				if (curState.pathname == state.pathname) return; // nothing to do
+				if (self.chains.route.thenables.length == 0) {
+					return pGet(url).then(function(html) {
+						var doc = document.cloneNode(false);
+						doc.open();
+						doc.write(html);
+						doc.close();
+						state.document = doc;
+					});
+				}
+			}).then(function() {
+				return self.runChain('route', state);
+			});
 		}
 	}).then(function() {
 		if (state.stage >= IMPORTED || !state.document) return;
