@@ -468,7 +468,15 @@ PageClass.prototype.replace = function(state) {
 };
 
 PageClass.prototype.historyMethod = function(method, obj) {
-	var copy = this.parse(typeof obj == "string" ? obj : this.format(obj));
+	var url = typeof obj == "string" ? obj : this.format(obj);
+	var copy = this.parse(url);
+	if (!this.sameDomain(this.state, copy)) {
+		if (method == "push") {
+			document.location = url;
+		} else {
+			throw new Error("Page.replace expects same domain:\n" + url);
+		}
+	}
 	if (this.state) {
 		if (this.state.data != null) copy.data = this.state.data;
 		copy.stage = this.state.stage;
