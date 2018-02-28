@@ -373,12 +373,11 @@ PageClass.prototype.importDocument = function(doc, noload) {
 	nodes.map(function(node) {
 		// just preload everything
 		if (node.nodeName == "SCRIPT") {
-			node._type = node.type;
+			node._type = node.getAttribute('type');
 			node.setAttribute('type', "none");
-		} else if (node.nodeName == "LINK") {
-			node._rel = node.getAttribute('rel');
+		} else if (node.nodeName == "LINK" && (node.rel == "stylesheet" || node.rel == "import")) {
+			node.setAttribute('rel', '_' + node.rel);
 			node._href = node.getAttribute('href');
-			node.setAttribute('rel', 'none');
 			node.removeAttribute('href');
 		}
 	});
@@ -386,14 +385,14 @@ PageClass.prototype.importDocument = function(doc, noload) {
 	var mountHead = document.adoptNode(doc.head);
 	var mountBody = document.adoptNode(doc.body);
 
-	// load all
+	// preload scripts and imports
 	nodes.forEach(function(node) {
-		var src = node.src || node.href;
+		var src = node.src || node._href;
 		if (!src) return;
+		// not imports if there is no native support because polyfill already do preloading
+		if (node.nodeName == "LINK" && node.rel == "_import" && !node.import) return;
 		if (noload) states[src] = true;
 		if (states[src] === true) return;
-		// not imports if there is no native support because polyfill already do preloading
-		if (node.nodeName == "LINK" && node._rel == "import" && !node.import) return;
 		// not data-uri
 		if (src.slice(0, 5) == 'data:') return;
 		states[src] = pGet(src).then(function() {
@@ -420,9 +419,17 @@ PageClass.prototype.importDocument = function(doc, noload) {
 				parent.insertBefore(cursor, node);
 				parent.removeChild(node);
 			}
-			restoreAttr(node, 'rel');
-			restoreAttr(node, 'href');
-			restoreAttr(node, 'type');
+			if (node.nodeName == "LINK" && node.rel) {
+				node.setAttribute('rel', node.rel.substring(1));
+				if (node._href) {
+					node.setAttribute('href', node._href);
+					delete node._href;
+				}
+			}
+			if (node.nodeName == "SCRIPT" && node.type) {
+				if (node._type) node.setAttribute('type', node._type);
+				else node.removeAttribute('type');
+			}
 			if (old) return;
 			var copy = document.createElement(node.nodeName);
 			for (var i=0; i < node.attributes.length; i++) {
@@ -537,14 +544,6 @@ PageClass.prototype.stateFrom = function(from) {
 	state.data = from.data || {};
 	return state;
 };
-
-function restoreAttr(node, attr) {
-	var val = node['_' + attr];
-	if (val === undefined) return;
-	delete node['_' + attr];
-	if (val) node.setAttribute(attr, val);
-	else node.removeAttribute(attr);
-}
 
 function queryAll(doc, selector) {
 	if (doc.queryAll) return doc.queryAll(selector);
