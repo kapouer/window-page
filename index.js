@@ -461,9 +461,9 @@ PageClass.prototype.importDocument = function(doc, noload) {
 
 	// links can be loaded all at once
 	return Promise.all(parallels.map(loadNode)).then(function() {
-		this.root = docRoot;
 		return this.insertDocument(docRoot);
 	}.bind(this)).then(function() {
+		this.root = document.documentElement;
 		// scripts must be run in order
 		var p = Promise.resolve();
 		serials.forEach(function(node) {
