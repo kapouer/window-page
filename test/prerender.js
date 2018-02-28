@@ -77,18 +77,6 @@ describe("Prerendering", function suite() {
 		});
 	});
 
-	it("should read and store data before route, and read it during build", function(done) {
-		request({
-			method: 'GET',
-			url: host + ':' + port + '/store.html?template=store'
-		}, function(err, res, body) {
-			expect(res.statusCode).to.be(200);
-			expect(body).to.contain("I'm built0 with thing=1 and data.template=store");
-			expect(body).to.not.contain('data-page-thing="1"');
-			done();
-		});
-	});
-
 	it("should run route and imports", function(done) {
 		request({
 			method: 'GET',

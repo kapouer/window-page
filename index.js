@@ -10,7 +10,6 @@ var urlHelper = document.createElement('a');
 
 function PageClass() {
 	this.name = "PageClass";
-	this.prefix = 'data-page-';
 	this.window = window;
 	this.debug = false;
 	this.reset();
@@ -44,34 +43,14 @@ PageClass.prototype.historyListener = function(e) {
 	}
 };
 
-PageClass.prototype.store = function(name, data) {
-	var storage = this.storage;
-	if (!storage) this.storage = storage = {};
-	if (data === undefined) {
-		if (storage[name] !== undefined) return storage[name];
-	}
+PageClass.prototype.stage = function(stage) {
 	var root = this.root;
 	if (!root) {
-		this.root = root = document.querySelector(
-			'[' + this.prefix + 'stage' + ']'
-		) || document.documentElement;
+		this.root = root = document.querySelector('[data-page-stage]') || document.documentElement;
 	}
-	if (data === undefined) {
-		try {
-			data = this.storage[name] = JSON.parse(root.getAttribute(this.prefix + name));
-		} catch (ex) {}
-	} else if (data === null) {
-		delete this.storage[name];
-		root.removeAttribute(this.prefix + name);
-	} else {
-		this.storage[name] = data;
-		root.setAttribute(this.prefix + name, JSON.stringify(data));
-	}
-	return data;
-};
-
-PageClass.prototype.stage = function(stage) {
-	return this.store('stage', stage) || INIT;
+	if (stage != null) this.root.dataset.pageStage = stage;
+	else stage = this.root.dataset.pageStage
+	return stage || INIT;
 };
 
 PageClass.prototype.parse = function(str) {
