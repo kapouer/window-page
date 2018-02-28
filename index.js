@@ -456,14 +456,18 @@ PageClass.prototype.importDocument = function(doc, noload) {
 		});
 	}
 
-	var links = queryAll(mountHead, 'link[rel="none"]')
-		.concat(queryAll(mountBody, 'link[rel="none"]'));
+	var parallels = [].concat(
+		queryAll(mountHead, 'link[rel="_stylesheet"]'),
+		queryAll(mountBody, 'link[rel="_stylesheet"]')
+	);
 
-	var scripts = queryAll(mountHead, 'script[type="none"]')
-		.concat(queryAll(mountBody, 'script[type="none"]'));
+	var serials = [].concat(
+		queryAll(mountHead, 'script[type="none"],link[rel="_import"]'),
+		queryAll(mountBody, 'script[type="none"],link[rel="_import"]'),
+	);
 
 	// links can be loaded all at once
-	return Promise.all(links.map(loadNode)).then(function() {
+	return Promise.all(parallels.map(loadNode)).then(function() {
 		// replace document
 		var root = document.documentElement;
 		while (root.attributes.length > 0) {
@@ -478,7 +482,7 @@ PageClass.prototype.importDocument = function(doc, noload) {
 
 		// scripts must be run in order
 		var p = Promise.resolve();
-		scripts.forEach(function(node) {
+		serials.forEach(function(node) {
 			p = p.then(function() {
 				return loadNode(node);
 			});
