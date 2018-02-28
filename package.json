@@ -1,6 +1,6 @@
 {
   "name": "window-page",
-  "version": "2.0.0-alpha.3",
+  "version": "2.0.0-alpha.4",
   "description": "Route, setup, and build web pages",
   "main": "index.js",
   "scripts": {
