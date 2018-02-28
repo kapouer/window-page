@@ -5,6 +5,7 @@ var INIT = 0;
 var IMPORTED = 1;
 var BUILT = 2;
 var SETUP = 3;
+var CLOSING = 4;
 
 var urlHelper = document.createElement('a');
 
@@ -162,6 +163,7 @@ PageClass.prototype.run = function(state) {
 			state.stage = INIT;
 		}
 		if (state.stage == INIT) {
+			if (curState.stage == SETUP) self.stage(CLOSING);
 			self.emit("pageinit", state);
 			return Promise.resolve().then(function() {
 				if (curState.pathname == state.pathname) return; // nothing to do

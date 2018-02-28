@@ -90,7 +90,7 @@ Page.setup(function(state) {
 API
 ---
 
-### stage serialization, root node
+### stages and root node
 
 The current construction stage of a document is saved into the first node having
 a `data-page-stage` attribute, and defaults to documentElement if none is found.
@@ -101,6 +101,14 @@ The root node can be different after route chain imports a document.
 
 If one needs to export a part of the document, that part should carry that
 attribute, to ensure Page will be able to resume loading at the correct stage.
+
+There are five stages:
+
+- 0: init
+- 1: imported
+- 2: built
+- 3: setup
+- 4: closing
 
 
 ### state object
