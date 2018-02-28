@@ -355,12 +355,10 @@ PageClass.prototype.importDocument = function(doc, noload) {
 	// document to be imported will have some nodes with custom props
 	// and before it is actually imported these props are removed
 	var states = {};
-	queryAll(document, 'script,link[rel="stylesheet"],link[rel="import"]').forEach(function(node) {
+	queryAll(document, 'script,link[rel="import"]').forEach(function(node) {
 		var src = node.src || node.href;
 		if (src) states[src] = true;
 	});
-
-	var nodes = queryAll(doc, 'script,link[rel="stylesheet"],link[rel="import"]');
 
 	// if there is no HTMLImports support, some loaded script might contain
 	// the HTMLImports polyfill itself, which will load imports however it likes
@@ -369,25 +367,19 @@ PageClass.prototype.importDocument = function(doc, noload) {
 	// imports nor does it let them run on insert
 	// if there is native support then it's like other resources.
 
-	// first make sure nodes won't load when inserted into live document
-	nodes.map(function(node) {
+	var nodes = queryAll(doc, 'script,link[rel="import"]');
+
+	nodes.forEach(function(node) {
 		// just preload everything
 		if (node.nodeName == "SCRIPT") {
-			node._type = node.getAttribute('type');
 			node.setAttribute('type', "none");
-		} else if (node.nodeName == "LINK" && (node.rel == "stylesheet" || node.rel == "import")) {
-			node.setAttribute('rel', '_' + node.rel);
-			node._href = node.getAttribute('href');
-			node.removeAttribute('href');
+		} else if (node.nodeName == "LINK") {
+			var rel = node.getAttribute('rel');
+			node.setAttribute('rel', 'none');
+			if (!node.import) return; // polyfill already do preloading
 		}
-	});
-
-	// preload scripts and imports
-	nodes.forEach(function(node) {
-		var src = node.src || node._href;
+		var src = node.src || node.href;
 		if (!src) return;
-		// not imports if there is no native support because polyfill already do preloading
-		if (node.nodeName == "LINK" && node.rel == "_import" && !node.import) return;
 		if (noload) states[src] = true;
 		if (states[src] === true) return;
 		// not data-uri
@@ -395,7 +387,7 @@ PageClass.prototype.importDocument = function(doc, noload) {
 		states[src] = pGet(src).then(function() {
 			debug("preloaded", src);
 		}).catch(function(err) {
-			debug("error preloading", src, err);
+			console.error("error preloading", src, err);
 		});
 	});
 
@@ -416,16 +408,10 @@ PageClass.prototype.importDocument = function(doc, noload) {
 				parent.insertBefore(cursor, node);
 				parent.removeChild(node);
 			}
-			if (node.nodeName == "LINK" && node.rel) {
-				node.setAttribute('rel', node.rel.substring(1));
-				if (node._href) {
-					node.setAttribute('href', node._href);
-					delete node._href;
-				}
-			}
-			if (node.nodeName == "SCRIPT" && node.type) {
-				if (node._type) node.setAttribute('type', node._type);
-				else node.removeAttribute('type');
+			if (node.nodeName == "LINK") {
+				node.setAttribute('rel', 'import');
+			} else if (node.nodeName == "SCRIPT") {
+				node.removeAttribute('type');
 			}
 			if (old) return;
 			var copy = document.createElement(node.nodeName);
@@ -433,36 +419,38 @@ PageClass.prototype.importDocument = function(doc, noload) {
 				copy.setAttribute(node.attributes[i].name, node.attributes[i].value);
 			}
 			if (node.textContent) copy.textContent = node.textContent;
-			var p;
+			var rp;
 			if (src) {
 				debug("async node loading", src);
-				if (node.nodeName == "LINK" && node.rel == "import" && !node.import) {
+				if (node.nodeName == "LINK" && !node.import) {
 					debug("not loading import", src);
 				} else {
-					p = readyNode(copy);
+					rp = readyNode(copy);
 				}
 			} else {
 				debug("inline node loading");
-				p = new Promise(function(resolve) {
+				rp = new Promise(function(resolve) {
 					setTimeout(resolve);
 				});
 			}
 			parent.insertBefore(copy, cursor);
 			parent.removeChild(cursor);
-			if (p) return p;
+			if (rp) return rp;
 		});
 	}
 
 	var docRoot = document.adoptNode(doc.documentElement);
 
-	var parallels = queryAll(docRoot, 'link[rel="_stylesheet"]');
+	var parallelsDone = Promise.all(
+		queryAll(docRoot, 'link[rel="stylesheet"]').map(readyNode)
+	);
+	var serials = queryAll(docRoot, 'script[type="none"],link[rel="none"]');
 
-	var serials = queryAll(docRoot, 'script[type="none"],link[rel="_import"]');
-
-	// links can be loaded all at once
-	return Promise.all(parallels.map(loadNode)).then(function() {
+	return Promise.resolve().then(function() {
 		return this.insertDocument(docRoot);
 	}.bind(this)).then(function() {
+		return parallelsDone;
+	}).then(function() {
 		this.root = document.documentElement;
 		// scripts must be run in order
 		var p = Promise.resolve();
