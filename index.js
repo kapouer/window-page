@@ -477,8 +477,7 @@ PageClass.prototype.importDocument = function(doc, noload) {
 		if (docRoot.attributes) for (var i=0; i < docRoot.attributes.length; i++) {
 			root.setAttribute(docRoot.attributes[i].name, docRoot.attributes[i].value);
 		}
-		root.replaceChild(mountHead, document.head);
-		root.replaceChild(mountBody, document.body);
+		this.docReplace(mountHead, mountBody);
 
 		// scripts must be run in order
 		var p = Promise.resolve();
@@ -488,7 +487,12 @@ PageClass.prototype.importDocument = function(doc, noload) {
 			});
 		});
 		return p;
-	});
+	}.bind(this));
+};
+
+PageClass.prototype.docReplace = function(head, body) {
+	document.documentElement.replaceChild(head, document.head);
+	document.documentElement.replaceChild(body, document.body);
 };
 
 PageClass.prototype.push = function(state) {
