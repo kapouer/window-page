@@ -49,8 +49,8 @@ PageClass.prototype.stage = function(stage) {
 	if (!root) {
 		this.root = root = document.querySelector('[data-page-stage]') || document.documentElement;
 	}
-	if (stage != null) this.root.dataset.pageStage = stage;
-	else stage = this.root.dataset.pageStage
+	if (stage != null) this.root.setAttribute('data-page-stage', stage);
+	else stage = this.root.dataset.pageStage;
 	return stage || INIT;
 };
 
