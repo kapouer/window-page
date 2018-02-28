@@ -382,9 +382,6 @@ PageClass.prototype.importDocument = function(doc, noload) {
 		}
 	});
 
-	var mountHead = document.adoptNode(doc.head);
-	var mountBody = document.adoptNode(doc.body);
-
 	// preload scripts and imports
 	nodes.forEach(function(node) {
 		var src = node.src || node._href;
@@ -456,15 +453,11 @@ PageClass.prototype.importDocument = function(doc, noload) {
 		});
 	}
 
-	var parallels = [].concat(
-		queryAll(mountHead, 'link[rel="_stylesheet"]'),
-		queryAll(mountBody, 'link[rel="_stylesheet"]')
-	);
+	var docRoot = document.adoptNode(doc.documentElement);
 
-	var serials = [].concat(
-		queryAll(mountHead, 'script[type="none"],link[rel="_import"]'),
-		queryAll(mountBody, 'script[type="none"],link[rel="_import"]'),
-	);
+	var parallels = queryAll(docRoot, 'link[rel="_stylesheet"]');
+
+	var serials = queryAll(docRoot, 'script[type="none"],link[rel="_import"]');
 
 	// links can be loaded all at once
 	return Promise.all(parallels.map(loadNode)).then(function() {
@@ -473,11 +466,10 @@ PageClass.prototype.importDocument = function(doc, noload) {
 		while (root.attributes.length > 0) {
 			root.removeAttribute(root.attributes[0].name);
 		}
-		var docRoot = doc.documentElement;
 		if (docRoot.attributes) for (var i=0; i < docRoot.attributes.length; i++) {
 			root.setAttribute(docRoot.attributes[i].name, docRoot.attributes[i].value);
 		}
-		this.docReplace(mountHead, mountBody);
+		this.docReplace(docRoot);
 
 		// scripts must be run in order
 		var p = Promise.resolve();
@@ -490,9 +482,9 @@ PageClass.prototype.importDocument = function(doc, noload) {
 	}.bind(this));
 };
 
-PageClass.prototype.docReplace = function(head, body) {
-	document.documentElement.replaceChild(head, document.head);
-	document.documentElement.replaceChild(body, document.body);
+PageClass.prototype.docReplace = function(doc) {
+	document.documentElement.replaceChild(doc.querySelector('head'), document.head);
+	document.documentElement.replaceChild(doc.querySelector('body'), document.body);
 };
 
 PageClass.prototype.push = function(state) {
