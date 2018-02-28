@@ -175,11 +175,14 @@ PageClass.prototype.run = function(state) {
 	}
 	this.queue = this.waitReady().then(function() {
 		state.initialStage = state.stage = self.stage();
+		var curState = self.state || self.parse();
+		if (!self.sameDomain(curState, state)) {
+			throw new Error("Cannot route to a different domain:\n" + url);
+		}
+		if (curState.pathname != state.pathname) {
+			state.stage = INIT;
+		}
 		if (state.stage == INIT) {
-			var curState = self.state || self.parse();
-			if (!self.sameDomain(curState, state)) {
-				throw new Error("Cannot route to a different domain:\n" + url);
-			}
 			self.emit("pageinit", state);
 			return Promise.resolve().then(function() {
 				if (curState.pathname == state.pathname) return; // nothing to do
