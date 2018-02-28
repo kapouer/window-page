@@ -461,15 +461,7 @@ PageClass.prototype.importDocument = function(doc, noload) {
 
 	// links can be loaded all at once
 	return Promise.all(parallels.map(loadNode)).then(function() {
-		// replace document
-		var root = document.documentElement;
-		while (root.attributes.length > 0) {
-			root.removeAttribute(root.attributes[0].name);
-		}
-		if (docRoot.attributes) for (var i=0; i < docRoot.attributes.length; i++) {
-			root.setAttribute(docRoot.attributes[i].name, docRoot.attributes[i].value);
-		}
-	}).then(function() {
+		this.root = docRoot;
 		return this.insertDocument(docRoot);
 	}.bind(this)).then(function() {
 		// scripts must be run in order
@@ -483,9 +475,8 @@ PageClass.prototype.importDocument = function(doc, noload) {
 	}.bind(this));
 };
 
-PageClass.prototype.insertDocument = function(doc) {
-	document.documentElement.replaceChild(doc.querySelector('head'), document.head);
-	document.documentElement.replaceChild(doc.querySelector('body'), document.body);
+PageClass.prototype.insertDocument = function(docRoot) {
+	document.replaceChild(docRoot, document.documentElement);
 };
 
 PageClass.prototype.push = function(state) {
