@@ -382,18 +382,9 @@ PageClass.prototype.importDocument = function(doc, noload) {
 			node.removeAttribute('href');
 		}
 	});
-	// then import
-	var root = document.documentElement;
-	while (root.attributes.length > 0) {
-		root.removeAttribute(root.attributes[0].name);
-	}
-	var docRoot = doc.documentElement;
-	if (docRoot.attributes) for (var i=0; i < docRoot.attributes.length; i++) {
-		root.setAttribute(docRoot.attributes[i].name, docRoot.attributes[i].value);
-	}
 
-	root.replaceChild(document.adoptNode(doc.head), document.head);
-	root.replaceChild(document.adoptNode(doc.body), document.body);
+	var mountHead = document.adoptNode(doc.head);
+	var mountBody = document.adoptNode(doc.body);
 
 	// load all
 	nodes.forEach(function(node) {
@@ -412,16 +403,16 @@ PageClass.prototype.importDocument = function(doc, noload) {
 		});
 	});
 
-	var chain = Promise.resolve();
-	queryAll(document, 'script[type="none"],link[rel="none"]').forEach(function(node) {
+	function loadNode(node) {
+		var p = Promise.resolve();
 		var src = node.src || node.href;
 		var state = states[src];
 		var old = state === true;
 		var loader = !old && state;
 		if (loader) {
-			chain = chain.then(loader);
+			p = p.then(loader);
 		}
-		chain = chain.then(function() {
+		return p.then(function() {
 			var parent = node.parentNode;
 			var cursor;
 			if (!old) {
@@ -456,8 +447,37 @@ PageClass.prototype.importDocument = function(doc, noload) {
 			parent.removeChild(cursor);
 			if (p) return p;
 		});
+	}
+
+	var links = queryAll(mountHead, 'link[rel="none"]')
+		.concat(queryAll(mountBody, 'link[rel="none"]'));
+
+	var scripts = queryAll(mountHead, 'script[type="none"]')
+		.concat(queryAll(mountBody, 'script[type="none"]'));
+
+	// links can be loaded all at once
+	return Promise.all(links.map(loadNode)).then(function() {
+		// replace document
+		var root = document.documentElement;
+		while (root.attributes.length > 0) {
+			root.removeAttribute(root.attributes[0].name);
+		}
+		var docRoot = doc.documentElement;
+		if (docRoot.attributes) for (var i=0; i < docRoot.attributes.length; i++) {
+			root.setAttribute(docRoot.attributes[i].name, docRoot.attributes[i].value);
+		}
+		root.replaceChild(mountHead, document.head);
+		root.replaceChild(mountBody, document.body);
+
+		// scripts must be run in order
+		var p = Promise.resolve();
+		scripts.forEach(function(node) {
+			p = p.then(function() {
+				return loadNode(node);
+			});
+		});
+		return p;
 	});
-	return chain;
 };
 
 PageClass.prototype.push = function(state) {
