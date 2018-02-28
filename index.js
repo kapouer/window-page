@@ -469,8 +469,9 @@ PageClass.prototype.importDocument = function(doc, noload) {
 		if (docRoot.attributes) for (var i=0; i < docRoot.attributes.length; i++) {
 			root.setAttribute(docRoot.attributes[i].name, docRoot.attributes[i].value);
 		}
-		this.docReplace(docRoot);
-
+	}).then(function() {
+		return this.insertDocument(docRoot);
+	}.bind(this)).then(function() {
 		// scripts must be run in order
 		var p = Promise.resolve();
 		serials.forEach(function(node) {
@@ -482,7 +483,7 @@ PageClass.prototype.importDocument = function(doc, noload) {
 	}.bind(this));
 };
 
-PageClass.prototype.docReplace = function(doc) {
+PageClass.prototype.insertDocument = function(doc) {
 	document.documentElement.replaceChild(doc.querySelector('head'), document.head);
 	document.documentElement.replaceChild(doc.querySelector('body'), document.body);
 };
