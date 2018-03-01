@@ -1,1 +1,1 @@
-../../../node_modules/url-polyfill/url.js
+../../../node_modules/url-polyfill/url-polyfill.js

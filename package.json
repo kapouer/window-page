@@ -39,7 +39,7 @@
     "promise-polyfill": "^6.0.2",
     "request": "^2.79.0",
     "selenium-webdriver": "^3.0.1",
-    "url-polyfill": "github:webcomponents/URL",
+    "url-polyfill": "^1.0.11",
     "webcomponents.js": "^0.7.23",
     "webkitgtk": "^4.8.1",
     "window-agent": "^1.0.1"
