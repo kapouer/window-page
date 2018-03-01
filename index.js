@@ -182,7 +182,6 @@ PageClass.prototype.run = function(state) {
 		}
 	}).then(function() {
 		if (state.stage >= IMPORTED || !state.document) return;
-		self.reset();
 		return self.importDocument(state.document).then(function() {
 			debug("importDocument done");
 			delete state.document;
@@ -229,12 +228,25 @@ PageClass.prototype.run = function(state) {
 	return this.queue;
 };
 
-PageClass.prototype.reset = function() {
-	this.chains = {
+PageClass.prototype.reset = function(map) {
+	// all thenables coming from a src in map are removed
+	if (!map) map = {};
+	function filterBy(obj) {
+		if (!obj.src) return false;
+		if (map[obj.src]) return false;
+		return true;
+	}
+	var chains = this.chains || {
 		route: {thenables: []},
 		build: {thenables: []},
 		patch: {thenables: []},
 		setup: {thenables: []}
+	};
+	this.chains = {
+		route: {thenables: chains.route.thenables.filter(filterBy)},
+		build: {thenables: chains.build.thenables.filter(filterBy)},
+		patch: {thenables: chains.patch.thenables.filter(filterBy)},
+		setup: {thenables: chains.setup.thenables.filter(filterBy)}
 	};
 };
 
@@ -249,8 +261,14 @@ PageClass.prototype.runChain = function(name, state) {
 };
 
 PageClass.prototype.chainThenable = function(name, fn) {
+	var src = document.currentScript;
+	if (src) src = src.src;
 	var chain = this.chains[name];
-	chain.thenables.push(fn);
+	var obj = {
+		fn: fn,
+		src: src
+	};
+	chain.thenables.push(obj);
 	if (chain.promise) {
 		chain.promise = this.oneFn(chain.promise, name, fn);
 	}
@@ -275,8 +293,8 @@ PageClass.prototype.oneFn = function(p, name, fn) {
 PageClass.prototype.allFn = function(state, name, list) {
 	var p = Promise.resolve(state);
 	var self = this;
-	list.forEach(function(fn) {
-		p = self.oneFn(p, name, fn);
+	list.forEach(function(obj) {
+		p = self.oneFn(p, name, obj.fn);
 	});
 	return p;
 };
@@ -350,14 +368,15 @@ PageClass.prototype.waitReady = function() {
 	return p.then(this.waitImports);
 };
 
-PageClass.prototype.importDocument = function(doc, noload) {
+PageClass.prototype.importDocument = function(doc) {
 	if (doc == document) return Promise.resolve();
 	// document to be imported will have some nodes with custom props
 	// and before it is actually imported these props are removed
 	var states = {};
+	var knowns = {};
 	queryAll(document, 'script,link[rel="import"]').forEach(function(node) {
 		var src = node.src || node.href;
-		if (src) states[src] = true;
+		if (src) knowns[src] = states[src] = true;
 	});
 
 	// if there is no HTMLImports support, some loaded script might contain
@@ -380,7 +399,7 @@ PageClass.prototype.importDocument = function(doc, noload) {
 		}
 		var src = node.src || node.href;
 		if (!src) return;
-		if (noload) states[src] = true;
+		delete knowns[src];
 		if (states[src] === true) return;
 		// not data-uri
 		if (src.slice(0, 5) == 'data:') return;
@@ -390,6 +409,8 @@ PageClass.prototype.importDocument = function(doc, noload) {
 			console.error("error preloading", src, err);
 		});
 	});
+
+	this.reset(knowns);
 
 	function loadNode(node) {
 		var p = Promise.resolve();
