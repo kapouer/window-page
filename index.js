@@ -442,16 +442,21 @@ PageClass.prototype.importDocument = function(doc, noload) {
 	var docRoot = document.adoptNode(doc.documentElement);
 
 	var parallelsDone = Promise.all(
-		queryAll(docRoot, 'link[rel="stylesheet"]').map(readyNode)
+		queryAll(docRoot.querySelector('head'), 'link[rel="stylesheet"]').map(readyNode)
 	);
 	var serials = queryAll(docRoot, 'script[type="none"],link[rel="none"]');
 
+	var body = docRoot.querySelector('body');
+	var emptyBody = document.createElement('body');
+	docRoot.replaceChild(emptyBody, body);
+
 	return Promise.resolve().then(function() {
-		return this.insertDocument(docRoot);
-	}.bind(this)).then(function() {
-		return parallelsDone;
-	}).then(function() {
+		this.insertDocument(docRoot);
 		this.root = document.documentElement;
+		return parallelsDone;
+	}.bind(this)).then(function() {
+		return this.insertBody(body);
+	}.bind(this)).then(function() {
 		// scripts must be run in order
 		var p = Promise.resolve();
 		serials.forEach(function(node) {
@@ -465,6 +470,10 @@ PageClass.prototype.importDocument = function(doc, noload) {
 
 PageClass.prototype.insertDocument = function(docRoot) {
 	document.replaceChild(docRoot, document.documentElement);
+};
+
+PageClass.prototype.insertBody = function(body) {
+	document.documentElement.replaceChild(body, document.body);
 };
 
 PageClass.prototype.push = function(state) {
