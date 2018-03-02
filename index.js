@@ -406,7 +406,7 @@ PageClass.prototype.importDocument = function(doc) {
 		states[src] = pGet(src).then(function() {
 			debug("preloaded", src);
 		}).catch(function(err) {
-			console.error("error preloading", src, err);
+			if (err) console.error("error preloading", src, err);
 		});
 	});
 
