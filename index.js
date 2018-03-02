@@ -170,9 +170,8 @@ PageClass.prototype.run = function(state) {
 				if (self.chains.route.thenables.length == 0) {
 					return pGet(url).then(function(html) {
 						var doc = document.cloneNode(false);
-						doc.open();
-						doc.write(html);
-						doc.close();
+						if (!doc.documentElement) doc.appendChild(doc.createElement('html'));
+						doc.documentElement.innerHTML = html;
 						state.document = doc;
 					});
 				}
