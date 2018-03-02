@@ -460,20 +460,27 @@ PageClass.prototype.importDocument = function(doc) {
 		});
 	}
 
-	var docRoot = document.adoptNode(doc.documentElement);
+	var nroot = document.adoptNode(doc.documentElement);
+	var head = nroot.querySelector('head');
+	var body = nroot.querySelector('body');
+
+	var root = document.documentElement;
+	var atts = nroot.attributes;
+	for (var i=0; i < atts.length; i++) {
+		root.setAttribute(atts[i].name, atts[i].value);
+	}
+	atts = Array.prototype.slice.call(root.attributes);
+	for (var i=0; i < atts.length; i++) {
+		if (!nroot.hasAttribute(atts[i].name)) nroot.removeAttribute(atts[i].name);
+	}
 
 	var parallelsDone = Promise.all(
-		queryAll(docRoot.querySelector('head'), 'link[rel="stylesheet"]').map(readyNode)
+		queryAll(head, 'link[rel="stylesheet"]').map(readyNode)
 	);
-	var serials = queryAll(docRoot, 'script[type="none"],link[rel="none"]');
-
-	var body = docRoot.querySelector('body');
-	var emptyBody = document.createElement('body');
-	docRoot.replaceChild(emptyBody, body);
+	var serials = queryAll(nroot, 'script[type="none"],link[rel="none"]');
 
 	return Promise.resolve().then(function() {
-		this.insertDocument(docRoot);
-		this.root = document.documentElement;
+		this.insertHead(head);
 		return parallelsDone;
 	}.bind(this)).then(function() {
 		return this.insertBody(body);
@@ -489,8 +496,8 @@ PageClass.prototype.importDocument = function(doc) {
 	}.bind(this));
 };
 
-PageClass.prototype.insertDocument = function(docRoot) {
-	document.replaceChild(docRoot, document.documentElement);
+PageClass.prototype.insertHead = function(head) {
+	document.documentElement.replaceChild(head, document.head);
 };
 
 PageClass.prototype.insertBody = function(body) {
