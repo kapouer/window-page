@@ -176,6 +176,7 @@ PageClass.prototype.run = function(state) {
 					});
 				}
 			}).then(function() {
+				self.stage(INIT);
 				return self.runChain('route', state);
 			});
 		}
