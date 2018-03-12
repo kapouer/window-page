@@ -50,8 +50,8 @@ PageClass.prototype.stage = function(stage) {
 		this.root = root = document.querySelector('[data-page-stage]') || document.documentElement;
 	}
 	if (stage != null) this.root.setAttribute('data-page-stage', stage);
-	else stage = this.root.dataset.pageStage;
-	return stage || INIT;
+	else stage = parseInt(this.root.dataset.pageStage);
+	return isNaN(stage) ? INIT : stage;
 };
 
 PageClass.prototype.parse = function(str) {
