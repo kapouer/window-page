@@ -478,19 +478,20 @@ PageClass.prototype.importDocument = function(doc) {
 		queryAll(head, 'link[rel="stylesheet"]').map(readyNode)
 	);
 	var serials = queryAll(nroot, 'script[type="none"],link[rel="none"]');
+	var me = this;
 
 	return Promise.resolve().then(function() {
-		this.insertHead(head);
+		me.insertHead(head);
 		return parallelsDone;
-	}.bind(this)).then(function() {
+	}).then(function() {
 		return Promise.resolve().then(function() {
-			return this.insertBody(body);
+			return me.insertBody(body);
 		}).then(function(body) {
 			if (body && body.nodeName == "BODY") {
 				document.documentElement.replaceChild(body, document.body);
 			}
 		});
-	}.bind(this)).then(function() {
+	}).then(function() {
 		// scripts must be run in order
 		var p = Promise.resolve();
 		serials.forEach(function(node) {
@@ -499,7 +500,7 @@ PageClass.prototype.importDocument = function(doc) {
 			});
 		});
 		return p;
-	}.bind(this));
+	});
 };
 
 PageClass.prototype.insertHead = function(head) {
