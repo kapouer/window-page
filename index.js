@@ -483,7 +483,13 @@ PageClass.prototype.importDocument = function(doc) {
 		this.insertHead(head);
 		return parallelsDone;
 	}.bind(this)).then(function() {
-		return this.insertBody(body);
+		return Promise.resolve().then(function() {
+			return this.insertBody(body);
+		}).then(function(body) {
+			if (body && body.nodeName == "BODY") {
+				document.documentElement.replaceChild(body, document.body);
+			}
+		});
 	}.bind(this)).then(function() {
 		// scripts must be run in order
 		var p = Promise.resolve();
@@ -501,7 +507,7 @@ PageClass.prototype.insertHead = function(head) {
 };
 
 PageClass.prototype.insertBody = function(body) {
-	document.documentElement.replaceChild(body, document.body);
+	return body;
 };
 
 PageClass.prototype.push = function(state) {
