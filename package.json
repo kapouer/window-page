@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "mocha",
-    "prepublish": "browserify-lite $PWD/index.js --outfile $PWD/window-page.js"
+    "prepare": "browserify-lite $PWD/index.js --outfile $PWD/window-page.js"
   },
   "files": [
     "window-page.js"
