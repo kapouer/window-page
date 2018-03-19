@@ -15,7 +15,6 @@ function PageClass() {
 	this.window = window;
 	this.debug = false;
 	this.listeners = [];
-	this.trackListeners(document.body);
 	this.reset();
 
 	this.route = this.chainThenable.bind(this, "route");
@@ -36,11 +35,17 @@ function PageClass() {
 }
 
 PageClass.prototype.trackListeners = function(node) {
-	var fn = node.addEventListener;
+	var meth = node.addEventListener;
+
 	var list = this.listeners;
-	node.addEventListener = function(evt, fn, opts) {
+	if (list) list.forEach(function(obj) {
+		obj.node.removeEventListener(obj.evt, obj.fn, obj.opts);
+	});
+	list = this.listeners = [];
+
+	if (meth == Node.prototype.addEventListener) node.addEventListener = function(evt, fn, opts) {
 		list.push({node: node, evt: evt, fn: fn, opts: opts});
-		return fn.call(node, evt, fn, opts);
+		return meth.call(node, evt, fn, opts);
 	};
 };
 
@@ -168,6 +173,7 @@ PageClass.prototype.run = function(state) {
 	}
 	var curState;
 	this.queue = this.waitReady().then(function() {
+		self.trackListeners(document.body);
 		state.initialStage = state.stage = self.stage();
 		curState = self.state || self.parse();
 		if (!self.sameDomain(curState, state)) {
@@ -246,10 +252,6 @@ PageClass.prototype.run = function(state) {
 };
 
 PageClass.prototype.reset = function(map) {
-	this.listeners.forEach(function(obj) {
-		obj.node.removeEventListener(obj.evt, obj.fn, obj.opts);
-	});
-	this.listeners = [];
 	// all thenables coming from a src in map are removed
 	if (!map) map = {};
 	function filterBy(obj) {
@@ -521,9 +523,6 @@ PageClass.prototype.importDocument = function(doc) {
 		}).then(function(body) {
 			if (body && body.nodeName == "BODY") {
 				document.documentElement.replaceChild(body, document.body);
-			}
-			if (curBody != document.body) {
-				me.trackListeners(document.body);
 			}
 		});
 	}).then(function() {
