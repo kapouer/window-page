@@ -32,6 +32,7 @@
     "express": "^4.14.0",
     "express-dom": "^5.9.3",
     "gport": "^1.1.0",
+    "levenlistdiff": "^1.0.1",
     "mocha": "^3.2.0",
     "promise-polyfill": "^6.0.2",
     "query-string": "^5.1.0",

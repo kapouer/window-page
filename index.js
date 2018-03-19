@@ -1,5 +1,6 @@
 (function() {
 var QueryString = require('query-string');
+var Diff = require('levenlistdiff');
 
 var INIT = 0;
 var IMPORTED = 1;
@@ -474,18 +475,25 @@ PageClass.prototype.importDocument = function(doc) {
 		if (!nroot.hasAttribute(atts[i].name)) nroot.removeAttribute(atts[i].name);
 	}
 
+	var knownSheets = {};
+	queryAll(document.head, 'link[rel="stylesheet"]').forEach(function(node) {
+		knownSheets[node.href] = true;
+	});
+
 	var parallelsDone = Promise.all(
-		queryAll(head, 'link[rel="stylesheet"]').map(readyNode)
+		queryAll(head, 'link[rel="stylesheet"]').filter(function(node) {
+			return !knownSheets[node.href];
+		}).map(readyNode)
 	);
 	var serials = queryAll(nroot, 'script[type="none"],link[rel="none"]');
 	var me = this;
 
 	return Promise.resolve().then(function() {
-		me.insertHead(head);
+		me.updateHead(head);
 		return parallelsDone;
 	}).then(function() {
 		return Promise.resolve().then(function() {
-			return me.insertBody(body);
+			return me.updateBody(body);
 		}).then(function(body) {
 			if (body && body.nodeName == "BODY") {
 				document.documentElement.replaceChild(body, document.body);
@@ -503,12 +511,55 @@ PageClass.prototype.importDocument = function(doc) {
 	});
 };
 
-PageClass.prototype.insertHead = function(head) {
-	document.documentElement.replaceChild(head, document.head);
+PageClass.prototype.updateHead = function(head) {
+	this.updateAttributes(document.head, head);
+	this.updateChildren(document.head, head);
 };
 
-PageClass.prototype.insertBody = function(body) {
+PageClass.prototype.updateBody = function(body) {
 	return body;
+};
+
+PageClass.prototype.updateAttributes = function(from, to) {
+	var attFrom = from.attributes;
+	var attTo = to.attributes;
+	Diff(attFrom, attTo, function(att) {
+		return att.name + "_" + att.value;
+	}).forEach(function(patch) {
+		switch (patch.type) {
+			case Diff.INSERTION:
+				if (patch.item.value) from.setAttribute(patch.item.name, patch.item.value);
+			break;
+			case Diff.SUBSTITUTION:
+				if (patch.item.value) from.setAttribute(patch.item.name, patch.item.value);
+				else from.removeAttribute(patch.item.name);
+			break;
+			case Diff.DELETION:
+				from.removeAttribute(attFrom[patch.index].name);
+			break;
+		}
+	});
+};
+
+PageClass.prototype.updateChildren = function(from, to) {
+	Diff(from.children, to.children, function(node) {
+		var key = node.src || node.href;
+		if (key) return node.nodeName + '_' + key;
+		else return node.outerHTML;
+	}).forEach(function(patch) {
+		var node = from.children[patch.index];
+		switch (patch.type) {
+			case Diff.INSERTION:
+				from.insertBefore(patch.item, node);
+			break;
+			case Diff.SUBSTITUTION:
+				from.replaceChild(patch.item, node);
+			break;
+			case Diff.DELETION:
+				node.remove();
+			break;
+		}
+	});
 };
 
 PageClass.prototype.push = function(state) {
