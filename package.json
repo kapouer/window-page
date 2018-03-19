@@ -23,9 +23,6 @@
   ],
   "author": "Jérémy Lal <kapouer@melix.org>",
   "license": "MIT",
-  "dependencies": {
-    "query-string": "^5.1.0"
-  },
   "bugs": {
     "url": "https://github.com/kapouer/window-page/issues"
   },
@@ -37,6 +34,7 @@
     "gport": "^1.1.0",
     "mocha": "^3.2.0",
     "promise-polyfill": "^6.0.2",
+    "query-string": "^5.1.0",
     "request": "^2.79.0",
     "selenium-webdriver": "^3.0.1",
     "url-polyfill": "^1.0.11",
