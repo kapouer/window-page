@@ -20,6 +20,7 @@ function PageClass() {
 	this.build = this.chainThenable.bind(this, "build");
 	this.patch = this.chainThenable.bind(this, "patch");
 	this.setup = this.chainThenable.bind(this, "setup");
+	this.close = this.chainThenable.bind(this, "close");
 	this.format = this.format.bind(this);
 	this.historyListener = this.historyListener.bind(this);
 
@@ -154,33 +155,37 @@ PageClass.prototype.run = function(state) {
 			});
 		}
 	}
+	var curState;
 	this.queue = this.waitReady().then(function() {
 		state.initialStage = state.stage = self.stage();
-		var curState = self.state || self.parse();
+		curState = self.state || self.parse();
 		if (!self.sameDomain(curState, state)) {
 			throw new Error("Cannot route to a different domain:\n" + url);
 		}
 		if (curState.pathname != state.pathname) {
 			state.stage = INIT;
 		}
-		if (state.stage == INIT) {
-			if (curState.stage == SETUP) self.stage(CLOSING);
-			self.emit("pageinit", state);
-			return Promise.resolve().then(function() {
-				if (curState.pathname == state.pathname) return; // nothing to do
-				if (self.chains.route.thenables.length == 0) {
-					return pGet(url).then(function(html) {
-						var doc = document.cloneNode(false);
-						if (!doc.documentElement) doc.appendChild(doc.createElement('html'));
-						doc.documentElement.innerHTML = html;
-						state.document = doc;
-					});
-				}
-			}).then(function() {
-				self.stage(INIT);
-				return self.runChain('route', state);
-			});
+		if (state.stage == INIT && curState.stage == SETUP) {
+			self.stage(CLOSING);
+			return self.runChain('close', curState);
 		}
+	}).then(function() {
+		if (state.stage != INIT) return;
+		self.emit("pageinit", state);
+		return Promise.resolve().then(function() {
+			if (curState.pathname == state.pathname) return; // nothing to do
+			if (self.chains.route.thenables.length == 0) {
+				return pGet(url).then(function(html) {
+					var doc = document.cloneNode(false);
+					if (!doc.documentElement) doc.appendChild(doc.createElement('html'));
+					doc.documentElement.innerHTML = html;
+					state.document = doc;
+				});
+			}
+		}).then(function() {
+			self.stage(INIT);
+			return self.runChain('route', state);
+		});
 	}).then(function() {
 		if (state.stage >= IMPORTED || !state.document) return;
 		return self.importDocument(state.document).then(function() {
@@ -241,13 +246,15 @@ PageClass.prototype.reset = function(map) {
 		route: {thenables: []},
 		build: {thenables: []},
 		patch: {thenables: []},
-		setup: {thenables: []}
+		setup: {thenables: []},
+		close: {thenables: []}
 	};
 	this.chains = {
 		route: {thenables: chains.route.thenables.filter(filterBy)},
 		build: {thenables: chains.build.thenables.filter(filterBy)},
 		patch: {thenables: chains.patch.thenables.filter(filterBy)},
-		setup: {thenables: chains.setup.thenables.filter(filterBy)}
+		setup: {thenables: chains.setup.thenables.filter(filterBy)},
+		close: {thenables: chains.close.thenables.filter(filterBy)}
 	};
 };
 
