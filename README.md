@@ -60,12 +60,17 @@ Usage
 ```
 // get data and document from location
 Page.route(function(state) {
-	GET(page.pathname + '.json').then(function(data) {
+	return fetch(page.pathname + '.json').then(function(res) {
+		return res.json();
+	}).then(function(data) {
 		// not mandatory property name, but a good idea to avoid future collisions
 		state.data = data;
-		return GET(data.template, {type: "document"});
-	}).then(function(doc) {
-		state.document = doc;
+		return fetch(data.template).then(function(res) {
+			return res.text();
+		});
+	}).then(function(str) {
+		state.document = document.cloneNode(false);
+		state.document.innerHTML = str;
 	});
 });
 
@@ -141,6 +146,7 @@ functions:
 * Page.build(fn)
 * Page.patch(fn)
 * Page.setup(fn)
+* Page.close(fn)
 
 The return values of the promises are ignored.
 
@@ -159,6 +165,7 @@ Page emits these window events:
 - pagebuild (after build chain)
 - pagepatch (after patch chain)
 - pagesetup (after setup chain)
+- pageclose (after close chain)
 - pageerror (in case of error during run)
 - pagehash (document hash has changed)
 
@@ -317,11 +324,13 @@ Page.build(function(state) {
 });
 
 Page.patch(function(state) {
-	GET({
+	return fetch(Page.format({
 		pathname: "/api/data",
 		query: state.query
+	})).then(function(res) {
+		return res.json();
 	}).then(function(obj) {
-		myMergeUpdate(obj);
+		return myMergeUpdate(obj);
 	});
 });
 
