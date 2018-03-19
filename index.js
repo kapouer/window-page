@@ -375,7 +375,8 @@ PageClass.prototype.importDocument = function(doc) {
 	// and before it is actually imported these props are removed
 	var states = {};
 	var knowns = {};
-	queryAll(document, 'script,link[rel="import"]').forEach(function(node) {
+	var selector = 'script:not([type]),script[type="text/javascript"],link[rel="import"]';
+	queryAll(document, selector).forEach(function(node) {
 		var src = node.src || node.href;
 		if (src) knowns[src] = states[src] = true;
 	});
@@ -387,7 +388,7 @@ PageClass.prototype.importDocument = function(doc) {
 	// imports nor does it let them run on insert
 	// if there is native support then it's like other resources.
 
-	var nodes = queryAll(doc, 'script,link[rel="import"]');
+	var nodes = queryAll(doc, selector);
 
 	nodes.forEach(function(node) {
 		// just preload everything
