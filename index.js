@@ -14,6 +14,8 @@ function PageClass() {
 	this.name = "PageClass";
 	this.window = window;
 	this.debug = false;
+	this.listeners = [];
+	this.trackListeners(document.body);
 	this.reset();
 
 	this.route = this.chainThenable.bind(this, "route");
@@ -32,6 +34,15 @@ function PageClass() {
 	var state = this.parse();
 	this.run(state);
 }
+
+PageClass.prototype.trackListeners = function(node) {
+	var fn = node.addEventListener;
+	var list = this.listeners;
+	node.addEventListener = function(evt, fn, opts) {
+		list.push({node: node, evt: evt, fn: fn, opts: opts});
+		return fn.call(node, evt, fn, opts);
+	};
+};
 
 PageClass.prototype.historyListener = function(e) {
 	var state = this.stateFrom(e.state);
@@ -235,6 +246,10 @@ PageClass.prototype.run = function(state) {
 };
 
 PageClass.prototype.reset = function(map) {
+	this.listeners.forEach(function(obj) {
+		obj.node.removeEventListener(obj.evt, obj.fn, obj.opts);
+	});
+	this.listeners = [];
 	// all thenables coming from a src in map are removed
 	if (!map) map = {};
 	function filterBy(obj) {
@@ -419,8 +434,6 @@ PageClass.prototype.importDocument = function(doc) {
 		});
 	});
 
-	this.reset(knowns);
-
 	function loadNode(node) {
 		var p = Promise.resolve();
 		var src = node.src || node.href;
@@ -473,6 +486,8 @@ PageClass.prototype.importDocument = function(doc) {
 	var head = nroot.querySelector('head');
 	var body = nroot.querySelector('body');
 
+	this.reset(knowns);
+
 	var root = document.documentElement;
 	var atts = nroot.attributes;
 	for (var i=0; i < atts.length; i++) {
@@ -495,6 +510,7 @@ PageClass.prototype.importDocument = function(doc) {
 	);
 	var serials = queryAll(nroot, 'script[type="none"],link[rel="none"]');
 	var me = this;
+	var curBody = document.body;
 
 	return Promise.resolve().then(function() {
 		me.updateHead(head);
@@ -505,6 +521,9 @@ PageClass.prototype.importDocument = function(doc) {
 		}).then(function(body) {
 			if (body && body.nodeName == "BODY") {
 				document.documentElement.replaceChild(body, document.body);
+			}
+			if (curBody != document.body) {
+				me.trackListeners(document.body);
 			}
 		});
 	}).then(function() {
