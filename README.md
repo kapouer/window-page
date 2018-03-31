@@ -53,6 +53,8 @@ ln -s node_modules/window-page/window-page.js public/js/
 then add a script tag in a web page, before the application scripts that
 use the chain methods.
 
+window-page is also a commonjs module, so it can be used with `require`.
+
 
 Usage
 -----
@@ -206,7 +208,7 @@ state (which can be different from Page.state - this is new in window-page 2).
 Order of execution of chains
 ----------------------------
 
-There are four chains (route, build, patch, setup) that accepts thenables.
+There are five chains (route, build, patch, setup, close) that accepts thenables.
 
 The first time the document is parsed into a DOM, it is in its 'initial' state,
 the second time it is 'prerendered'; meaning it has been built once, serialized,
@@ -225,6 +227,8 @@ empty, in place of the build chain in case of a document update.
 
 The setup chain is not run when prerendering.
 
+The close chain is run when Page.push/replace results in navigating to a
+new document.
 
 
 ### 1. Initial document - construction
@@ -246,6 +250,21 @@ Page.replace, or Page.push calls:
 DOM Ready on built document:
 - setup
 
+Before the setup chain is called, `document.body` is monkey-patched to be
+able to track events setup on body.
+
+This allows navigation to automatically reset events that have been added
+during setup chain.
+
+So it is strongly advised to always setup events listeners on `document.body`
+and use event delegation technique.
+
+Transitions during navigation should insted use `documentElement` to avoid
+getting their transition listeners garbage-collected.
+
+It is also possible to setup events listeners anywhere else, and it's up
+to the client code to clean them up. The `close` chain can be useful to do that.
+
 
 Application behaviors
 ---------------------
@@ -263,38 +282,6 @@ parts of the document.
 
 Since `state.data` is supposed to be set by route functions, its presence means
 the document is still being prerendered in its initial phase.
-
-
-### setup non-webcomponents elements globally
-
-If a build function inserts node elements that need some initialization function
-to be called, it has to deal with properly setting up user interface listeners.
-
-It seems to be in contradiction with the idea of using 'setup' chain to do that;
-but it is not ! The right way to handle that situation is to delegate initialization
-by dispatching events from the build function to a setup function:
-
-```
-// runs on initial document or on replaced document
-Page.build(function() {
-	$('#somenode').append('<div class="dropdown" />');
-	$(document).trigger('dropdown');
-});
-
-// runs on prerendered document
-Page.setup(function() {
-	$(document).on('dropdown', function() {
-		// initialize added dropdowns
-		$('.dropdown').dropdown();
-	});
-	// initialize prerendered dropdowns
-	$('.dropdown').dropdown();
-});
-```
-
-Webcomponents setup themselves, so that kind of separation is implied by the
-fact webcomponents are not prerendered by Page.import - they are only rendered
-so they initialize only when the document is visible to the user.
 
 
 ### Open new url
@@ -335,7 +322,8 @@ Page.patch(function(state) {
 });
 
 Page.setup(function(state) {
-	$('form').on('submit', function(e) {
+	// this listener will be garbage collected automatically when page changes
+	document.body.addEventListener('submit', function(e) {
 		e.preventDefault();
 		// push to history, triggers routers chain which in turn will call update()
 		state.query = $(this).form('get values');
