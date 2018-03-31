@@ -173,7 +173,6 @@ PageClass.prototype.run = function(state) {
 	}
 	var curState;
 	this.queue = this.waitReady().then(function() {
-		self.trackListeners(document.body);
 		state.initialStage = state.stage = self.stage();
 		curState = self.state || self.parse();
 		if (!self.sameDomain(curState, state)) {
@@ -231,6 +230,7 @@ PageClass.prototype.run = function(state) {
 			return self.runChain(self.chains.patch.thenables.length ? 'patch' : 'build', state);
 		} else return self.waitUiReady().then(function() {
 			if (state.abort) return Promise.reject("abort");
+			self.trackListeners(document.body);
 			return self.runChain('setup', state).then(function() {
 				if (state.stage < SETUP) {
 					state.stage = SETUP;
