@@ -4,7 +4,7 @@ node_js:
   - '6'
 
 before_script:
-  - npm run-script prepublish
+  - npm run-script prepare
 
 notifications:
   email: false
