@@ -35,16 +35,14 @@ function PageClass() {
 }
 
 PageClass.prototype.trackListeners = function(node) {
-	var meth = node.addEventListener;
-
-	var list = this.listeners;
-	if (list) list.forEach(function(obj) {
+	this.listeners.forEach(function(obj) {
 		obj.node.removeEventListener(obj.evt, obj.fn, obj.opts);
 	});
-	list = this.listeners = [];
-
+	this.listeners = [];
+	var me = this;
+	var meth = node.addEventListener;
 	if (meth == Node.prototype.addEventListener) node.addEventListener = function(evt, fn, opts) {
-		list.push({node: node, evt: evt, fn: fn, opts: opts});
+		me.listeners.push({node: node, evt: evt, fn: fn, opts: opts});
 		return meth.call(node, evt, fn, opts);
 	};
 };
