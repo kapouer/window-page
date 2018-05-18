@@ -189,10 +189,13 @@ PageClass.prototype.run = function(state) {
 		return Promise.resolve().then(function() {
 			if (curState.pathname == state.pathname) return; // nothing to do
 			if (self.chains.route.thenables.length == 0) {
-				return pGet(url).then(function(html) {
+				return pGet(url, 500).then(function(client) {
 					var doc = document.cloneNode(false);
 					if (!doc.documentElement) doc.appendChild(doc.createElement('html'));
-					doc.documentElement.innerHTML = html;
+					doc.documentElement.innerHTML = client.responseText;
+					if (client.status >= 400 && (!doc.documentElement.body || doc.documentElement.body.children.length == 0)) {
+						throw new Error(client.statusText);
+					}
 					state.document = doc;
 				});
 			}
@@ -427,10 +430,10 @@ PageClass.prototype.importDocument = function(doc) {
 		if (states[src] === true) return;
 		// not data-uri
 		if (src.slice(0, 5) == 'data:') return;
-		states[src] = pGet(src).then(function() {
+		states[src] = pGet(src, 400).then(function() {
 			debug("preloaded", src);
 		}).catch(function(err) {
-			if (err) console.error("error preloading", src, err);
+			debug("not preloaded", src, err);
 		});
 	});
 
@@ -651,14 +654,15 @@ function queryAll(doc, selector) {
 	return Array.prototype.slice.call(list);
 }
 
-function pGet(url) {
+function pGet(url, statusRejects) {
 	return new Promise(function(resolve, reject) {
 		var xhr = new XMLHttpRequest();
 		xhr.open("GET", url, true);
 		xhr.onreadystatechange = function() {
 			if (this.readyState != 4) return;
 			var code = this.status;
-			if (code >= 200 && code < 400) resolve(this.responseText);
+			if (!statusRejects) statusRejects = 400;
+			if (code >= 200 && code < statusRejects) resolve(this);
 			else reject(code);
 		};
 		xhr.send();
