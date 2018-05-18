@@ -193,7 +193,7 @@ PageClass.prototype.run = function(state) {
 					var doc = document.cloneNode(false);
 					if (!doc.documentElement) doc.appendChild(doc.createElement('html'));
 					doc.documentElement.innerHTML = client.responseText;
-					if (client.status >= 400 && (!doc.documentElement.body || doc.documentElement.body.children.length == 0)) {
+					if (client.status >= 400 && (!doc.body || doc.body.children.length == 0)) {
 						throw new Error(client.statusText);
 					}
 					state.document = doc;
