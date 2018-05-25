@@ -553,16 +553,25 @@ PageClass.prototype.updateAttributes = function(from, to) {
 	Diff(attFrom, attTo, function(att) {
 		return att.name + "_" + att.value;
 	}).forEach(function(patch) {
+		var att = attFrom[patch.index];
 		switch (patch.type) {
 			case Diff.INSERTION:
-				if (patch.item.value) from.setAttribute(patch.item.name, patch.item.value);
+				if (patch.item.value) {
+					from.setAttribute(patch.item.name, patch.item.value);
+				}
 			break;
 			case Diff.SUBSTITUTION:
-				if (patch.item.value) from.setAttribute(patch.item.name, patch.item.value);
-				else from.removeAttribute(patch.item.name);
+				if (att.name != patch.item.name) {
+					from.removeAttribute(att.name);
+				}
+				if (patch.item.value) {
+					from.setAttribute(patch.item.name, patch.item.value);
+				} else {
+					from.removeAttribute(patch.item.name);
+				}
 			break;
 			case Diff.DELETION:
-				from.removeAttribute(attFrom[patch.index].name);
+				from.removeAttribute(att.name);
 			break;
 		}
 	});
