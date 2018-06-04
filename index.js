@@ -79,6 +79,8 @@ PageClass.prototype.parse = function(str) {
 		query: QueryString.parse(loc.search),
 		hash: loc.hash
 	};
+	if (!obj.pathname) obj.pathname = "/";
+	else if (obj.pathname[0] != "/") obj.pathname = "/" + obj.pathname;
 	if (obj.hash && obj.hash[0] == "#") obj.hash = obj.hash.substring(1);
 
 	if (this.sameDomain(loc, dloc)) {
