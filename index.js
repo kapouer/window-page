@@ -244,7 +244,8 @@ PageClass.prototype.run = function(state) {
 	}).catch(function(err) {
 		delete state.abort;
 		if (err != "abort") {
-			console.error(err);
+			if (typeof err != "integer") console.error(err);
+			state.error = err;
 			self.emit("pageerror", state);
 		}
 	}).then(function() {
