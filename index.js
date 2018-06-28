@@ -241,15 +241,15 @@ PageClass.prototype.run = function(state) {
 				}
 			});
 		});
-	}).then(function() {
-		self.state = state;
-		self.queue = null;
 	}).catch(function(err) {
 		delete state.abort;
 		if (err != "abort") {
 			console.error(err);
 			self.emit("pageerror", state);
 		}
+	}).then(function() {
+		self.state = state;
+		self.queue = null;
 	});
 	return this.queue;
 };
