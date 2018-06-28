@@ -168,7 +168,7 @@ Page emits these window events:
 - pagepatch (after patch chain)
 - pagesetup (after setup chain)
 - pageclose (after close chain)
-- pageerror (in case of error during run)
+- pageerror (since version 3.1.0 exposes state.error)
 - pagehash (document hash has changed)
 
 Listeners receive an event object with a `state` property being the current
