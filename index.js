@@ -377,9 +377,7 @@ PageClass.prototype.waitReady = function() {
 	var p = new Promise(function(resolve) {
 		solve = resolve;
 	});
-	// https://github.com/jquery/jquery/issues/2100
-	if (document.readyState == "complete" ||
-		(document.readyState != "loading" && !document.documentElement.doScroll)) {
+	if (document.readyState == "complete") {
 		this.docReady = true;
 		setTimeout(solve);
 		return p;
