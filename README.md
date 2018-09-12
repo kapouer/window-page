@@ -183,9 +183,13 @@ state (which can be different from Page.state - this is new in window-page 2).
 * Page.state  
   the last successful state
 
-* Page.push(state or url)
+* Page.push(state or url, curState?)  
+  curState is optional, and must be given when push/replace is called before
+  current state is final.
 
-* Page.replace(state or url)
+* Page.replace(state or url, curState?)  
+  curState is optional, and must be given when push/replace is called before
+  current state is final.
 
 
 ### Tools

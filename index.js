@@ -599,34 +599,35 @@ PageClass.prototype.updateChildren = function(from, to) {
 	});
 };
 
-PageClass.prototype.push = function(state) {
-	return this.historyMethod('push', state);
+PageClass.prototype.push = function(newState, state) {
+	return this.historyMethod('push', newState, state);
 };
 
-PageClass.prototype.replace = function(state) {
-	return this.historyMethod('replace', state);
+PageClass.prototype.replace = function(newState, state) {
+	return this.historyMethod('replace', newState, state);
 };
 
-PageClass.prototype.historyMethod = function(method, obj) {
-	var url = typeof obj == "string" ? obj : this.format(obj);
+PageClass.prototype.historyMethod = function(method, newState, state) {
+	var url = typeof obj == "string" ? obj : this.format(newState);
 	var copy = this.parse(url);
-	if (!this.sameDomain(this.state, copy)) {
+	if (!state) state = this.state;
+	if (!this.sameDomain(state, copy)) {
 		if (method == "push") {
 			document.location = url;
 		} else {
 			throw new Error("Page.replace expects same domain:\n" + url);
 		}
 	}
-	if (this.state) {
-		if (this.state.data != null) copy.data = this.state.data;
-		copy.stage = this.state.stage;
+	if (state) {
+		if (state.data != null) copy.data = state.data;
+		copy.stage = state.stage;
 	}
 
 	if (this.supportsHistory && !this.initializedHistory && method == "push") {
 		// to be able to go back, the initial state must be set in history
 		this.initializedHistory = true;
 		// we want current location here
-		var to = this.stateTo(this.state);
+		var to = this.stateTo(state);
 		// ensure it calls patch or build chain
 		if (to.stage == BUILT) to.stage = SETUP;
 		to.href = this.format(this.parse(document.location.toString()));
