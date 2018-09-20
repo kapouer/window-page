@@ -608,7 +608,7 @@ PageClass.prototype.replace = function(newState, state) {
 };
 
 PageClass.prototype.historyMethod = function(method, newState, state) {
-	var url = typeof obj == "string" ? obj : this.format(newState);
+	var url = typeof newState == "string" ? newState : this.format(newState);
 	var copy = this.parse(url);
 	if (!state) state = this.state;
 	if (!this.sameDomain(state, copy)) {
