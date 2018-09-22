@@ -615,11 +615,9 @@ PageClass.prototype.historyMethod = function(method, newState, state) {
 	var copy = this.parse(url);
 	if (!state) state = this.state;
 	if (!this.sameDomain(state, copy)) {
-		if (method == "push") {
-			document.location = url;
-		} else {
-			throw new Error("Page.replace expects same domain:\n" + url);
-		}
+		if (method == "replace") console.info("Cannot replace to a different origin");
+		document.location = url;
+		return Promise.resolve();
 	}
 	if (state) {
 		if (state.data != null) copy.data = state.data;
