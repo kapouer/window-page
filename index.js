@@ -207,7 +207,7 @@ PageClass.prototype.run = function(state) {
 		});
 	}).then(function() {
 		if (state.stage >= IMPORTED || !state.document) return;
-		return self.importDocument(state.document).then(function() {
+		return self.importDocument(state.document, state).then(function() {
 			debug("importDocument done");
 			delete state.document;
 			var docStage = self.stage();
@@ -395,8 +395,11 @@ PageClass.prototype.waitReady = function() {
 	return p.then(this.waitImports);
 };
 
-PageClass.prototype.importDocument = function(doc) {
-	if (doc == document) return Promise.resolve();
+PageClass.prototype.importDocument = function(doc, state) {
+	if (!state) state = this.state;
+	if (doc == document) {
+		return Promise.resolve();
+	}
 	// document to be imported will have some nodes with custom props
 	// and before it is actually imported these props are removed
 	var states = {};
@@ -517,11 +520,11 @@ PageClass.prototype.importDocument = function(doc) {
 	var curBody = document.body;
 
 	return Promise.resolve().then(function() {
-		me.updateHead(head);
+		me.updateHead(head, state);
 		return parallelsDone;
 	}).then(function() {
 		return Promise.resolve().then(function() {
-			return me.updateBody(body);
+			return me.updateBody(body, state);
 		}).then(function(body) {
 			if (body && body.nodeName == "BODY") {
 				document.documentElement.replaceChild(body, document.body);
