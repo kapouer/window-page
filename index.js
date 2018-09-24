@@ -31,7 +31,11 @@ function PageClass() {
 	}
 
 	var state = this.parse();
-	this.run(state);
+	this.run(state).then(function() {
+		if (!this.window.history.state) {
+			this.historySave("replace", state);
+		}
+	}.bind(this));
 }
 
 PageClass.prototype.trackListeners = function(node) {
