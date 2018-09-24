@@ -51,19 +51,6 @@ PageClass.prototype.trackListeners = function(node) {
 	};
 };
 
-PageClass.prototype.historyListener = function(e) {
-	var state = this.stateFrom(e.state);
-	if (state) {
-		this.run(state);
-	} else {
-		var state = this.parse();
-		if (this.samePath(this.state, state) && this.state.hash != state.hash) {
-			this.emit("pagehash", state);
-			this.state.hash = state.hash;
-		}
-	}
-};
-
 PageClass.prototype.stage = function(stage) {
 	var root = this.root;
 	if (!root) {
@@ -620,36 +607,49 @@ PageClass.prototype.replace = function(newState, state) {
 };
 
 PageClass.prototype.historyMethod = function(method, newState, state) {
-	var url = typeof newState == "string" ? newState : this.format(newState);
+	var url;
+	if (typeof newState == "string") {
+		url = newState;
+		newState = {};
+	} else {
+		url = this.format(newState);
+	}
 	var copy = this.parse(url);
+	if (newState.data != null) copy.data = newState.data;
+	copy.stage = newState.stage;
+
 	if (!state) state = this.state;
 	if (!this.sameDomain(state, copy)) {
 		if (method == "replace") console.info("Cannot replace to a different origin");
 		document.location = url;
 		return Promise.resolve();
 	}
-	if (state) {
-		if (state.data != null) copy.data = state.data;
-		copy.stage = state.stage;
-	}
-
-	if (this.supportsHistory && !this.initializedHistory && method == "push") {
-		// to be able to go back, the initial state must be set in history
-		this.initializedHistory = true;
-		// we want current location here
-		var to = this.stateTo(state);
-		// ensure it calls patch or build chain
-		if (to.stage == BUILT) to.stage = SETUP;
-		to.href = this.format(this.parse(document.location.toString()));
-		this.window.history.replaceState(to, document.title, to.href);
-	}
 
 	return this.run(copy).then(function() {
-		var to = this.stateTo(copy);
-		if (this.supportsHistory) {
-			this.window.history[method + 'State'](to, document.title, to.href);
-		}
+		this.historySave(method, copy);
 	}.bind(this));
+};
+
+PageClass.prototype.historySave = function(method, state) {
+	if (!this.supportsHistory) return;
+	var to = this.stateTo(state);
+	if (!to.stage || to.stage == BUILT) {
+		to.stage = SETUP;
+	}
+	this.window.history[method + 'State'](to, document.title, to.href);
+};
+
+PageClass.prototype.historyListener = function(e) {
+	var state = this.stateFrom(e.state);
+	if (state) {
+		this.run(state);
+	} else {
+		var state = this.parse();
+		if (this.samePath(this.state, state) && this.state.hash != state.hash) {
+			this.emit("pagehash", state);
+			this.state.hash = state.hash;
+		}
+	}
 };
 
 PageClass.prototype.stateTo = function(state) {
