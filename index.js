@@ -402,7 +402,7 @@ PageClass.prototype.waitReady = function() {
 PageClass.prototype.importDocument = function(doc, state) {
 	if (!state) state = this.state;
 	if (doc == document) {
-		return Promise.resolve();
+		return this.updateDone();
 	}
 	// document to be imported will have some nodes with custom props
 	// and before it is actually imported these props are removed
@@ -533,6 +533,7 @@ PageClass.prototype.importDocument = function(doc, state) {
 			if (body && body.nodeName == "BODY") {
 				document.documentElement.replaceChild(body, document.body);
 			}
+			return me.updateDone(state);
 		});
 	}).then(function() {
 		// scripts must be run in order
@@ -553,6 +554,10 @@ PageClass.prototype.updateHead = function(head) {
 
 PageClass.prototype.updateBody = function(body) {
 	return body;
+};
+
+PageClass.prototype.updateDone = function(state) {
+	return Promise.resolve();
 };
 
 PageClass.prototype.updateAttributes = function(from, to) {
