@@ -63,7 +63,7 @@ PageClass.prototype.stage = function(stage) {
 PageClass.prototype.parse = function(str) {
 	var dloc = this.window.document.location;
 	var loc = urlHelper;
-	loc.href = str || "";
+	loc.href = str || "";
 	var obj = {
 		pathname: loc.pathname,
 		query: QueryString.parse(loc.search),
