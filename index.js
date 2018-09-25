@@ -234,6 +234,7 @@ PageClass.prototype.run = function(state) {
 	}).catch(function(err) {
 		delete state.abort;
 		if (err != "abort") {
+			// eslint-disable-next-line no-console
 			if (typeof err != "number") console.error(err);
 			state.error = err;
 			self.emit("pageerror", state);
@@ -295,6 +296,7 @@ PageClass.prototype.chainThenable = function(name, fn) {
 };
 
 PageClass.prototype.catcher = function(name, err, fn) {
+	// eslint-disable-next-line no-console
 	console.error("Uncaught error during", name, err, fn);
 };
 
@@ -319,17 +321,20 @@ PageClass.prototype.allFn = function(state, name, list) {
 };
 
 PageClass.prototype.waitUiReady = function() {
+	var solve;
 	if (document.visibilityState == "prerender") {
-		var solve, p = new Promise(function(resolve) { solve = resolve; });
-		function vizListener() {
-			document.removeEventListener('visibilitychange', vizListener, false);
-			solve();
-		}
+		var p = new Promise(function(resolve) {
+			solve = resolve;
+		});
 		document.addEventListener('visibilitychange', vizListener, false);
 	} else {
 		p = Promise.resolve();
 	}
 	return p;
+	function vizListener() {
+		document.removeEventListener('visibilitychange', vizListener, false);
+		solve();
+	}
 };
 
 PageClass.prototype.waitImports = function() {
@@ -359,7 +364,7 @@ PageClass.prototype.waitImports = function() {
 
 		return readyNode(link);
 	}));
-}
+};
 
 PageClass.prototype.waitReady = function() {
 	if (this.docReady) return Promise.resolve();
@@ -414,7 +419,6 @@ PageClass.prototype.importDocument = function(doc, state) {
 		if (node.nodeName == "SCRIPT") {
 			node.setAttribute('type', "none");
 		} else if (node.nodeName == "LINK") {
-			var rel = node.getAttribute('rel');
 			node.setAttribute('rel', 'none');
 			if (!node.import) return; // polyfill already do preloading
 		}
@@ -491,8 +495,8 @@ PageClass.prototype.importDocument = function(doc, state) {
 		root.setAttribute(atts[i].name, atts[i].value);
 	}
 	atts = Array.prototype.slice.call(root.attributes);
-	for (var i=0; i < atts.length; i++) {
-		if (!nroot.hasAttribute(atts[i].name)) nroot.removeAttribute(atts[i].name);
+	for (var j=0; j < atts.length; j++) {
+		if (!nroot.hasAttribute(atts[j].name)) nroot.removeAttribute(atts[j].name);
 	}
 
 	var knownSheets = {};
@@ -507,7 +511,6 @@ PageClass.prototype.importDocument = function(doc, state) {
 	);
 	var serials = queryAll(nroot, 'script[type="none"],link[rel="none"]');
 	var me = this;
-	var curBody = document.body;
 
 	return Promise.resolve().then(function() {
 		me.updateHead(head, state);
@@ -554,23 +557,23 @@ PageClass.prototype.updateAttributes = function(from, to) {
 	}).forEach(function(patch) {
 		var att = attFrom[patch.index];
 		switch (patch.type) {
-			case Diff.INSERTION:
-				if (patch.item.value) {
-					from.setAttribute(patch.item.name, patch.item.value);
-				}
+		case Diff.INSERTION:
+			if (patch.item.value) {
+				from.setAttribute(patch.item.name, patch.item.value);
+			}
 			break;
-			case Diff.SUBSTITUTION:
-				if (att.name != patch.item.name) {
-					from.removeAttribute(att.name);
-				}
-				if (patch.item.value) {
-					from.setAttribute(patch.item.name, patch.item.value);
-				} else {
-					from.removeAttribute(patch.item.name);
-				}
-			break;
-			case Diff.DELETION:
+		case Diff.SUBSTITUTION:
+			if (att.name != patch.item.name) {
 				from.removeAttribute(att.name);
+			}
+			if (patch.item.value) {
+				from.setAttribute(patch.item.name, patch.item.value);
+			} else {
+				from.removeAttribute(patch.item.name);
+			}
+			break;
+		case Diff.DELETION:
+			from.removeAttribute(att.name);
 			break;
 		}
 	});
@@ -584,14 +587,14 @@ PageClass.prototype.updateChildren = function(from, to) {
 	}).forEach(function(patch) {
 		var node = from.children[patch.index];
 		switch (patch.type) {
-			case Diff.INSERTION:
-				from.insertBefore(patch.item, node);
+		case Diff.INSERTION:
+			from.insertBefore(patch.item, node);
 			break;
-			case Diff.SUBSTITUTION:
-				from.replaceChild(patch.item, node);
+		case Diff.SUBSTITUTION:
+			from.replaceChild(patch.item, node);
 			break;
-			case Diff.DELETION:
-				node.remove();
+		case Diff.DELETION:
+			node.remove();
 			break;
 		}
 	});
@@ -619,6 +622,7 @@ PageClass.prototype.historyMethod = function(method, newState, state) {
 
 	if (!state) state = this.state;
 	if (!this.sameDomain(state, copy)) {
+		// eslint-disable-next-line no-console
 		if (method == "replace") console.info("Cannot replace to a different origin");
 		document.location = url;
 		return Promise.resolve();
@@ -643,7 +647,7 @@ PageClass.prototype.historyListener = function(e) {
 	if (state) {
 		this.run(state);
 	} else {
-		var state = this.parse();
+		state = this.parse();
 		if (this.samePath(this.state, state) && this.state.hash != state.hash) {
 			this.emit("pagehash", state);
 			this.state.hash = state.hash;
@@ -690,7 +694,7 @@ function pGet(url, statusRejects) {
 }
 
 function readyNode(node) {
-	return new Promise(function(resolve, reject) {
+	return new Promise(function(resolve) {
 		function done() {
 			node.removeEventListener('load', done);
 			node.removeEventListener('error', done);
@@ -702,6 +706,7 @@ function readyNode(node) {
 }
 
 function debug() {
+	// eslint-disable-next-line no-console
 	if (window.Page.debug) console.info.apply(console, Array.prototype.slice.call(arguments));
 }
 
