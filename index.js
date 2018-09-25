@@ -1,4 +1,3 @@
-(function() {
 var QueryString = require('query-string');
 var Diff = require('levenlistdiff');
 
@@ -717,4 +716,3 @@ PageClass.init = function() {
 
 PageClass.init();
 
-})();
