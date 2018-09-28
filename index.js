@@ -62,11 +62,16 @@ PageClass.prototype.stage = function(stage) {
 
 PageClass.prototype.parse = function(str) {
 	var dloc = this.window.document.location;
-	var loc = urlHelper;
-	loc.href = str || "";
+	var loc;
+	if (str == null || typeof str == "string") {
+		loc = urlHelper;
+		loc.href = str || "";
+	} else {
+		loc = str;
+	}
 	var obj = {
 		pathname: loc.pathname,
-		query: QueryString.parse(loc.search),
+		query: loc.query || QueryString.parse(loc.search),
 		hash: loc.hash
 	};
 	if (!obj.pathname) obj.pathname = "/";
@@ -168,6 +173,10 @@ PageClass.prototype.run = function(state) {
 		if (!self.sameDomain(curState, state)) {
 			throw new Error("Cannot route to a different domain:\n" + url);
 		}
+		var refer = self.state || document.referrer;
+		if (refer) self.referrer = self.parse(refer);
+		else self.referrer = null;
+
 		if (curState.pathname != state.pathname) {
 			state.stage = INIT;
 		}

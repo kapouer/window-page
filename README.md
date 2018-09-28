@@ -183,6 +183,11 @@ state (which can be different from Page.state - this is new in window-page 2).
 * Page.state  
   the last successful state
 
+* Page.referrer  
+  Initially a parsed `document.referrer` url object or null if no referrer was
+  found, then the previous url object.  
+  Available since version 3.3.0.
+
 * Page.push(state or url, curState?)  
   curState is optional, and must be given when push/replace is called before
   current state is final.
