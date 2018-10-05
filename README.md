@@ -196,6 +196,9 @@ state (which can be different from Page.state - this is new in window-page 2).
   curState is optional, and must be given when push/replace is called before
   current state is final.
 
+* Page.reload()  
+  reloads current page, starting from initial stage.
+
 * Page.historySave(method, state)  
   method can be `replace` or `push`.  
   Normalizes and saves state using history api.  

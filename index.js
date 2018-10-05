@@ -255,6 +255,13 @@ PageClass.prototype.run = function(state) {
 	return this.queue;
 };
 
+PageClass.prototype.reload = function() {
+	var state = this.state;
+	this.state = {stage: state.stage};
+	state.stage = state.initialStage;
+	return this.run(state);
+};
+
 PageClass.prototype.reset = function(map) {
 	// all thenables coming from a src in map are removed
 	if (!map) map = {};
