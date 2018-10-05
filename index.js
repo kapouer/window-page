@@ -278,7 +278,7 @@ PageClass.prototype.reset = function(map) {
 		close: {thenables: []}
 	};
 	this.chains = {
-		route: {thenables: chains.route.thenables.filter(filterBy)},
+		route: {thenables: chains.route.thenables.slice()},
 		build: {thenables: chains.build.thenables.filter(filterBy)},
 		patch: {thenables: chains.patch.thenables.filter(filterBy)},
 		setup: {thenables: chains.setup.thenables.filter(filterBy)},
