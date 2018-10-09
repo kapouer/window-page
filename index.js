@@ -95,7 +95,8 @@ PageClass.prototype.parse = function(str) {
 
 PageClass.prototype.format = function(obj) {
 	var dloc = this.window.document.location;
-	obj = Object.assign({}, obj);
+	if (typeof obj == "string") obj = this.parse(obj);
+	else obj = Object.assign({}, obj);
 	if (obj.path) {
 		var parsedPath = this.parse(obj.path);
 		obj.pathname = parsedPath.pathname;
@@ -103,8 +104,10 @@ PageClass.prototype.format = function(obj) {
 		obj.hash = parsedPath.hash;
 		delete obj.path;
 	}
-	var search = QueryString.stringify(obj.query || {});
-	obj.search = search || "";
+	var qstr;
+	if (obj.query) qstr = QueryString.stringify(obj.query);
+	else if (obj.search) qstr = obj.search[0] == "?" ? obj.search.substring(1) : obj.search;
+	obj.search = qstr;
 
 	var keys = ["pathname", "search", "hash"];
 	var relative = !obj.protocol && !obj.hostname && !obj.port;
@@ -118,7 +121,7 @@ PageClass.prototype.format = function(obj) {
 	}
 
 	var str = obj.pathname || "";
-	if (search) str += '?' + search;
+	if (qstr) str += '?' + qstr;
 	if (obj.hash) str += '#' + obj.hash;
 	if (!relative) {
 		var port = (obj.port && obj.port != 80) ? ":" + obj.port : "";
