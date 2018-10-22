@@ -356,35 +356,6 @@ PageClass.prototype.waitUiReady = function() {
 	}
 };
 
-PageClass.prototype.waitImports = function() {
-	var imports = queryAll(document, 'link[rel="import"]');
-	var polyfill = window.HTMLImports;
-	var whenReady = (function() {
-		var promise;
-		return function() {
-			if (!promise) promise = new Promise(function(resolve) {
-				polyfill.whenReady(function() {
-					setTimeout(resolve);
-				});
-			});
-			return promise;
-		};
-	})();
-
-	return Promise.all(imports.map(function(link) {
-		if (link.import && link.import.readyState == "complete") {
-			// no need to wait, wether native or polyfill
-			return Promise.resolve();
-		}
-		if (polyfill) {
-			// link.onload cannot be trusted
-			return whenReady();
-		}
-
-		return readyNode(link);
-	}));
-};
-
 PageClass.prototype.waitReady = function() {
 	if (this.docReady) return Promise.resolve();
 	var solve;
@@ -406,7 +377,11 @@ PageClass.prototype.waitReady = function() {
 	}
 	document.addEventListener('DOMContentLoaded', listener);
 	window.addEventListener('load', listener);
-	return p.then(this.waitImports);
+	return p.then(function() {
+		return waitStyles(document.head);
+	}).then(function() {
+		return waitImports(document);
+	});
 };
 
 PageClass.prototype.importDocument = function(doc, state) {
@@ -518,22 +493,13 @@ PageClass.prototype.importDocument = function(doc, state) {
 		if (!nroot.hasAttribute(atts[j].name)) nroot.removeAttribute(atts[j].name);
 	}
 
-	var knownSheets = {};
-	queryAll(document.head, 'link[rel="stylesheet"]').forEach(function(node) {
-		knownSheets[node.href] = true;
-	});
-
-	var parallelsDone = Promise.all(
-		queryAll(head, 'link[rel="stylesheet"]').filter(function(node) {
-			return !knownSheets[node.href];
-		}).map(readyNode)
-	);
+	var parallels = waitStyles(document.head);
 	var serials = queryAll(nroot, 'script[type="none"],link[rel="none"]');
 	var me = this;
 
 	return Promise.resolve().then(function() {
 		me.updateHead(head, state);
-		return parallelsDone;
+		return parallels;
 	}).then(function() {
 		return Promise.resolve().then(function() {
 			return me.updateBody(body, state);
@@ -684,6 +650,48 @@ PageClass.prototype.stateFrom = function(from) {
 	state.data = from.data || {};
 	return state;
 };
+
+function waitStyles(head) {
+	var knownSheets = {};
+	queryAll(head, 'link[rel="stylesheet"]').forEach(function(node) {
+		knownSheets[node.href] = true;
+	});
+
+	return Promise.all(
+		queryAll(head, 'link[rel="stylesheet"]').filter(function(node) {
+			return !knownSheets[node.href];
+		}).map(readyNode)
+	);
+}
+
+function waitImports(doc) {
+	var imports = queryAll(doc, 'link[rel="import"]');
+	var polyfill = window.HTMLImports;
+	var whenReady = (function() {
+		var promise;
+		return function() {
+			if (!promise) promise = new Promise(function(resolve) {
+				polyfill.whenReady(function() {
+					setTimeout(resolve);
+				});
+			});
+			return promise;
+		};
+	})();
+
+	return Promise.all(imports.map(function(link) {
+		if (link.import && link.import.readyState == "complete") {
+			// no need to wait, wether native or polyfill
+			return Promise.resolve();
+		}
+		if (polyfill) {
+			// link.onload cannot be trusted
+			return whenReady();
+		}
+
+		return readyNode(link);
+	}));
+}
 
 function queryAll(doc, selector) {
 	if (doc.queryAll) return doc.queryAll(selector);
