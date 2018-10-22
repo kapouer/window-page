@@ -6,7 +6,7 @@ A general, light, client page controller for running promise-based chains:
 - route, matching url with document and data
 - build, filling the document using collected data
 - patch, optionally updating document
-- setup, adding listeners on delegated events and initializing global objects
+- setup, setting up UI, adding listeners on delegated events, starting animations...
 
 window.Page is designed to play well with:
 
@@ -242,7 +242,8 @@ The build chain is not run when reopening a prerendered document.
 The patch chain is run after the build chain the first time, and, if it is not
 empty, in place of the build chain in case of a document update.
 
-The setup chain is not run when prerendering.
+The setup chain is not run when prerendering, and waits for stylesheets to be
+loaded.
 
 The close chain is run when Page.push/replace results in navigating to a
 new document.
@@ -264,7 +265,7 @@ Page.replace, or Page.push calls:
 
 ### 3. Prerendered document - opening
 
-DOM Ready on built document:
+DOM Ready on built document and styles applied:
 - setup
 
 Before the setup chain is called, `document.body` is monkey-patched to be

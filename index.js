@@ -346,13 +346,16 @@ PageClass.prototype.waitUiReady = function() {
 		var p = new Promise(function(resolve) {
 			solve = resolve;
 		});
-		document.addEventListener('visibilitychange', vizListener, false);
+		document.addEventListener('visibilitychange', listener, false);
 	} else {
 		p = Promise.resolve();
 	}
-	return p;
-	function vizListener() {
-		document.removeEventListener('visibilitychange', vizListener, false);
+	return p.then(function() {
+		return waitStyles(document.head);
+	});
+
+	function listener() {
+		document.removeEventListener('visibilitychange', listener, false);
 		solve();
 	}
 };
@@ -379,8 +382,6 @@ PageClass.prototype.waitReady = function() {
 	document.addEventListener('DOMContentLoaded', listener);
 	window.addEventListener('load', listener);
 	return p.then(function() {
-		return waitStyles(document.head);
-	}).then(function() {
 		return waitImports(document);
 	});
 };
@@ -494,12 +495,7 @@ PageClass.prototype.importDocument = function(doc, state) {
 		if (!nroot.hasAttribute(atts[j].name)) nroot.removeAttribute(atts[j].name);
 	}
 
-	var knownSheets = {};
-	queryAll(document.head, 'link[rel="stylesheet"]').forEach(function(node) {
-		knownSheets[node.href] = true;
-	});
-
-	var parallels = waitStyles(head, knownSheets);
+	var parallels = waitStyles(head, document.head);
 	var serials = queryAll(nroot, 'script[type="none"],link[rel="none"]');
 	var me = this;
 
@@ -657,11 +653,22 @@ PageClass.prototype.stateFrom = function(from) {
 	return state;
 };
 
-function waitStyles(head, knowns) {
+function waitStyles(head, old) {
+	var knowns = {};
+	var thenFn;
+	var sel = 'link[rel="stylesheet"]';
+	if (old && head != old) {
+		queryAll(old, sel).forEach(function(node) {
+			knowns[node.href] = true;
+		}, this);
+		thenFn = readyNode;
+	} else {
+		thenFn = readyStyle;
+	}
 	return Promise.all(
-		queryAll(head, 'link[rel="stylesheet"]').filter(function(node) {
-			return !knowns || !knowns[node.href];
-		}).map(readyNode)
+		queryAll(head, sel).filter(function(node) {
+			return !knowns[node.href];
+		}).map(thenFn)
 	);
 }
 
@@ -713,6 +720,34 @@ function pGet(url, statusRejects) {
 			else reject(code);
 		};
 		xhr.send();
+	});
+}
+
+function readyStyle(link) {
+	var done = false;
+	return new Promise(function(resolve) {
+		readyNode(link).then(function() {
+			if (!done) {
+				done = true;
+				resolve();
+			}
+		});
+		(function check() {
+			if (done) return;
+			var ok = false;
+			try {
+				ok = link.sheet && link.sheet.cssRules;
+			} catch(ex) {
+				// bail out
+				ok = true;
+			}
+			if (ok) {
+				done = true;
+				resolve();
+			}	else {
+				setTimeout(check, 5);
+			}
+		})();
 	});
 }
 
