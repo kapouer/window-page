@@ -171,6 +171,7 @@ PageClass.prototype.run = function(state) {
 	}
 	var curState;
 	this.queue = this.waitReady().then(function() {
+		// not sure state.stage must be set here
 		state.initialStage = state.stage = self.stage();
 		curState = self.state || self.parse();
 		if (!self.sameDomain(curState, state)) {
@@ -493,7 +494,12 @@ PageClass.prototype.importDocument = function(doc, state) {
 		if (!nroot.hasAttribute(atts[j].name)) nroot.removeAttribute(atts[j].name);
 	}
 
-	var parallels = waitStyles(document.head);
+	var knownSheets = {};
+	queryAll(document.head, 'link[rel="stylesheet"]').forEach(function(node) {
+		knownSheets[node.href] = true;
+	});
+
+	var parallels = waitStyles(head, knownSheets);
 	var serials = queryAll(nroot, 'script[type="none"],link[rel="none"]');
 	var me = this;
 
@@ -651,15 +657,10 @@ PageClass.prototype.stateFrom = function(from) {
 	return state;
 };
 
-function waitStyles(head) {
-	var knownSheets = {};
-	queryAll(head, 'link[rel="stylesheet"]').forEach(function(node) {
-		knownSheets[node.href] = true;
-	});
-
+function waitStyles(head, knowns) {
 	return Promise.all(
 		queryAll(head, 'link[rel="stylesheet"]').filter(function(node) {
-			return !knownSheets[node.href];
+			return !knowns || !knowns[node.href];
 		}).map(readyNode)
 	);
 }
