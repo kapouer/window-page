@@ -174,6 +174,8 @@ Page emits these window events:
 Listeners receive an event object with a `state` property being the current
 state (which can be different from Page.state - this is new in window-page 2).
 
+The route, build, patch events might not be called, depending on current page
+stage. The init event is always called. (New in 3.6.0).
 
 ### History
 
