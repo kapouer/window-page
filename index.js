@@ -189,8 +189,8 @@ PageClass.prototype.run = function(state) {
 			return self.runChain('close', curState);
 		}
 	}).then(function() {
-		if (state.stage != INIT) return;
 		self.emit("pageinit", state);
+		if (state.stage != INIT) return;
 		return Promise.resolve().then(function() {
 			if (curState.pathname == state.pathname) return; // nothing to do
 			if (self.chains.route.thenables.length == 0) {
