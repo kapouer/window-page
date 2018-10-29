@@ -306,11 +306,14 @@ PageClass.prototype.stageListener = function(stage, fn, e) {
 };
 
 PageClass.prototype.chain = function(stage, fn) {
-	var lfn = this.stageListener.bind(this, stage, fn);
-	if (!fn.pageListeners) fn.pageListeners = {};
-	fn.pageListeners[stage] = lfn;
-	this.chains[stage].count++;
-	document.addEventListener('page' + stage, lfn);
+	var ls = fn.pageListeners;
+	if (!ls) ls = fn.pageListeners = {};
+	var lfn = ls[stage];
+	if (!lfn) {
+		lfn = ls[stage] = this.stageListener.bind(this, stage, fn);
+		this.chains[stage].count++;
+		document.addEventListener('page' + stage, lfn);
+	}
 	var p = Promise.resolve();
 	if (this.stage >= Stages.indexOf(stage)) {
 		debug("chain has run, execute fn now", stage);
