@@ -1,59 +1,38 @@
 window.Page
 ===========
 
-A general, light, client page controller for running promise-based chains:
+Runs promise-based lifecycle page chains.
 
-- route, matching url with document and data
-- build, filling the document using collected data
-- patch, optionally updating document
-- setup, setting up UI, adding listeners on delegated events, starting animations...
+and integrates with:
 
-window.Page is designed to play well with:
-
-- webcomponents and link imports
+- custom elements
+- link imports
 - visibility API, when prerendering is done on server
-- history API, supporting single or multiple pages applications or mixes of both
-
-and degrades gracefully when these features are not supported on client.
+- history API
 
 
-Browser support
----------------
+Chains
+------
 
-[![Build Status](https://travis-ci.org/kapouer/window-page.svg?branch=master)](https://travis-ci.org/kapouer/window-page)
-![BrowserStack Status](https://www.browserstack.com/automate/badge.svg?badge_key=MndLTXRsN2RKampOTGJEVmVVdmtONnhOTkxDV25KOXdGa0RnNTNWcTJUMD0tLU8xUWJJY0RqK2xpYzNQcUhxUEFIZGc9PQ==--6b7064ec4dca4fb4a26f955db807a43e32f2a2c3)
+Chains are always run after DOM is ready.
 
-Tested on:
+- init, always called at start of a page run
+- route, allows one to load a remote document and import it with its assets
+- build, fetch data and fill document
+- patch, when query changes, fetch data and update document
+- setup, UI, events animations
+- close, use it to clean what has been done in setup
+- error, a fatal error happened during page run, `state.error` is set.
+- hash, the location hash has changed, `state.hash` is set.
 
-- latest versions of Chrome, Firefox, Safari
-- iPhone >= 5
-- IE >= 10 (with URL and Promise polyfills)
-- Edge >= 13
-- android browser (on Samsung Galaxy S5)
+A run is triggered by navigation (document.location changed except hash).
 
-It might work on IE9, but tests rely on a feature not available there
-(getting a DOM document from XHR request).
+Route and build chains are called when pathname changes and if the page has not
+been built once and reopened (as with prerendering).
 
+Patch chain is called after build, and also when query changes.
 
-### BrowserStack
-
-This project runs its tests on multiple desktop and mobile browsers using [travis BrowserStack addon](https://docs.travis-ci.com/user/browserstack/), sponsored by [BrowserStack](browserstack.com).
-
-[![Browser Stack Logo](https://cloud.githubusercontent.com/assets/131406/22254315/87f2c136-e254-11e6-9a25-587b2247cc30.png)](https://www.browserstack.com/)
-
-
-Install
--------
-
-Manual installation is simple:
-```
-npm install window-page
-ln -s node_modules/window-page/window-page.js public/js/
-```
-then add a script tag in a web page, before the application scripts that
-use the chain methods.
-
-window-page is also a commonjs module, so it can be used with `require`.
+Setup chain is called when document is visible and stylesheets are loaded.
 
 
 Usage
@@ -97,28 +76,20 @@ Page.setup(function(state) {
 API
 ---
 
-### stages and root node
+### chains
 
-The current construction stage of a document is saved into the first node having
-a `data-page-stage` attribute, and defaults to documentElement if none is found.
+For each chain, two functions are available:
 
-This node is called the `root node`, and is accessible through `Page.root`.
+* Page[chain](fn)  
+  runs fn right now if the chain is reached, or wait the chain to be run
+* Page[`un${chain}`](fn)  
+  removes fn from a chain
 
-The root node can be different after route chain imports a document.
-
-If one needs to export a part of the document, that part should carry that
-attribute, to ensure Page will be able to resume loading at the correct stage.
-
-There are five stages:
-
-- 0: init
-- 1: imported
-- 2: built
-- 3: setup
-- 4: closing
+The function receives one argument: the state object.
+A chain is a promise that runs each function serially.
 
 
-### state object
+### state
 
 The state object describes components of the url parsed with Page.parse()
 
@@ -141,27 +112,20 @@ functions:
   route chain is finished it is imported into window.document before the build
   chain starts.
 
-
-### Chains
-
-* Page.route(fn)
-* Page.build(fn)
-* Page.patch(fn)
-* Page.setup(fn)
-* Page.close(fn)
-
-The return values of the promises are ignored.
-
-All functions receive the same "state" parameter.
-
-A successful run of the chains updates Page.state to the new state (new in
-window-page 2).
+It is possible to access `Page.state`, which is the page state of the last run.
 
 
-All `Page.${stage}` methods have a matching `Page.un${stage}` method available
-to explicitely unregister `fn`.
+### window.Page.root
 
-Typically useful for custom elements:
+Defaults to documentElement.
+
+If one needs to export a part of the document, that part should carry that
+attribute, to ensure Page will be able to resume loading at the correct stage.
+
+
+### Integration with Custom Elements
+
+Typical example with patch chain:
 ```
 init() {
   this.patch = this.patch.bind(this);
@@ -177,26 +141,10 @@ patch(state) {
 }
 ```
 
-New in version 4.0.0.
+### Integration with link imports
 
-### Events
+When importing a document, scritps and link imports are serially loaded in order.
 
-Page emits these events on the `document`:
-
-- pageinit (before initial run)
-- pageroute (after route chain)
-- pagebuild (after build chain)
-- pagepatch (after patch chain)
-- pagesetup (after setup chain)
-- pageclose (after close chain)
-- pageerror (since version 3.1.0 exposes state.error)
-- pagehash (document hash has changed)
-
-Listeners receive an event object with a `state` property being the current
-state (which can be different from Page.state - this is new in window-page 2).
-
-The route, build, patch events might not be called, depending on current page
-stage. The init event is always called. (New in 3.6.0).
 
 ### History
 
@@ -245,130 +193,39 @@ stage. The init event is always called. (New in 3.6.0).
   compare domains (protocol + hostname + port) of two url or objects.
 
 
-Order of execution of chains
-----------------------------
+### BrowserStack and Browser support
 
-There are five chains (route, build, patch, setup, close) that accepts thenables.
+This project runs its tests on multiple desktop and mobile browsers using [travis BrowserStack addon](https://docs.travis-ci.com/user/browserstack/), sponsored by [BrowserStack](browserstack.com).
 
-The first time the document is parsed into a DOM, it is in its 'initial' state,
-the second time it is 'prerendered'; meaning it has been built once, serialized,
-then reopened later in a browser.
+[![Browser Stack Logo](https://cloud.githubusercontent.com/assets/131406/22254315/87f2c136-e254-11e6-9a25-587b2247cc30.png)](https://www.browserstack.com/)
 
-Chains are always run after DOM is ready.
+Tested on:
 
-When the route chain has finished, if state.document has not been imported,
-it is imported into current document, scripts and import links being loaded
-in order.
+- latest versions of Chrome, Firefox, Safari
+- iPhone >= 5
+- IE >= 10 (with URL and Promise polyfills)
+- Edge >= 13
+- android browser (on Samsung Galaxy S5)
 
-The build chain is not run when reopening a prerendered document.
+It might work on IE9, but tests rely on a feature not available there
+(getting a DOM document from XHR request).
 
-The patch chain is run after the build chain the first time, and, if it is not
-empty, in place of the build chain in case of a document update.
-
-The setup chain is not run when prerendering, and waits for stylesheets to be
-loaded.
-
-The close chain is run when Page.push/replace results in navigating to a
-new document.
+[![Build Status](https://travis-ci.org/kapouer/window-page.svg?branch=master)](https://travis-ci.org/kapouer/window-page)
+![BrowserStack Status](https://www.browserstack.com/automate/badge.svg?badge_key=MndLTXRsN2RKampOTGJEVmVVdmtONnhOTkxDV25KOXdGa0RnNTNWcTJUMD0tLU8xUWJJY0RqK2xpYzNQcUhxUEFIZGc9PQ==--6b7064ec4dca4fb4a26f955db807a43e32f2a2c3)
 
 
-### 1. Initial document - construction
+Install
+-------
 
-DOM Ready on new document, or state.document has not been imported:
-- route
-- build
-- patch
-- setup (if not prerendering)
-
-### 2. Initial or prerendered document - navigation
-
-Page.replace, or Page.push calls:
-- build, if the patch chain is empty
-- patch
-
-### 3. Prerendered document - opening
-
-DOM Ready on built document and styles applied:
-- setup
-
- 
-Before the setup chain is called, `document` is monkey-patched to be
-able to track events setup on document.
-
-When navigation happens, the document listeners that are not part of any
-new source script are removed automatically.
-
-It is also possible to setup events listeners anywhere else, and it's up
-to the client code to clean them up. The `close` chain can be useful to do that.
-
-
-Application behaviors
----------------------
-
-### build functions - run once or multiple times
-
-If patch chain is empty, it is up to the build chain to deal with being called
-multiple times (typically after a Page.replace or Page.push call).
-
-Some build functions only use `state.data` and will return early if that variable
-isn't set.
-
-Other build functions use `state.query` to fetch additional data and refresh
-parts of the document.
-
-Since `state.data` is supposed to be set by route functions, its presence means
-the document is still being prerendered in its initial phase.
-
-
-### Open new url
-
-Because of the need to get new data and document, simply do
+Manual installation is simple:
 ```
-Page.push(newHref)
+npm install window-page
+ln -s node_modules/window-page/window-page.js public/js/
 ```
+then add a script tag in a web page, before the application scripts that
+use the chain methods.
 
-
-Example: update when query change
----------------------------------
-
-Optionally, some code deals with application routing and sets data
-
-```
-Page.route(function(state) {
-	state.data = {articles: [...]};
-});
-```
-
-In another js file:
-```
-Page.build(function(state) {
-	// called once during prerendering, use already set data or fetch some
-	myMerge(state.data.articles);
-});
-
-Page.patch(function(state) {
-	return fetch(Page.format({
-		pathname: "/api/data",
-		query: state.query
-	})).then(function(res) {
-		return res.json();
-	}).then(function(obj) {
-		return myMergeUpdate(obj);
-	});
-});
-
-Page.setup(function(state) {
-	// this listener will be garbage collected automatically when page changes
-	document.body.addEventListener('submit', function(e) {
-		e.preventDefault();
-		// push to history, triggers routers chain which in turn will call update()
-		state.query = $(this).form('get values');
-		// doesn't run routers chain because we're pushing an existing state with
-		// a document already set
-		Page.push(state);
-	});
-});
-```
+window-page is also a commonjs module, so it can be used with `require`.
 
 
 License
