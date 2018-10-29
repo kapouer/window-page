@@ -40,24 +40,6 @@ function PageClass() {
 	}.bind(this));
 }
 
-PageClass.prototype.trackListeners = function(node) {
-	var list = this.listeners;
-	var sources = this.sources || {};
-	if (list) list.forEach(function(obj) {
-		if (!obj.src || sources[obj.src]) return;
-		debug("remove event listener", obj.evt, obj.src);
-		obj.node.removeEventListener(obj.evt, obj.fn, obj.opts);
-	}, this);
-	list = this.listeners = [];
-	var meth = node.addEventListener;
-	if (meth == Node.prototype.addEventListener) node.addEventListener = function(evt, fn, opts) {
-		var src = document.currentScript;
-		if (src) src = src.src;
-		list.push({node: node, evt: evt, fn: fn, opts: opts, src: src});
-		return meth.call(node, evt, fn, opts);
-	};
-};
-
 PageClass.prototype.stage = function(stage) {
 	var root = this.root;
 	if (!root) {
@@ -184,8 +166,8 @@ PageClass.prototype.run = function(state) {
 	var curState;
 	this.queue = this.waitReady().then(function() {
 		// not sure state.stage must be set here
-		debug("doc ready");
 		state.initialStage = state.stage = self.stage();
+		debug("doc ready at stage", state.initialStage);
 		curState = self.state || self.parse();
 		if (!self.sameDomain(curState, state)) {
 			throw new Error("Cannot route to a different domain:\n" + url);
@@ -202,7 +184,10 @@ PageClass.prototype.run = function(state) {
 			return self.runChain(CLOSE, curState);
 		}
 	}).then(function() {
-		return self.runChain(INIT, state);
+		var prevStage = state.stage;
+		return self.runChain(INIT, state).then(function() {
+			state.stage = prevStage;
+		});
 	}).then(function() {
 		if (state.stage != INIT) return;
 		self.stage(INIT);
@@ -223,7 +208,6 @@ PageClass.prototype.run = function(state) {
 		});
 	}).then(function() {
 		if (state.stage != ROUTE || !state.document) return;
-		self.trackListeners(document);
 		return self.importDocument(state.document, state).then(function() {
 			delete state.document;
 			var docStage = self.stage();
@@ -280,6 +264,28 @@ PageClass.prototype.reset = function() {
 			count: 0
 		};
 	}, this);
+
+	var doc = document;
+
+	var list = this.listeners;
+	var sources = this.sources || {};
+	if (list) list.forEach(function(obj) {
+		if (obj.src && sources[obj.src]) {
+			debug("keep listener", obj.evt, obj.src);
+		} else {
+			debug("remove listener", obj.evt, obj.src);
+			doc.removeEventListener(obj.evt, obj.fn, obj.opts);
+		}
+	}, this);
+
+	list = this.listeners = [];
+	var meth = doc.addEventListener;
+	if (meth == Node.prototype.addEventListener) doc.addEventListener = function(evt, fn, opts) {
+		var src = document.currentScript;
+		if (src) src = src.src;
+		list.push({evt: evt, fn: fn, opts: opts, src: src});
+		return meth.call(doc, evt, fn, opts);
+	};
 };
 
 PageClass.prototype.runChain = function(name, state) {
@@ -294,7 +300,6 @@ PageClass.prototype.runChain = function(name, state) {
 PageClass.prototype.stageListener = function(stage, fn, e) {
 	var chain = this.chains[stage];
 	var me = this;
-	debug("run listener", stage, typeof fn);
 	chain.promise = chain.promise.then(function() {
 		return fn(e.detail);
 	}).catch(function(err) {
@@ -388,16 +393,15 @@ PageClass.prototype.waitReady = function() {
 PageClass.prototype.importDocument = function(doc, state) {
 	if (!state) state = this.state;
 	if (doc == document) {
+		debug("Do not import same document");
 		return Promise.resolve();
 	}
-	// document to be imported will have some nodes with custom props
-	// and before it is actually imported these props are removed
+	debug("Import new document");
 	var states = {};
-	var knowns = {};
 	var selector = 'script:not([type]),script[type="text/javascript"],link[rel="import"]';
 	queryAll(document, selector).forEach(function(node) {
 		var src = node.src || node.href;
-		if (src) knowns[src] = states[src] = true;
+		if (src) states[src] = true;
 	});
 
 	// if there is no HTMLImports support, some loaded script might contain
