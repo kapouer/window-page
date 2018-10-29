@@ -7,8 +7,9 @@ var BUILD = "build";
 var PATCH = "patch";
 var SETUP = "setup";
 var CLOSE = "close";
+var ERROR = "error";
 
-var Stages = [INIT, ROUTE, BUILD, PATCH, SETUP, CLOSE];
+PageClass.Stages = [INIT, ROUTE, BUILD, PATCH, SETUP, ERROR, CLOSE];
 
 var urlHelper = document.createElement('a');
 
@@ -18,7 +19,7 @@ function PageClass() {
 	this.debug = false;
 	this.reset();
 
-	Stages.forEach(function(stage) {
+	PageClass.Stages.forEach(function(stage) {
 		this[stage] = this.chain.bind(this, stage);
 		this['un' + stage] = this.unchain.bind(this, stage);
 	}, this);
@@ -241,7 +242,7 @@ PageClass.prototype.run = function(state) {
 			// eslint-disable-next-line no-console
 			if (typeof err != "number") console.error(err);
 			state.error = err;
-			self.emit("pageerror", state);
+			self.runChain(ERROR, state)
 		}
 	}).then(function() {
 		self.state = state;
@@ -259,7 +260,7 @@ PageClass.prototype.reload = function() {
 
 PageClass.prototype.reset = function() {
 	this.chains = {};
-	Stages.forEach(function(stage) {
+	PageClass.Stages.forEach(function(stage) {
 		this.chains[stage] = {
 			count: 0
 		};
@@ -317,7 +318,7 @@ PageClass.prototype.chain = function(stage, fn) {
 		document.addEventListener('page' + stage, lfn);
 	}
 	var p = Promise.resolve();
-	if (this.stage >= Stages.indexOf(stage) - 1) {
+	if (this.stage >= PageClass.Stages.indexOf(stage) - 1) {
 		debug("chain has run, execute fn now", stage);
 		var state = this.state;
 		p = p.then(function() {
