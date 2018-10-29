@@ -7,18 +7,21 @@
 	<script src="/window-page.js"></script>
 	<link rel="stylesheet" href="/assets/square.css"></script>
 	<script>
-var calls = 0;
+var builds = 0;
+var setups = 0;
 Page.build(function(state) {
 	if (document.body.offsetWidth == 400) {
-		document.querySelector('.status').innerHTML = "squared" + calls++;
+		document.querySelector('.status').innerHTML = "squared" + (builds + setups);
 	} else {
-		document.querySelector('.status').innerHTML = "hidden" + calls++;
+		document.querySelector('.status').innerHTML = "hidden" + (builds + setups);
 	}
+	builds++;
 });
 Page.setup(function(state) {
 	if (document.body.offsetWidth == 400) {
-		document.querySelector('.status').innerHTML = "squared" + calls++;
+		document.querySelector('.status').innerHTML = "squared" + (builds + setups);
 	}
+	setups++;
 });
 	</script>
 </head>
