@@ -8,8 +8,9 @@ var PATCH = "patch";
 var SETUP = "setup";
 var CLOSE = "close";
 var ERROR = "error";
+var HASH = "hash";
 
-PageClass.Stages = [INIT, ROUTE, BUILD, PATCH, SETUP, ERROR, CLOSE];
+PageClass.Stages = [INIT, ROUTE, BUILD, PATCH, SETUP, ERROR, CLOSE, HASH];
 
 var urlHelper = document.createElement('a');
 
@@ -630,7 +631,7 @@ PageClass.prototype.historyListener = function(e) {
 	} else {
 		state = this.parse();
 		if (this.samePath(this.state, state) && this.state.hash != state.hash) {
-			this.emit("pagehash", state);
+			this.runChain(HASH, state);
 			this.state.hash = state.hash;
 		}
 	}
