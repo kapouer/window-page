@@ -114,7 +114,7 @@ describe("Rendering", function suite() {
 
 	it("should run build and setup", function() {
 		return testPageForStrings(browser, base + '/build.html', [
-			'data-page-stage="3"',
+			'data-page-stage="setup"',
 			'<div class="build">0</div>',
 			'<div class="setup">0</div>'
 		]);
@@ -122,7 +122,7 @@ describe("Rendering", function suite() {
 
 	it("should run build and patch and setup", function() {
 		return testPageForStrings(browser, base + '/patch.html', [
-			'data-page-stage="3"',
+			'data-page-stage="setup"',
 			'<div class="build">0</div>',
 			'<div class="patch">0</div>',
 			'<div class="setup">0</div>'
@@ -131,7 +131,7 @@ describe("Rendering", function suite() {
 
 	it("should run build and patch and setup, call replace and run patch again", function() {
 		return testPageForStrings(browser, base + '/replace.html', [
-			'data-page-stage="3"',
+			'data-page-stage="setup"',
 			'<div class="build">0</div>',
 			'<div class="patch">1</div>',
 			'<div class="setup">0</div>',
@@ -141,7 +141,7 @@ describe("Rendering", function suite() {
 
 	it("should run build and patch and setup, call push and run patch again", function() {
 		return testPageForStrings(browser, base + '/push.html', [
-			'data-page-stage="3"',
+			'data-page-stage="setup"',
 			'<div class="build">0</div>',
 			'<div class="patch">2</div>',
 			'<div class="setup">0</div>',
@@ -152,7 +152,7 @@ describe("Rendering", function suite() {
 
 	it("should run route and build and setup", function() {
 		return testPageForStrings(browser, base + '/route.html?template=build', [
-			'data-page-stage="3"',
+			'data-page-stage="setup"',
 			'<div class="build">0</div>',
 			'<div class="setup">0</div>'
 		]);
@@ -160,7 +160,7 @@ describe("Rendering", function suite() {
 
 	it("should run route and imports", function() {
 		return testPageForStrings(browser, base + '/route.html?template=import', [
-			'data-page-stage="3"',
+			'data-page-stage="setup"',
 			"I'm setup0",
 			"your body0"
 		]);
@@ -174,14 +174,14 @@ describe("Rendering", function suite() {
 
 	it("should load stylesheet before remote script when rendering", function() {
 		return testPageForStrings(browser, base + '/route.html?template=order-stylesheets-scripts', [
-			'data-page-stage="3"',
+			'data-page-stage="setup"',
 			'<div class="status">squared</div>'
 		]);
 	});
 
 	it("should run route and load script before import", function() {
 		return testPageForStrings(browser, base + '/route.html?template=import-depending-on-script', [
-			'data-page-stage="3"',
+			'data-page-stage="setup"',
 			"I'm setup0",
 			"your body770"
 		]);

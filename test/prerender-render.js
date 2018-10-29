@@ -93,13 +93,13 @@ describe("Two-phase rendering", function suite() {
 			url: host + ':' + port + '/route.html?template=import'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
-			expect(body).to.contain('data-page-stage="2"');
+			expect(body).to.contain('data-page-stage="build"');
 			expect(body).to.contain("I'm built0");
 			expect(body).to.contain("your body0");
 			dom(body).load({
 				plugins: renderPlugins
 			})(res.request.uri.href).then(function(state) {
-				expect(state.body).to.contain('data-page-stage="3"');
+				expect(state.body).to.contain('data-page-stage="setup"');
 				expect(state.body).to.contain("I'm setup0");
 				done();
 			}).catch(function(err) {

@@ -83,7 +83,7 @@ describe("Prerendering", function suite() {
 			url: host + ':' + port + '/route.html?template=import'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
-			expect(body).to.contain('data-page-stage="2"');
+			expect(body).to.contain('data-page-stage="build"');
 			expect(body).to.contain("I'm built0");
 			expect(body).to.contain("your body0");
 			done();
@@ -96,7 +96,7 @@ describe("Prerendering", function suite() {
 			url: host + ':' + port + '/route.html?template=import-ignore'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
-			expect(body).to.contain('data-page-stage="2"');
+			expect(body).to.contain('data-page-stage="build"');
 			expect(body).to.contain("I'm built0");
 			expect(body).to.contain('<div class="from-import">77</div>');
 			done();
