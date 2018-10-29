@@ -42,10 +42,6 @@ function PageClass() {
 }
 
 PageClass.prototype.stage = function(stage) {
-	var root = this.root;
-	if (!root) {
-		this.root = root = document.querySelector('[data-page-stage]') || document.documentElement;
-	}
 	if (stage != null) this.root.setAttribute('data-page-stage', stage);
 	else stage = this.root.dataset.pageStage;
 	return stage || INIT;
@@ -148,7 +144,7 @@ PageClass.prototype.emit = function(name, state) {
 		detail: state
 	});
 	e.state = state; // backward compat
-	document.dispatchEvent(e);
+	this.root.dispatchEvent(e);
 };
 
 PageClass.prototype.run = function(state) {
@@ -259,14 +255,16 @@ PageClass.prototype.reload = function() {
 };
 
 PageClass.prototype.reset = function() {
+	var root = this.root;
+	if (!root) {
+		this.root = root = document.querySelector('[data-page-stage]') || document.documentElement;
+	}
 	this.chains = {};
 	PageClass.Stages.forEach(function(stage) {
 		this.chains[stage] = {
 			count: 0
 		};
 	}, this);
-
-	var doc = document;
 
 	var list = this.listeners;
 	var sources = this.sources || {};
@@ -275,17 +273,17 @@ PageClass.prototype.reset = function() {
 			debug("keep listener", obj.evt, obj.src);
 		} else {
 			debug("remove listener", obj.evt, obj.src);
-			doc.removeEventListener(obj.evt, obj.fn, obj.opts);
+			root.removeEventListener(obj.evt, obj.fn, obj.opts);
 		}
 	}, this);
 
 	list = this.listeners = [];
-	var meth = doc.addEventListener;
-	if (meth == Node.prototype.addEventListener) doc.addEventListener = function(evt, fn, opts) {
+	var meth = root.addEventListener;
+	if (meth == Node.prototype.addEventListener) root.addEventListener = function(evt, fn, opts) {
 		var src = document.currentScript;
 		if (src) src = src.src;
 		list.push({evt: evt, fn: fn, opts: opts, src: src});
-		return meth.call(doc, evt, fn, opts);
+		return meth.call(root, evt, fn, opts);
 	};
 };
 
@@ -490,12 +488,11 @@ PageClass.prototype.importDocument = function(doc, state) {
 
 	this.reset();
 
-	var root = document.documentElement;
 	var atts = nroot.attributes;
 	for (var i=0; i < atts.length; i++) {
-		root.setAttribute(atts[i].name, atts[i].value);
+		this.root.setAttribute(atts[i].name, atts[i].value);
 	}
-	atts = Array.prototype.slice.call(root.attributes);
+	atts = Array.prototype.slice.call(this.root.attributes);
 	for (var j=0; j < atts.length; j++) {
 		if (!nroot.hasAttribute(atts[j].name)) nroot.removeAttribute(atts[j].name);
 	}
@@ -512,7 +509,7 @@ PageClass.prototype.importDocument = function(doc, state) {
 			return me.updateBody(body, state);
 		}).then(function(body) {
 			if (body && body.nodeName == "BODY") {
-				document.documentElement.replaceChild(body, document.body);
+				me.root.replaceChild(body, document.body);
 			}
 		});
 	}).then(function() {
