@@ -10,7 +10,7 @@ var CLOSE = "close";
 var ERROR = "error";
 var HASH = "hash";
 
-PageClass.Stages = [INIT, ROUTE, BUILD, PATCH, SETUP, ERROR, CLOSE, HASH];
+PageClass.Stages = [INIT, ROUTE, BUILD, PATCH, SETUP, HASH, ERROR, CLOSE];
 
 var urlHelper = document.createElement('a');
 
