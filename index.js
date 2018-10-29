@@ -7,20 +7,22 @@ var BUILT = 2;
 var SETUP = 3;
 var CLOSING = 4;
 
+var Stages = ["route", "build", "patch", "setup", "close"];
+
 var urlHelper = document.createElement('a');
 
 function PageClass() {
 	this.name = "PageClass";
 	this.window = window;
 	this.debug = false;
-	this.listeners = [];
 	this.reset();
 
-	this.route = this.chainThenable.bind(this, "route");
-	this.build = this.chainThenable.bind(this, "build");
-	this.patch = this.chainThenable.bind(this, "patch");
-	this.setup = this.chainThenable.bind(this, "setup");
-	this.close = this.chainThenable.bind(this, "close");
+	Stages.forEach(function(stage) {
+		this[stage] = this.chain.bind(this, stage);
+		this['un' + stage] = this.unchain.bind(this, stage);
+	}, this);
+
+
 	this.format = this.format.bind(this);
 	this.historyListener = this.historyListener.bind(this);
 
@@ -38,14 +40,19 @@ function PageClass() {
 }
 
 PageClass.prototype.trackListeners = function(node) {
-	this.listeners.forEach(function(obj) {
+	var list = this.listeners;
+	var sources = this.sources || {};
+	if (list) list.forEach(function(obj) {
+		if (!obj.src || sources[obj.src]) return;
+		debug("remove event listener", obj.evt, obj.src);
 		obj.node.removeEventListener(obj.evt, obj.fn, obj.opts);
-	});
-	this.listeners = [];
-	var me = this;
+	}, this);
+	list = this.listeners = [];
 	var meth = node.addEventListener;
 	if (meth == Node.prototype.addEventListener) node.addEventListener = function(evt, fn, opts) {
-		me.listeners.push({node: node, evt: evt, fn: fn, opts: opts});
+		var src = document.currentScript;
+		if (src) src = src.src;
+		list.push({node: node, evt: evt, fn: fn, opts: opts, src: src});
 		return meth.call(node, evt, fn, opts);
 	};
 };
@@ -150,10 +157,14 @@ PageClass.prototype.sameDomain = function(a, b) {
 };
 
 PageClass.prototype.emit = function(name, state) {
-	var event = document.createEvent('Event');
-	event.initEvent(name, true, true);
-	event.state = state;
-	window.dispatchEvent(event);
+	var e = new CustomEvent(name, {
+		view: window,
+		bubbles: true,
+		cancelable: true,
+		detail: state
+	});
+	e.state = state; // backward compat
+	document.dispatchEvent(e);
 };
 
 PageClass.prototype.run = function(state) {
@@ -193,7 +204,7 @@ PageClass.prototype.run = function(state) {
 		if (state.stage != INIT) return;
 		return Promise.resolve().then(function() {
 			if (curState.pathname == state.pathname) return; // nothing to do
-			if (self.chains.route.thenables.length == 0) {
+			if (self.chains.route.count == 0) {
 				return pGet(url, 500).then(function(client) {
 					var doc = document.cloneNode(false);
 					if (!doc.documentElement) doc.appendChild(doc.createElement('html'));
@@ -210,6 +221,7 @@ PageClass.prototype.run = function(state) {
 		});
 	}).then(function() {
 		if (state.stage >= IMPORTED || !state.document) return;
+		self.trackListeners(document);
 		return self.importDocument(state.document, state).then(function() {
 			debug("importDocument done");
 			delete state.document;
@@ -233,10 +245,9 @@ PageClass.prototype.run = function(state) {
 	}).then(function() {
 		if (state.stage == SETUP) {
 			// run patch if any, or build
-			return self.runChain(self.chains.patch.thenables.length ? 'patch' : 'build', state);
+			return self.runChain(self.chains.patch.count ? 'patch' : 'build', state);
 		} else return self.waitUiReady().then(function() {
 			if (state.abort) return Promise.reject("abort");
-			self.trackListeners(document.body);
 			return self.runChain('setup', state).then(function() {
 				if (state.stage < SETUP) {
 					state.stage = SETUP;
@@ -266,78 +277,66 @@ PageClass.prototype.reload = function() {
 	return this.run(state);
 };
 
-PageClass.prototype.reset = function(map) {
-	// all thenables coming from a src in map are removed
-	if (!map) map = {};
-	function filterBy(obj) {
-		if (!obj.src) return false;
-		if (map[obj.src]) return false;
-		return true;
-	}
-	var chains = this.chains || {
-		route: {thenables: []},
-		build: {thenables: []},
-		patch: {thenables: []},
-		setup: {thenables: []},
-		close: {thenables: []}
-	};
-	this.chains = {
-		route: {thenables: chains.route.thenables.slice()},
-		build: {thenables: chains.build.thenables.filter(filterBy)},
-		patch: {thenables: chains.patch.thenables.filter(filterBy)},
-		setup: {thenables: chains.setup.thenables.filter(filterBy)},
-		close: {thenables: chains.close.thenables.filter(filterBy)}
-	};
+PageClass.prototype.reset = function() {
+	this.chains = {};
+	Stages.forEach(function(stage) {
+		this.chains[stage] = {
+			count: 0
+		};
+	}, this);
 };
 
 PageClass.prototype.runChain = function(name, state) {
-	debug("run chain", name);
 	var chain = this.chains[name];
-	chain.promise = this.allFn(state, name, chain.thenables);
-	return chain.promise.then(function() {
-		this.emit("page" + name, state);
-		return state;
-	}.bind(this));
+	debug("run chain", name, "of length", chain.count);
+	chain.promise = Promise.resolve();
+	this.emit("page" + name, state);
+	return chain.promise;
 };
 
-PageClass.prototype.chainThenable = function(name, fn) {
-	var src = document.currentScript;
-	if (src) src = src.src;
-	var chain = this.chains[name];
-	var obj = {
-		fn: fn,
-		src: src
-	};
-	chain.thenables.push(obj);
-	if (chain.promise) {
-		chain.promise = this.oneFn(chain.promise, name, fn);
+PageClass.prototype.stageListener = function(stage, fn, e) {
+	var chain = this.chains[stage];
+	var me = this;
+	debug("run listener", stage, typeof fn);
+	chain.promise = chain.promise.then(function() {
+		return fn(e.detail);
+	}).catch(function(err) {
+		return me.catcher(stage, err, fn);
+	});
+};
+
+PageClass.prototype.chain = function(stage, fn) {
+	var lfn = this.stageListener.bind(this, stage, fn);
+	if (!fn.pageListeners) fn.pageListeners = {};
+	fn.pageListeners[stage] = lfn;
+	this.chains[stage].count++;
+	document.addEventListener('page' + stage, lfn);
+	var p = Promise.resolve();
+	if (this.stage >= Stages.indexOf(stage)) {
+		debug("chain has run, execute fn now", stage);
+		var state = this.state;
+		p = p.then(function() {
+			return fn(state);
+		});
+	} else {
+		debug("chain pending", stage);
 	}
-	return this;
+	return p;
+};
+
+PageClass.prototype.unchain = function(stage, fn) {
+	var ls = fn.pageListeners;
+	if (!ls) return;
+	var lfn = ls[stage];
+	if (!lfn) return;
+	this.chains[stage].count--;
+	delete ls[stage];
+	document.removeEventListener('page' + stage, lfn);
 };
 
 PageClass.prototype.catcher = function(name, err, fn) {
 	// eslint-disable-next-line no-console
 	console.error("Uncaught error during", name, err, fn);
-};
-
-PageClass.prototype.oneFn = function(p, name, fn) {
-	var catcher = this.catcher.bind(this);
-	return p.then(function(state) {
-		return Promise.resolve(state).then(fn).catch(function(err) {
-			return catcher(name, err, fn);
-		}).then(function() {
-			return state;
-		});
-	});
-};
-
-PageClass.prototype.allFn = function(state, name, list) {
-	var p = Promise.resolve(state);
-	var self = this;
-	list.forEach(function(obj) {
-		p = self.oneFn(p, name, obj.fn);
-	});
-	return p;
 };
 
 PageClass.prototype.waitUiReady = function() {
@@ -409,6 +408,7 @@ PageClass.prototype.importDocument = function(doc, state) {
 	// if there is native support then it's like other resources.
 
 	var nodes = queryAll(doc, selector);
+	var sources = this.sources = {};
 
 	nodes.forEach(function(node) {
 		// just preload everything
@@ -420,7 +420,7 @@ PageClass.prototype.importDocument = function(doc, state) {
 		}
 		var src = node.src || node.href;
 		if (!src) return;
-		delete knowns[src];
+		sources[src] = true;
 		if (states[src] === true) return;
 		// not data-uri
 		if (src.slice(0, 5) == 'data:') return;
@@ -483,7 +483,7 @@ PageClass.prototype.importDocument = function(doc, state) {
 	var head = nroot.querySelector('head');
 	var body = nroot.querySelector('body');
 
-	this.reset(knowns);
+	this.reset();
 
 	var root = document.documentElement;
 	var atts = nroot.attributes;

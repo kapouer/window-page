@@ -158,9 +158,30 @@ A successful run of the chains updates Page.state to the new state (new in
 window-page 2).
 
 
+All `Page.${stage}` methods have a matching `Page.un${stage}` method available
+to explicitely unregister `fn`.
+
+Typically useful for custom elements:
+```
+init() {
+  this.patch = this.patch.bind(this);
+}
+connectedCallback() {
+  Page.patch(this.patch);
+}
+disconnectedCallback() {
+  Page.unpatch(this.patch);
+}
+patch(state) {
+  // do something with state.query...
+}
+```
+
+New in version 4.0.0.
+
 ### Events
 
-Page emits these window events:
+Page emits these events on the `document`:
 
 - pageinit (before initial run)
 - pageroute (after route chain)
@@ -270,17 +291,12 @@ Page.replace, or Page.push calls:
 DOM Ready on built document and styles applied:
 - setup
 
-Before the setup chain is called, `document.body` is monkey-patched to be
-able to track events setup on body.
+ 
+Before the setup chain is called, `document` is monkey-patched to be
+able to track events setup on document.
 
-This allows navigation to automatically reset events that have been added
-during setup chain.
-
-So it is strongly advised to always setup events listeners on `document.body`
-and use event delegation technique.
-
-Transitions during navigation should insted use `documentElement` to avoid
-getting their transition listeners garbage-collected.
+When navigation happens, the document listeners that are not part of any
+new source script are removed automatically.
 
 It is also possible to setup events listeners anywhere else, and it's up
 to the client code to clean them up. The `close` chain can be useful to do that.
