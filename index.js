@@ -1,13 +1,14 @@
 var QueryString = require('query-string');
 var Diff = require('levenlistdiff');
 
-var INIT = 0;
-var IMPORTED = 1;
-var BUILT = 2;
-var SETUP = 3;
-var CLOSING = 4;
+var INIT = "init";
+var ROUTE = "route";
+var BUILD = "build";
+var PATCH = "patch";
+var SETUP = "setup";
+var CLOSE = "close";
 
-var Stages = ["route", "build", "patch", "setup", "close"];
+var Stages = [INIT, ROUTE, BUILD, PATCH, SETUP, CLOSE];
 
 var urlHelper = document.createElement('a');
 
@@ -63,8 +64,8 @@ PageClass.prototype.stage = function(stage) {
 		this.root = root = document.querySelector('[data-page-stage]') || document.documentElement;
 	}
 	if (stage != null) this.root.setAttribute('data-page-stage', stage);
-	else stage = parseInt(this.root.dataset.pageStage);
-	return isNaN(stage) ? INIT : stage;
+	else stage = this.root.dataset.pageStage;
+	return stage || INIT;
 };
 
 PageClass.prototype.parse = function(str) {
@@ -172,7 +173,7 @@ PageClass.prototype.run = function(state) {
 	if (!state.data) state.data = {};
 	var self = this;
 	if (this.queue) {
-		if (this.state && this.state.stage == BUILT) {
+		if (this.state && this.state.stage == BUILD) {
 			this.state.abort = true;
 		} else {
 			return this.queue.then(function() {
@@ -183,6 +184,7 @@ PageClass.prototype.run = function(state) {
 	var curState;
 	this.queue = this.waitReady().then(function() {
 		// not sure state.stage must be set here
+		debug("doc ready");
 		state.initialStage = state.stage = self.stage();
 		curState = self.state || self.parse();
 		if (!self.sameDomain(curState, state)) {
@@ -196,63 +198,57 @@ PageClass.prototype.run = function(state) {
 			state.stage = INIT;
 		}
 		if (state.stage == INIT && curState.stage == SETUP) {
-			self.stage(CLOSING);
-			return self.runChain('close', curState);
+			self.stage(CLOSE);
+			return self.runChain(CLOSE, curState);
 		}
 	}).then(function() {
-		self.emit("pageinit", state);
+		return self.runChain(INIT, state);
+	}).then(function() {
 		if (state.stage != INIT) return;
+		self.stage(INIT);
 		return Promise.resolve().then(function() {
 			if (curState.pathname == state.pathname) return; // nothing to do
-			if (self.chains.route.count == 0) {
-				return pGet(url, 500).then(function(client) {
-					var doc = document.cloneNode(false);
-					if (!doc.documentElement) doc.appendChild(doc.createElement('html'));
-					doc.documentElement.innerHTML = client.responseText;
-					if (client.status >= 400 && (!doc.body || doc.body.children.length == 0)) {
-						throw new Error(client.statusText);
-					}
-					state.document = doc;
-				});
-			}
+			if (self.chains.route.count > 0) return;
+			return pGet(url, 500).then(function(client) {
+				var doc = document.cloneNode(false);
+				if (!doc.documentElement) doc.appendChild(doc.createElement('html'));
+				doc.documentElement.innerHTML = client.responseText;
+				if (client.status >= 400 && (!doc.body || doc.body.children.length == 0)) {
+					throw new Error(client.statusText);
+				}
+				state.document = doc;
+			});
 		}).then(function() {
-			self.stage(INIT);
-			return self.runChain('route', state);
+			return self.runChain(ROUTE, state);
 		});
 	}).then(function() {
-		if (state.stage >= IMPORTED || !state.document) return;
+		if (state.stage != ROUTE || !state.document) return;
 		self.trackListeners(document);
 		return self.importDocument(state.document, state).then(function() {
-			debug("importDocument done");
 			delete state.document;
 			var docStage = self.stage();
+			debug("imported doc at stage", docStage);
 			if (docStage == INIT) {
-				docStage = IMPORTED;
-				self.stage(IMPORTED);
+				docStage = ROUTE;
+				self.stage(ROUTE);
 			}
 			state.stage = docStage;
 		});
 	}).then(function() {
-		if (state.stage >= BUILT) return;
-		return self.runChain('build', state).then(function() {
-			return self.runChain('patch', state);
+		if (state.stage != INIT && state.stage != ROUTE) return;
+		return self.runChain(BUILD, state).then(function() {
+			return self.runChain(PATCH, state);
 		}).then(function() {
-			if (state.stage < BUILT) {
-				state.stage = BUILT;
-				self.stage(BUILT);
-			}
+			self.stage(BUILD);
 		});
 	}).then(function() {
 		if (state.stage == SETUP) {
 			// run patch if any, or build
-			return self.runChain(self.chains.patch.count ? 'patch' : 'build', state);
+			return self.runChain(self.chains.patch.count ? PATCH : BUILD, state);
 		} else return self.waitUiReady().then(function() {
 			if (state.abort) return Promise.reject("abort");
-			return self.runChain('setup', state).then(function() {
-				if (state.stage < SETUP) {
-					state.stage = SETUP;
-					self.stage(SETUP);
-				}
+			return self.runChain(SETUP, state).then(function() {
+				self.stage(SETUP);
 			});
 		});
 	}).catch(function(err) {
@@ -287,6 +283,7 @@ PageClass.prototype.reset = function() {
 };
 
 PageClass.prototype.runChain = function(name, state) {
+	state.stage = name;
 	var chain = this.chains[name];
 	debug("run chain", name, "of length", chain.count);
 	chain.promise = Promise.resolve();
@@ -315,7 +312,7 @@ PageClass.prototype.chain = function(stage, fn) {
 		document.addEventListener('page' + stage, lfn);
 	}
 	var p = Promise.resolve();
-	if (this.stage >= Stages.indexOf(stage)) {
+	if (this.stage >= Stages.indexOf(stage) - 1) {
 		debug("chain has run, execute fn now", stage);
 		var state = this.state;
 		p = p.then(function() {
@@ -621,9 +618,6 @@ PageClass.prototype.historyMethod = function(method, newState, state) {
 PageClass.prototype.historySave = function(method, state) {
 	if (!this.supportsHistory) return;
 	var to = this.stateTo(state);
-	if (!to.stage || to.stage == BUILT) {
-		to.stage = SETUP;
-	}
 	this.window.history[method + 'State'](to, document.title, to.href);
 };
 
@@ -643,7 +637,6 @@ PageClass.prototype.historyListener = function(e) {
 PageClass.prototype.stateTo = function(state) {
 	return {
 		href: this.format(state),
-		stage: state.initialStage,
 		data: state.data
 	};
 };
@@ -651,7 +644,7 @@ PageClass.prototype.stateTo = function(state) {
 PageClass.prototype.stateFrom = function(from) {
 	if (!from || !from.href) return;
 	var state = this.parse(from.href);
-	state.stage = from.stage;
+	state.stage = SETUP;
 	state.data = from.data || {};
 	return state;
 };
@@ -767,8 +760,9 @@ function readyNode(node) {
 }
 
 function debug() {
+	var inst = window.Page || window.parent.Page;
 	// eslint-disable-next-line no-console
-	if (window.Page.debug) console.info.apply(console, Array.prototype.slice.call(arguments));
+	if (!inst || inst.debug) console.info.apply(console, Array.prototype.slice.call(arguments));
 }
 
 PageClass.init = function() {
