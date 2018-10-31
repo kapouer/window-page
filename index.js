@@ -323,7 +323,9 @@ PageClass.prototype.chain = function(stage, fn) {
 		emitter.addEventListener('page' + stage, lfn.fn);
 	}
 	var p = Promise.resolve();
-	if (this.stage >= PageClass.Stages.indexOf(stage) - 1) {
+	var curNum = PageClass.Stages.indexOf(this.state.stage || INIT);
+	var tryNum = PageClass.Stages.indexOf(stage);
+	if (tryNum <= curNum) {
 		debug("chain has run, execute fn now", stage);
 		var state = this.state;
 		p = p.then(function() {
