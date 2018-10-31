@@ -17,10 +17,13 @@ Moves to query-string@6 and targets modern browsers.
 4.0.0
 =====
 
-- page events are emitted on document, not on window
-- event tracking happens on document, not on body
-- instead of managing chains, events are run using native event listeners
+- page events are no longer emitted globally
+- event tracking is done on document, not on document.body
+- new chain: init. Always called on each chain run.
+- instead of managing chains, events are run using native event listeners on
+scripts or on a per-page emitter.
 - in event listeners, `e.state` is deprecated in favor of `e.details` which 
 has the same value.
 - new: Page.unroute, unbuild, unsetup, unpatch... can unregister listeners.
+- page-data-state is now a string, which makes it easier to understand
 
