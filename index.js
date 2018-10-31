@@ -435,7 +435,6 @@ PageClass.prototype.importDocument = function(doc, state) {
 	// if there is native support then it's like other resources.
 
 	var nodes = queryAll(doc, selector);
-	var sources = this.sources = {};
 
 	nodes.forEach(function(node) {
 		// just preload everything
@@ -447,7 +446,6 @@ PageClass.prototype.importDocument = function(doc, state) {
 		}
 		var src = node.src || node.href;
 		if (!src) return;
-		sources[src] = true;
 		if (states[src] === true) return;
 		// not data-uri
 		if (src.slice(0, 5) == 'data:') return;
