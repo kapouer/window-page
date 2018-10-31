@@ -131,6 +131,12 @@ If one needs to export a part of the document, that part should carry that
 attribute, to ensure Page will be able to resume loading at the correct stage.
 
 
+### Tracking of document event listeners
+
+When called within a chain, `document.addEventListener` is patched to track
+listeners automatically, and remove them when closing the page.
+
+
 ### Integration with Custom Elements
 
 Typical example with patch chain:
