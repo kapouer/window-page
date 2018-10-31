@@ -18,6 +18,7 @@ function PageClass() {
 	this.name = "PageClass";
 	this.window = window;
 	this.debug = false;
+
 	this.reset();
 
 	PageClass.Stages.forEach(function(stage) {
@@ -184,6 +185,7 @@ PageClass.prototype.run = function(state) {
 		if (state.stage == INIT) {
 			if (curState.stage == SETUP) {
 				self.stage(CLOSE);
+				self.clear();
 				return self.runChain(CLOSE, curState);
 			} else {
 				delete state.emitter;
@@ -282,10 +284,30 @@ PageClass.prototype.reload = function() {
 	return this.run(state);
 };
 
+PageClass.prototype.clear = function() {
+	(this.listeners || []).forEach(function(obj) {
+		document.removeEventListener(obj.name, obj.fn, obj.opts);
+	});
+	this.listeners = [];
+};
+
 PageClass.prototype.reset = function() {
 	var root = this.root;
 	if (!root) {
 		this.root = root = document.querySelector('[data-page-stage]') || document.documentElement;
+	}
+	var self = this;
+	this.listeners = [];
+	if (document.addEventListener == Document.prototype.addEventListener) {
+		var ael = document.addEventListener;
+		document.addEventListener = function(name, fn, opts) {
+			self.listeners.push({
+				name: name,
+				fn: fn,
+				opts: opts
+			});
+			return ael.call(document, name, fn, opts);
+		};
 	}
 	this.chains = {};
 	PageClass.Stages.forEach(function(stage) {
