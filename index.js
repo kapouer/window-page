@@ -241,7 +241,6 @@ PageClass.prototype.run = function(state) {
 		});
 	}).then(function() {
 		if (state.stage == SETUP) {
-			// run patch if any, or build
 			return self.runChain(self.chains.patch.count ? PATCH : BUILD, state);
 		} else return self.waitUiReady().then(function() {
 			if (state.abort) return Promise.reject("abort");
@@ -322,17 +321,20 @@ PageClass.prototype.chain = function(stage, fn) {
 		if (!transient) this.chains[stage].count++;
 		emitter.addEventListener('page' + stage, lfn.fn);
 	}
-	var p = Promise.resolve();
+	var p;
 	var curNum = PageClass.Stages.indexOf(this.state.stage || INIT);
 	var tryNum = PageClass.Stages.indexOf(stage);
 	if (tryNum <= curNum) {
 		debug("chain has run, execute fn now", stage);
 		var state = this.state;
-		p = p.then(function() {
+		p = new Promise(function(resolve) {
+			setTimeout(resolve);
+		}).then(function() {
 			return fn(state);
 		});
 	} else {
 		debug("chain pending", stage);
+		p = Promise.resolve();
 	}
 	return p;
 };
