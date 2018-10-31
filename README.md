@@ -78,15 +78,23 @@ API
 
 ### chains
 
-For each chain, two functions are available:
+For each chain, one can add or remove a listener function that receives the
+current state as argument.
 
 * Page[chain](fn)  
   runs fn right now if the chain is reached, or wait the chain to be run
 * Page[`un${chain}`](fn)  
   removes fn from a chain
 
-The function receives one argument: the state object.
-A chain is a promise that runs each function serially.
+Functions listening for a given stage are run serially.
+
+These listeners are either permanent or transient, depending on when they are added.
+
+- when scripts are being loaded, adding a listener makes it permanent: it is removed
+when the script node it originates from is removed (this can happen when importing
+a new document).
+- when page is ready, adding a listener makes it transient; it is removed as soon
+as page is closed (this is useful for custom elements).
 
 
 ### state
