@@ -6,18 +6,21 @@
 	<script src="/polyfills/promise.js"></script>
 	<script src="/window-page.js"></script>
 	<script>
-var builds = 0;
-Page.build(function(state) {
-	document.querySelector('.build').innerHTML = builds++;
-});
-var patchs = 0;
-Page.patch(function(state) {
-	document.querySelector('.patch').innerHTML = patchs++;
-});
-var setups = 0;
-Page.setup(function(state) {
-	document.querySelector('.setup').innerHTML = setups++;
-});
+var nums = {
+	build: 1,
+	patch: 1,
+	setup: 1
+};
+Page.build(checkNums);
+Page.patch(checkNums);
+Page.setup(checkNums);
+
+function checkNums(state) {
+	var node = document.querySelector('.' + state.stage);
+	var int = parseInt(node.innerHTML);
+	if (!isNaN(int)) nums[state.stage] += int;
+	node.innerHTML = nums[state.stage]++;
+}
 	</script>
 </head>
 <body>

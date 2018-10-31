@@ -71,15 +71,15 @@ describe("Two-phase rendering", function suite() {
 			url: host + ':' + port + '/patch.html'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
-			expect(body).to.contain('<div class="build">0</div>');
-			expect(body).to.contain('<div class="patch">0</div>');
+			expect(body).to.contain('<div class="build">1</div>');
+			expect(body).to.contain('<div class="patch">1</div>');
 			expect(body).to.contain('<div class="setup"></div>');
 			dom(body).load({
 				plugins: renderPlugins
 			})(res.request.uri.href).then(function(state) {
-				expect(state.body).to.contain('<div class="build">0</div>');
-				expect(state.body).to.contain('<div class="patch">0</div>');
-				expect(state.body).to.contain('<div class="setup">0</div>');
+				expect(state.body).to.contain('<div class="build">1</div>');
+				expect(state.body).to.contain('<div class="patch">1</div>');
+				expect(state.body).to.contain('<div class="setup">1</div>');
 				done();
 			}).catch(function(err) {
 				done(err);
