@@ -201,11 +201,24 @@ PageClass.prototype.run = function(state) {
 			if (curState.pathname == state.pathname) return; // nothing to do
 			if (self.chains.route.count > 0) return;
 			return pGet(url, 500).then(function(client) {
-				var doc = document.cloneNode(false);
-				if (!doc.documentElement) doc.appendChild(doc.createElement('html'));
-				doc.documentElement.innerHTML = client.responseText;
+				var doc, txt = client.responseText;
+				try {
+					doc = (new window.DOMParser()).parseFromString(txt);
+				} catch(ex) { /* pass */ }
+				try {
+					doc = document.cloneNode(false);
+					doc.open();
+					doc.write(txt);
+					doc.close();
+				} catch(ex) { /* pass */ }
+
 				if (client.status >= 400 && (!doc.body || doc.body.children.length == 0)) {
 					throw new Error(client.statusText);
+				} else if (!doc) {
+					setTimeout(function() {
+						document.location = url;
+					}, 500);
+					throw new Error("Cannot load remote document - redirecting...");
 				}
 				state.document = doc;
 			});
