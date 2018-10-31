@@ -145,13 +145,17 @@ PageClass.prototype.emit = function(name, state) {
 		detail: state
 	});
 	e.state = state; // backward compat
-	this.root.dispatchEvent(e);
+	Array.from(document.querySelectorAll('script')).forEach(function(node) {
+		node.dispatchEvent(e);
+	});
+	if (state.emitter) state.emitter.dispatchEvent(e);
 };
 
 PageClass.prototype.run = function(state) {
 	var url = this.format(state); // converts path if any
 	if (!state.data) state.data = {};
 	var self = this;
+	if (!self.state) self.state = state;
 	if (this.queue) {
 		if (this.state && this.state.stage == BUILD) {
 			this.state.abort = true;
@@ -177,9 +181,13 @@ PageClass.prototype.run = function(state) {
 		if (curState.pathname != state.pathname) {
 			state.stage = INIT;
 		}
-		if (state.stage == INIT && curState.stage == SETUP) {
-			self.stage(CLOSE);
-			return self.runChain(CLOSE, curState);
+		if (state.stage == INIT) {
+			if (curState.stage == SETUP) {
+				self.stage(CLOSE);
+				return self.runChain(CLOSE, curState);
+			} else {
+				delete state.emitter;
+			}
 		}
 	}).then(function() {
 		var prevStage = state.stage;
@@ -205,7 +213,15 @@ PageClass.prototype.run = function(state) {
 			return self.runChain(ROUTE, state);
 		});
 	}).then(function() {
-		if (state.stage != ROUTE || !state.document) return;
+		self.state = state;
+		if (state.stage != ROUTE) {
+			if (curState && curState.emitter) state.emitter = curState.emitter;
+			return;
+		}
+		if (state.emitter) {
+			delete state.emitter;
+		}
+		if (!state.document) return;
 		return self.importDocument(state.document, state).then(function() {
 			delete state.document;
 			var docStage = self.stage();
@@ -242,7 +258,6 @@ PageClass.prototype.run = function(state) {
 			self.runChain(ERROR, state)
 		}
 	}).then(function() {
-		self.state = state;
 		self.queue = null;
 	});
 	return this.queue;
@@ -266,26 +281,6 @@ PageClass.prototype.reset = function() {
 			count: 0
 		};
 	}, this);
-
-	var list = this.listeners;
-	var sources = this.sources || {};
-	if (list) list.forEach(function(obj) {
-		if (obj.src && sources[obj.src]) {
-			debug("keep listener", obj.evt, obj.src);
-		} else {
-			debug("remove listener", obj.evt, obj.src);
-			root.removeEventListener(obj.evt, obj.fn, obj.opts);
-		}
-	}, this);
-
-	list = this.listeners = [];
-	var meth = root.addEventListener;
-	if (meth == Node.prototype.addEventListener) root.addEventListener = function(evt, fn, opts) {
-		var src = document.currentScript;
-		if (src) src = src.src;
-		list.push({evt: evt, fn: fn, opts: opts, src: src});
-		return meth.call(root, evt, fn, opts);
-	};
 };
 
 PageClass.prototype.runChain = function(name, state) {
@@ -311,10 +306,21 @@ PageClass.prototype.chain = function(stage, fn) {
 	var ls = fn.pageListeners;
 	if (!ls) ls = fn.pageListeners = {};
 	var lfn = ls[stage];
+	var transient = false;
+	var emitter = document.currentScript;
+	if (!emitter) {
+		transient = true;
+		if (!this.state.emitter) this.state.emitter = urlHelper.cloneNode();
+		emitter = this.state.emitter;
+	}
+
 	if (!lfn) {
-		lfn = ls[stage] = this.stageListener.bind(this, stage, fn);
-		this.chains[stage].count++;
-		document.addEventListener('page' + stage, lfn);
+		lfn = ls[stage] = {
+			fn: this.stageListener.bind(this, stage, fn),
+			em: emitter
+		};
+		if (!transient) this.chains[stage].count++;
+		emitter.addEventListener('page' + stage, lfn.fn);
 	}
 	var p = Promise.resolve();
 	if (this.stage >= PageClass.Stages.indexOf(stage) - 1) {
@@ -334,9 +340,9 @@ PageClass.prototype.unchain = function(stage, fn) {
 	if (!ls) return;
 	var lfn = ls[stage];
 	if (!lfn) return;
-	this.chains[stage].count--;
+	if (lfn.em != this.state.emitter) this.chains[stage].count--;
 	delete ls[stage];
-	document.removeEventListener('page' + stage, lfn);
+	lfn.em.removeEventListener('page' + stage, lfn.fn);
 };
 
 PageClass.prototype.catcher = function(name, err, fn) {
