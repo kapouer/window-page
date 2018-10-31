@@ -68,9 +68,9 @@ describe("Rendering", function suite() {
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
 			expect(body).to.contain('data-page-stage="setup"');
-			expect(body).to.contain('<div class="build">0</div>');
-			expect(body).to.contain('<div class="patch">0</div>');
-			expect(body).to.contain('<div class="setup">0</div>');
+			expect(body).to.contain('<div class="build">1</div>');
+			expect(body).to.contain('<div class="patch">1</div>');
+			expect(body).to.contain('<div class="setup">1</div>');
 			done();
 		});
 	});
