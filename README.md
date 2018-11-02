@@ -131,10 +131,13 @@ If one needs to export a part of the document, that part should carry that
 attribute, to ensure Page will be able to resume loading at the correct stage.
 
 
-### Tracking of document event listeners
+### Integration with Event delegation, removal of body listeners
 
-When called within a chain, `document.addEventListener` is patched to track
-listeners automatically, and remove them when closing the page.
+It is safer to add event listeners (during Page.setup) on `document.body`,
+because it is the part that is replaced by default when importing a document.
+
+If `Page.updateBody` is overwritten and customized to return the same body,
+the listeners added to it will be removed automatically anyway.
 
 
 ### Integration with Custom Elements

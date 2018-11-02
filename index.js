@@ -185,7 +185,6 @@ PageClass.prototype.run = function(state) {
 		if (state.stage == INIT) {
 			if (curState.stage == SETUP) {
 				self.stage(CLOSE);
-				self.clear();
 				return self.runChain(CLOSE, curState);
 			} else {
 				delete state.emitter;
@@ -293,7 +292,7 @@ PageClass.prototype.reload = function() {
 	return this.run(state);
 };
 
-PageClass.prototype.clear = function() {
+PageClass.prototype.clearListeners = function() {
 	(this.listeners || []).forEach(function(obj) {
 		document.body.removeEventListener(obj.name, obj.fn, obj.opts);
 	});
@@ -561,7 +560,10 @@ PageClass.prototype.importDocument = function(doc, state) {
 			return me.updateBody(body, state);
 		}).then(function(body) {
 			if (body && body.nodeName == "BODY") {
-				me.root.replaceChild(body, document.body);
+				me.listeners = [];
+				document.body.parentNode.replaceChild(body, document.body);
+			} else {
+				me.clearListeners();
 			}
 		});
 	}).then(function() {
