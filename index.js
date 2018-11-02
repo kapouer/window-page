@@ -169,6 +169,7 @@ PageClass.prototype.run = function(state) {
 	var curState;
 	this.queue = this.waitReady().then(function() {
 		// not sure state.stage must be set here
+		self.trackListeners(document.body);
 		state.initialStage = state.stage = self.stage();
 		debug("doc ready at stage", state.initialStage);
 		curState = self.state || self.parse();
@@ -292,22 +293,22 @@ PageClass.prototype.reload = function() {
 	return this.run(state);
 };
 
-PageClass.prototype.clearListeners = function() {
+PageClass.prototype.clearListeners = function(node) {
 	(this.listeners || []).forEach(function(obj) {
-		document.body.removeEventListener(obj.name, obj.fn, obj.opts);
+		node.removeEventListener(obj.name, obj.fn, obj.opts);
 	});
 	this.listeners = [];
 };
 
-PageClass.prototype.reset = function() {
-	var root = this.root;
-	if (!root) {
-		this.root = root = document.querySelector('[data-page-stage]') || document.documentElement;
-	}
+PageClass.prototype.trackListeners = function(node) {
 	var self = this;
 	this.listeners = [];
-	if (document.body.addEventListener == Node.prototype.addEventListener) {
-		document.body.addEventListener = function(name, fn, opts) {
+	if (!node) {
+		console.warn("No node to track listeners");
+		return;
+	}
+	if (node.addEventListener == Node.prototype.addEventListener) {
+		node.addEventListener = function(name, fn, opts) {
 			self.listeners.push({
 				name: name,
 				fn: fn,
@@ -315,6 +316,13 @@ PageClass.prototype.reset = function() {
 			});
 			return Node.prototype.addEventListener.call(this, name, fn, opts);
 		};
+	}
+};
+
+PageClass.prototype.reset = function() {
+	var root = this.root;
+	if (!root) {
+		this.root = root = document.querySelector('[data-page-stage]') || document.documentElement;
 	}
 	this.chains = {};
 	PageClass.Stages.forEach(function(stage) {
@@ -538,6 +546,7 @@ PageClass.prototype.importDocument = function(doc, state) {
 	var body = nroot.querySelector('body');
 
 	this.reset();
+	this.trackListeners(body);
 
 	var atts = nroot.attributes;
 	for (var i=0; i < atts.length; i++) {
@@ -557,13 +566,11 @@ PageClass.prototype.importDocument = function(doc, state) {
 		return parallels;
 	}).then(function() {
 		return Promise.resolve().then(function() {
+			me.clearListeners(document.body);
 			return me.updateBody(body, state);
 		}).then(function(body) {
 			if (body && body.nodeName == "BODY") {
-				me.listeners = [];
 				document.body.parentNode.replaceChild(body, document.body);
-			} else {
-				me.clearListeners();
 			}
 		});
 	}).then(function() {
