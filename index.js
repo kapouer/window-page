@@ -205,14 +205,23 @@ PageClass.prototype.run = function(state) {
 			return pGet(url, 500).then(function(client) {
 				var doc, txt = client.responseText;
 				try {
-					doc = (new window.DOMParser()).parseFromString(txt);
-				} catch(ex) { /* pass */ }
-				try {
-					doc = document.cloneNode(false);
-					doc.open();
-					doc.write(txt);
-					doc.close();
-				} catch(ex) { /* pass */ }
+					doc = (new window.DOMParser()).parseFromString(txt, "text/html");
+				} catch(ex) {
+					try {
+						doc = document.cloneNode(false);
+						doc.open();
+						doc.write(txt);
+						doc.close();
+					} catch(ex) { /* pass */ }
+				}
+				if (doc && !doc.documentElement && doc.children.length == 1) {
+					// firefox
+					try {
+						doc.documentElement = doc.firstElementChild;
+					} catch(ex) {
+						console.error(ex);
+					}
+				}
 
 				if (client.status >= 400 && (!doc.body || doc.body.children.length == 0)) {
 					throw new Error(client.statusText);
