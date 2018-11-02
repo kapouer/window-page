@@ -295,7 +295,7 @@ PageClass.prototype.reload = function() {
 
 PageClass.prototype.clear = function() {
 	(this.listeners || []).forEach(function(obj) {
-		document.removeEventListener(obj.name, obj.fn, obj.opts);
+		document.body.removeEventListener(obj.name, obj.fn, obj.opts);
 	});
 	this.listeners = [];
 };
@@ -307,15 +307,14 @@ PageClass.prototype.reset = function() {
 	}
 	var self = this;
 	this.listeners = [];
-	if (document.addEventListener == Document.prototype.addEventListener) {
-		var ael = document.addEventListener;
-		document.addEventListener = function(name, fn, opts) {
+	if (document.body.addEventListener == Node.prototype.addEventListener) {
+		document.body.addEventListener = function(name, fn, opts) {
 			self.listeners.push({
 				name: name,
 				fn: fn,
 				opts: opts
 			});
-			return ael.call(document, name, fn, opts);
+			return Node.prototype.addEventListener.call(this, name, fn, opts);
 		};
 	}
 	this.chains = {};
