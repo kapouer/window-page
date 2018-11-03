@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Sample build and patch page</title>
+	<script src="/polyfills/url.js"></script>
+	<script src="/polyfills/promise.js"></script>
+	<script src="/window-page.js"></script>
+	<script>
+var nums = {
+	build: 1,
+	patch: 1,
+	setup: 1
+};
+Page.build(checkNums);
+Page.patch(checkNums);
+Page.setup(checkNums);
+
+Page.patch(function(state) {
+	var once = document.getElementById("once");
+	if (once) return once.remove();
+});
+
+Page.patch(function(state) {
+	document.getElementById('query').innerText = state.query.test;
+	document.getElementById('loc').innerText = Page.format(state);
+});
+
+Page.setup(function(state) {
+	if (state.query.test == "one") return;
+	state.query.test = "one";
+	Page.push({
+		pathname: state.pathname,
+		query: {
+			test: "one"
+		}
+	});
+});
+
+function checkNums(state) {
+	var node = document.querySelector('.' + state.stage);
+	var int = parseInt(node.innerHTML);
+	if (!isNaN(int)) nums[state.stage] += int;
+	node.innerHTML = nums[state.stage]++;
+}
+	</script>
+</head>
+<body>
+<div id="once"></div>
+<div class="build"></div>
+<div class="patch"></div>
+<div class="setup"></div>
+<div id="query"></div>
+<div id="loc"></div>
+</body>
+</html>
