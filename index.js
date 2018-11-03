@@ -203,26 +203,7 @@ PageClass.prototype.run = function(state) {
 			if (curState.pathname == state.pathname) return; // nothing to do
 			if (self.chains.route.count > 0) return;
 			return pGet(url, 500).then(function(client) {
-				var doc, txt = client.responseText;
-				try {
-					doc = (new window.DOMParser()).parseFromString(txt, "text/html");
-				} catch(ex) {
-					try {
-						doc = document.cloneNode(false);
-						doc.open();
-						doc.write(txt);
-						doc.close();
-					} catch(ex) { /* pass */ }
-				}
-				if (doc && !doc.documentElement && doc.children.length == 1) {
-					// firefox
-					try {
-						doc.documentElement = doc.firstElementChild;
-					} catch(ex) {
-						console.error(ex);
-					}
-				}
-
+				var doc = parseDoc(client.responseText);
 				if (client.status >= 400 && (!doc.body || doc.body.children.length == 0)) {
 					throw new Error(client.statusText);
 				} else if (!doc) {
@@ -826,6 +807,29 @@ function debug() {
 	var inst = window.Page || window.parent.Page;
 	// eslint-disable-next-line no-console
 	if (!inst || inst.debug) console.info.apply(console, Array.prototype.slice.call(arguments));
+}
+
+function parseDoc(str) {
+	var doc;
+	try {
+		doc = (new window.DOMParser()).parseFromString(str, "text/html");
+	} catch(ex) {
+		try {
+			doc = document.cloneNode(false);
+			doc.open();
+			doc.write(str);
+			doc.close();
+		} catch(ex) { /* pass */ }
+	}
+	if (doc && !doc.documentElement && doc.children.length == 1) {
+		// firefox
+		try {
+			doc.documentElement = doc.firstElementChild;
+		} catch(ex) {
+			console.error(ex);
+		}
+	}
+	return doc;
 }
 
 PageClass.init = function() {
