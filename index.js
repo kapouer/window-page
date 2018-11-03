@@ -187,8 +187,6 @@ PageClass.prototype.run = function(state) {
 			if (curState.stage == SETUP) {
 				self.stage(CLOSE);
 				return self.runChain(CLOSE, curState);
-			} else {
-				delete state.emitter;
 			}
 		}
 	}).then(function() {
@@ -220,11 +218,10 @@ PageClass.prototype.run = function(state) {
 	}).then(function() {
 		self.state = state;
 		if (state.stage != ROUTE) {
-			if (curState && curState.emitter) state.emitter = curState.emitter;
+			if (curState && curState.emitter && !state.emitter) {
+				state.emitter = curState.emitter;
+			}
 			return;
-		}
-		if (state.emitter) {
-			delete state.emitter;
 		}
 		if (!state.document) return;
 		return self.importDocument(state.document, state).then(function() {
