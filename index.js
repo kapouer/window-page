@@ -340,8 +340,8 @@ PageClass.prototype.chain = function(stage, fn) {
 	var emitter = document.currentScript;
 	if (!emitter) {
 		transient = true;
-		if (!this.state.emitter) this.state.emitter = urlHelper.cloneNode();
 		emitter = this.state.emitter;
+		if (!emitter) emitter = this.state.emitter = urlHelper.cloneNode();
 	}
 
 	if (!lfn) {
