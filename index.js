@@ -226,6 +226,7 @@ PageClass.prototype.run = function(state) {
 			}
 			return;
 		}
+		self.clearListeners(document.body);
 		if (!state.document) return;
 		return self.importDocument(state.document, state).then(function() {
 			delete state.document;
@@ -548,7 +549,6 @@ PageClass.prototype.importDocument = function(doc, state) {
 		return parallels;
 	}).then(function() {
 		return Promise.resolve().then(function() {
-			me.clearListeners(document.body);
 			return me.updateBody(body, state);
 		}).then(function(body) {
 			if (body && body.nodeName == "BODY") {
