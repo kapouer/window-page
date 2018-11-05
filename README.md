@@ -18,6 +18,7 @@ Chains are always run after DOM is ready.
 
 - init, always called at start of a page run
 - route, allows one to load a remote document and import it with its assets
+  by setting state.document 
 - build, fetch data and fill document
 - patch, when query changes, fetch data and update document
 - setup, UI, events animations
