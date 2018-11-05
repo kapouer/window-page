@@ -283,12 +283,12 @@ PageClass.prototype.clearListeners = function(node) {
 
 PageClass.prototype.trackListeners = function(node) {
 	var self = this;
-	this.listeners = [];
 	if (!node) {
 		console.warn("No node to track listeners");
 		return;
 	}
 	if (node.addEventListener == Node.prototype.addEventListener) {
+		this.listeners = [];
 		node.addEventListener = function(name, fn, opts) {
 			debug("track listener", name);
 			self.listeners.push({
