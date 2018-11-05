@@ -26,4 +26,4 @@ scripts or on a per-page emitter.
 has the same value.
 - new: Page.unroute, unbuild, unsetup, unpatch... can unregister listeners.
 - page-data-state is now a string, which makes it easier to understand
-
+- Page.createDoc(str) to build a document out of a string

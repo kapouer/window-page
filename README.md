@@ -195,6 +195,9 @@ When importing a document, scritps and link imports are serially loaded in order
 
 ### Tools
 
+* Page.createDoc(str)  
+  returns an HTML document from a string.
+
 * Page.parse(url)  
   parses a url into pathname, query object, hash; and protocol, hostname, port
   if not the same domain as the document.
