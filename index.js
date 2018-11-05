@@ -139,6 +139,7 @@ PageClass.prototype.sameDomain = function(a, b) {
 };
 
 PageClass.prototype.emit = function(name, state) {
+	debug("emit", name);
 	var e = new CustomEvent(name, {
 		view: window,
 		bubbles: true,
@@ -159,8 +160,10 @@ PageClass.prototype.run = function(state) {
 	if (!self.state) self.state = state;
 	if (this.queue) {
 		if (this.state && this.state.stage == BUILD) {
+			debug("aborting current run");
 			this.state.abort = true;
 		} else {
+			debug("queueing");
 			return this.queue.then(function() {
 				return self.run(state);
 			});
@@ -168,8 +171,8 @@ PageClass.prototype.run = function(state) {
 	}
 	var curState;
 	this.queue = this.waitReady().then(function() {
-		// not sure state.stage must be set here
 		self.trackListeners(document.body);
+		// not sure state.stage must be set here
 		state.initialStage = state.stage = self.stage();
 		debug("doc ready at stage", state.initialStage);
 		curState = self.state || self.parse();
@@ -287,6 +290,7 @@ PageClass.prototype.trackListeners = function(node) {
 	}
 	if (node.addEventListener == Node.prototype.addEventListener) {
 		node.addEventListener = function(name, fn, opts) {
+			debug("track listener", name);
 			self.listeners.push({
 				name: name,
 				fn: fn,
@@ -647,10 +651,11 @@ PageClass.prototype.historyMethod = function(method, newState, state) {
 	if (!this.sameDomain(state, copy)) {
 		// eslint-disable-next-line no-console
 		if (method == "replace") console.info("Cannot replace to a different origin");
+		debug("redirecting to", url);
 		document.location = url;
 		return Promise.resolve();
 	}
-
+	debug("run", method, state);
 	return this.run(copy).then(function() {
 		this.historySave(method, copy);
 	}.bind(this));
@@ -664,6 +669,7 @@ PageClass.prototype.historySave = function(method, state) {
 
 PageClass.prototype.historyListener = function(e) {
 	var state = this.stateFrom(e.state);
+	debug("history event", e.type, state);
 	if (state) {
 		this.run(state);
 	} else {
