@@ -167,27 +167,5 @@ describe("Two-phase rendering", function suite() {
 			});
 		});
 	});
-
-	it("should run build and patch then setup then patch then back then patch", function(done) {
-		require('webkitgtk').load(host + ':' + port + '/back.html', {
-			stallTimeout: 100,
-			console: true,
-			navigation: true
-		}).once('idle', function() {
-			setTimeout(function() {
-				this.html().then(function(body) {
-					expect(body).to.contain('<div class="build">1</div>');
-					expect(body).to.contain('<div class="patch">2</div>');
-					expect(body).to.contain('<div class="setup">1</div>');
-					expect(body).to.contain('<div id="loc">/back.html?test=one</div>');
-					expect(body).to.contain('<div id="back">/back.html</div>');
-					done();
-				}).catch(function(err) {
-					done(err);
-				});
-			}.bind(this), 500);
-		});
-	});
-
 });
 
