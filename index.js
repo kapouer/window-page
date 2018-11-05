@@ -201,7 +201,7 @@ PageClass.prototype.run = function(state) {
 			if (curState.pathname == state.pathname) return; // nothing to do
 			if (self.chains.route.count > 0) return;
 			return pGet(url, 500).then(function(client) {
-				var doc = parseDoc(client.responseText);
+				var doc = self.createDoc(client.responseText);
 				if (client.status >= 400 && (!doc.body || doc.body.children.length == 0)) {
 					throw new Error(client.statusText);
 				} else if (!doc) {
@@ -806,7 +806,7 @@ function debug() {
 	if (!inst || inst.debug) console.info.apply(console, Array.prototype.slice.call(arguments));
 }
 
-function parseDoc(str) {
+PageClass.prototype.createDoc = function(str) {
 	var doc;
 	try {
 		doc = (new window.DOMParser()).parseFromString(str, "text/html");
@@ -827,7 +827,7 @@ function parseDoc(str) {
 		}
 	}
 	return doc;
-}
+};
 
 PageClass.init = function() {
 	var inst = window.Page;
