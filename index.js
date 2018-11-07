@@ -60,12 +60,15 @@ PageClass.prototype.parse = function(str) {
 	}
 	var obj = {
 		pathname: loc.pathname,
-		query: loc.query || QueryString.parse(loc.search),
-		hash: loc.hash
+		query: loc.query || QueryString.parse(loc.search)
 	};
 	if (!obj.pathname) obj.pathname = "/";
 	else if (obj.pathname[0] != "/") obj.pathname = "/" + obj.pathname;
-	if (obj.hash && obj.hash[0] == "#") obj.hash = obj.hash.substring(1);
+
+	var hash = loc.hash || (str == null ? dloc.hash : null);
+	if (hash && hash[0] == "#") hash = hash.substring(1);
+
+	if (hash != null && hash != '') obj.hash = hash;
 
 	if (this.sameDomain(loc, dloc)) {
 		delete obj.port;
