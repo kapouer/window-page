@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Sample hash page</title>
+	<script src="/polyfills/url.js"></script>
+	<script src="/polyfills/promise.js"></script>
+	<script src="/window-page.js"></script>
+	<script>
+var nums = {
+	build: 0,
+	hash: 0,
+	setup: 0
+};
+var reads = {};
+Page.build(checkNums);
+Page.setup(checkNums);
+Page.hash(checkNums);
+
+function checkNums(state) {
+	var stage = state.stage;
+	var node = document.querySelector('.' + stage);
+	if (!reads[stage]) {
+		reads[stage] = true;
+		var int = parseInt(node.innerHTML);
+		if (!isNaN(int)) nums[stage] = int;
+	}
+	node.innerHTML = ++nums[stage];
+}
+
+Page.hash(function(state) {
+	document.querySelector('#hash').innerHTML = state.hash;
+});
+	</script>
+</head>
+<body>
+<div class="build"></div>
+<div class="setup"></div>
+<div class="hash"></div>
+<div id="hash"></div>
+</body>
+</html>

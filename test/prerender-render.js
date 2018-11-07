@@ -185,5 +185,25 @@ describe("Two-phase rendering", function suite() {
 			}.bind(this), 500);
 		});
 	});
+
+	it("should run build then setup then hash", function(done) {
+		Web.load(host + ':' + port + '/hash.html#test', {
+			stallTimeout: 100,
+			console: true,
+			navigation: true
+		}).once('idle', function() {
+			setTimeout(function() {
+				this.html().then(function(body) {
+					expect(body).to.contain('<div class="build">1</div>');
+					expect(body).to.contain('<div class="setup">1</div>');
+					expect(body).to.contain('<div class="hash">1</div>');
+					expect(body).to.contain('<div id="hash">test</div>');
+					done();
+				}).catch(function(err) {
+					done(err);
+				});
+			}.bind(this), 500);
+		});
+	});
 });
 
