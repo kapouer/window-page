@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Sample hash page</title>
+	<script src="/polyfills/url.js"></script>
+	<script src="/polyfills/promise.js"></script>
+	<script src="/window-page.js"></script>
+	<script>
+Page.setup(function(state) {
+	document.querySelector('.hash').innerHTML = state.hash;
+	setTimeout(function() {
+		document.getElementById('link').click();
+	}, 100);
+});
+Page.hash(function(state) {
+	document.querySelector('.secondhash').innerHTML = state.hash;
+});
+	</script>
+</head>
+<body>
+<div class="hash"></div>
+<div class="secondhash"></div>
+<a href="#toto" id="link">test</a>
+</body>
+</html>

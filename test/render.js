@@ -228,5 +228,22 @@ describe("Rendering", function suite() {
 		});
 	});
 
+	it("should keep state.hash", function(done) {
+		Web(function(err, page) {
+			page.load(host + ':' + port + '/templates/hash.html#test', {
+				stallTimeout: 1000,
+				console: true,
+				navigation: true
+			}).when('idle', function() {
+				return page.html().then(function(body) {
+					expect(body).to.contain('data-page-stage="setup"');
+					expect(body).to.contain('<div class="hash">test</div>');
+					expect(body).to.contain('<div class="secondhash">toto</div>');
+					done();
+				});
+			}).catch(done);
+		});
+	});
+
 });
 
