@@ -26,7 +26,7 @@ Chains are always run after DOM is ready.
 - error, a fatal error happened during page run, `state.error` is set.
 - hash, the location hash has changed, `state.hash` is set.
 
-A run is triggered by navigation (document.location changed except hash).
+A run is triggered by navigation (document.location changed).
 
 Route and build chains are called when pathname changes and if the page has not
 been built once and reopened (as with prerendering).
@@ -34,6 +34,8 @@ been built once and reopened (as with prerendering).
 Patch chain is called after build, and also when query changes.
 
 Setup chain is called when document is visible and stylesheets are loaded.
+
+Hash chain is called when state.hash changed, after setup if any.
 
 
 Usage
