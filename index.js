@@ -266,6 +266,7 @@ PageClass.prototype.run = function(state) {
 			self.runChain(ERROR, state)
 		}
 	}).then(function() {
+		if (state.hash != curState.hash) self.runChain(HASH, state);
 		self.queue = null;
 	});
 	return this.queue;
