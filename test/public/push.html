@@ -6,13 +6,28 @@
 	<script src="/polyfills/promise.js"></script>
 	<script src="/window-page.js"></script>
 	<script>
-var builds = 0;
-Page.build(function(state) {
-	document.querySelector('.build').innerHTML = builds++;
-});
-var patchs = 0;
+var nums = {
+	build: 0,
+	patch: 0,
+	setup: 0
+};
+var reads = {};
+Page.build(checkNums);
+Page.patch(checkNums);
+Page.setup(checkNums);
+
+function checkNums(state) {
+	var stage = state.stage;
+	var node = document.querySelector('.' + stage);
+	if (!reads[stage]) {
+		reads[stage] = true;
+		var int = parseInt(node.innerHTML);
+		if (!isNaN(int)) nums[stage] = int;
+	}
+	node.innerHTML = ++nums[stage];
+}
+
 Page.patch(function(state) {
-	document.querySelector('.patch').innerHTML = patchs++;
 	if (state.query.toto) {
 		document.querySelector('.url').innerHTML = Page.format(state);
 		setTimeout(function() {
@@ -21,9 +36,8 @@ Page.patch(function(state) {
 		}, 300);
 	}
 });
-var setups = 0;
+
 Page.setup(function(state) {
-	document.querySelector('.setup').innerHTML = setups++;
 	setTimeout(function() {
 		Page.push({query: {toto:1}});
 	}, 300);

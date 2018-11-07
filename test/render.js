@@ -77,33 +77,41 @@ describe("Rendering", function suite() {
 	});
 
 	it("should run build and patch and setup, call replace and run patch again", function(done) {
-		request({
-			method: 'GET',
-			url: host + ':' + port + '/replace.html'
-		}, function(err, res, body) {
-			expect(res.statusCode).to.be(200);
-			expect(body).to.contain('data-page-stage="setup"');
-			expect(body).to.contain('<div class="build">0</div>');
-			expect(body).to.contain('<div class="patch">1</div>');
-			expect(body).to.contain('<div class="setup">0</div>');
-			expect(body).to.contain('<div class="url">/replace.html?toto=1</div>');
-			done();
+		Web(function(err, page) {
+			page.load(host + ':' + port + '/replace.html', {
+				stallTimeout: 1000,
+				console: true,
+				navigation: true
+			}).when('idle', function() {
+				return page.html().then(function(body) {
+					expect(body).to.contain('data-page-stage="setup"');
+					expect(body).to.contain('<div class="build">1</div>');
+					expect(body).to.contain('<div class="patch">2</div>');
+					expect(body).to.contain('<div class="setup">1</div>');
+					expect(body).to.contain('<div class="url">/replace.html?toto=1</div>');
+					done();
+				});
+			}).catch(done);
 		});
 	});
 
 	it("should run build and patch and setup, call push and run patch again", function(done) {
-		request({
-			method: 'GET',
-			url: host + ':' + port + '/push.html'
-		}, function(err, res, body) {
-			expect(res.statusCode).to.be(200);
-			expect(body).to.contain('data-page-stage="setup"');
-			expect(body).to.contain('<div class="build">0</div>');
-			expect(body).to.contain('<div class="patch">2</div>');
-			expect(body).to.contain('<div class="setup">0</div>');
-			expect(body).to.contain('<div class="url">/push.html?toto=2</div>');
-			expect(body).to.contain('<div class="location">/push.html?toto=2</div>');
-			done();
+		Web(function(err, page) {
+			page.load(host + ':' + port + '/push.html', {
+				stallTimeout: 1000,
+				console: true,
+				navigation: true
+			}).when('idle', function() {
+				return page.html().then(function(body) {
+				expect(body).to.contain('data-page-stage="setup"');
+				expect(body).to.contain('<div class="build">1</div>');
+				expect(body).to.contain('<div class="patch">3</div>');
+				expect(body).to.contain('<div class="setup">1</div>');
+				expect(body).to.contain('<div class="url">/push.html?toto=2</div>');
+				expect(body).to.contain('<div class="location">/push.html?toto=2</div>');
+					done();
+				});
+			}).catch(done);
 		});
 	});
 
