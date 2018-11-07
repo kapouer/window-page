@@ -257,6 +257,8 @@ PageClass.prototype.run = function(state) {
 				self.stage(SETUP);
 			});
 		});
+	}).then(function() {
+		if (state.hash != curState.hash) return self.runChain(HASH, state);
 	}).catch(function(err) {
 		delete state.abort;
 		if (err != "abort") {
@@ -266,7 +268,6 @@ PageClass.prototype.run = function(state) {
 			self.runChain(ERROR, state)
 		}
 	}).then(function() {
-		if (state.hash != curState.hash) self.runChain(HASH, state);
 		self.queue = null;
 	});
 	return this.queue;
@@ -672,17 +673,9 @@ PageClass.prototype.historySave = function(method, state) {
 };
 
 PageClass.prototype.historyListener = function(e) {
-	var state = this.stateFrom(e.state);
+	var state = this.stateFrom(e.state) || this.parse();
 	debug("history event", e.type, state);
-	if (state) {
-		this.run(state);
-	} else {
-		state = this.parse();
-		if (this.samePath(this.state, state) && this.state.hash != state.hash) {
-			this.runChain(HASH, state);
-			this.state.hash = state.hash;
-		}
-	}
+	this.run(state);
 };
 
 PageClass.prototype.stateTo = function(state) {
