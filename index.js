@@ -160,7 +160,6 @@ PageClass.prototype.run = function(state) {
 	var url = this.format(state); // converts path if any
 	if (!state.data) state.data = {};
 	var self = this;
-	if (!self.state) self.state = state;
 	if (this.queue) {
 		if (this.state && this.state.stage == BUILD) {
 			debug("aborting current run");
@@ -172,27 +171,29 @@ PageClass.prototype.run = function(state) {
 			});
 		}
 	}
-	var curState;
+	var refer = self.state || document.referrer;
+	if (!self.state) {
+		self.state = this.parse(state);
+		delete self.state.hash;
+	}
+	refer = self.referrer = refer ? self.parse(refer) : self.state;
 	this.queue = this.waitReady().then(function() {
 		self.trackListeners(document.body);
 		// not sure state.stage must be set here
 		state.initialStage = state.stage = self.stage();
 		debug("doc ready at stage", state.initialStage);
-		curState = self.state || self.parse();
-		if (!self.sameDomain(curState, state)) {
+
+		if (!self.sameDomain(refer, state)) {
 			throw new Error("Cannot route to a different domain:\n" + url);
 		}
-		var refer = self.state || document.referrer;
-		if (refer) self.referrer = self.parse(refer);
-		else self.referrer = null;
 
-		if (curState.pathname != state.pathname) {
+		if (refer.pathname != state.pathname) {
 			state.stage = INIT;
 		}
 		if (state.stage == INIT) {
-			if (curState.stage == SETUP) {
+			if (refer.stage == SETUP) {
 				self.stage(CLOSE);
-				return self.runChain(CLOSE, curState);
+				return self.runChain(CLOSE, refer);
 			}
 		}
 	}).then(function() {
@@ -204,7 +205,7 @@ PageClass.prototype.run = function(state) {
 		if (state.stage != INIT) return;
 		self.stage(INIT);
 		return Promise.resolve().then(function() {
-			if (curState.pathname == state.pathname) return; // nothing to do
+			if (refer.pathname == state.pathname) return; // nothing to do
 			if (self.chains.route.count > 0) return;
 			return pGet(url, 500).then(function(client) {
 				var doc = self.createDoc(client.responseText);
@@ -224,8 +225,8 @@ PageClass.prototype.run = function(state) {
 	}).then(function() {
 		self.state = state;
 		if (state.stage != ROUTE) {
-			if (curState && curState.emitter && !state.emitter) {
-				state.emitter = curState.emitter;
+			if (self.state && self.state.emitter && !state.emitter) {
+				state.emitter = self.state.emitter;
 			}
 			return;
 		}
@@ -250,7 +251,7 @@ PageClass.prototype.run = function(state) {
 		});
 	}).then(function() {
 		if (state.stage == SETUP) {
-			if (!self.samePath(state, curState)) {
+			if (!self.samePath(state, refer)) {
 				return self.runChain(self.chains.patch.count ? PATCH : BUILD, state);
 			}
 		} else return self.waitUiReady().then(function() {
@@ -260,7 +261,7 @@ PageClass.prototype.run = function(state) {
 			});
 		});
 	}).then(function() {
-		if (state.hash != curState.hash) return self.runChain(HASH, state);
+		if (state.hash != refer.hash) return self.runChain(HASH, state);
 	}).catch(function(err) {
 		delete state.abort;
 		if (err != "abort") {
