@@ -206,9 +206,9 @@ describe("Rendering", function suite() {
 		});
 	});
 
-	it("should keep state.hash", function(done) {
+	it("should parse state.hash and run hash chain on click", function(done) {
 		Web(function(err, page) {
-			page.load(host + ':' + port + '/templates/hash.html#test', {
+			page.load(host + ':' + port + '/templates/hash-click.html#test', {
 				stallTimeout: 1000,
 				console: true,
 				navigation: true
@@ -217,6 +217,22 @@ describe("Rendering", function suite() {
 					expect(body).to.contain('data-page-stage="setup"');
 					expect(body).to.contain('<div class="hash">test</div>');
 					expect(body).to.contain('<div class="secondhash">toto</div>');
+					done();
+				});
+			}).catch(done);
+		});
+	});
+
+	it("should run hash chain on push", function(done) {
+		Web(function(err, page) {
+			page.load(host + ':' + port + '/templates/hash-push.html', {
+				stallTimeout: 1000,
+				console: true,
+				navigation: true
+			}).when('idle', function() {
+				return page.html().then(function(body) {
+					expect(body).to.contain('data-page-stage="setup"');
+					expect(body).to.contain('<div class="hash">test</div>');
 					done();
 				});
 			}).catch(done);

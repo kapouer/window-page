@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Sample hash page</title>
+	<script src="/polyfills/url.js"></script>
+	<script src="/polyfills/promise.js"></script>
+	<script src="/window-page.js"></script>
+	<script>
+Page.setup(function(state) {
+	setTimeout(function() {
+		Page.push({hash: 'test'});
+	}, 100);
+});
+Page.hash(function(state) {
+	document.querySelector('.hash').innerHTML = state.hash;
+});
+	</script>
+</head>
+<body>
+<div class="hash"></div>
+</body>
+</html>
