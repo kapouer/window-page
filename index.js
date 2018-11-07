@@ -250,7 +250,9 @@ PageClass.prototype.run = function(state) {
 		});
 	}).then(function() {
 		if (state.stage == SETUP) {
-			return self.runChain(self.chains.patch.count ? PATCH : BUILD, state);
+			if (!self.samePath(state, curState)) {
+				return self.runChain(self.chains.patch.count ? PATCH : BUILD, state);
+			}
 		} else return self.waitUiReady().then(function() {
 			if (state.abort) return Promise.reject("abort");
 			return self.runChain(SETUP, state).then(function() {
