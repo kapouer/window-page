@@ -7,6 +7,7 @@ var expect = require('expect.js');
 var request = require('request');
 var express = require('express');
 var dom = require('express-dom');
+var Web = require('webkitgtk');
 
 dom.settings.stall = 5000;
 dom.settings.allow = 'all';
@@ -165,6 +166,27 @@ describe("Two-phase rendering", function suite() {
 			}).catch(function(err) {
 				done(err);
 			});
+		});
+	});
+
+	it("should run build and patch then setup then patch then back then patch", function(done) {
+		Web.load(host + ':' + port + '/back-patch.html', {
+			stallTimeout: 100,
+			console: true,
+			navigation: true
+		}).once('idle', function() {
+			setTimeout(function() {
+				this.html().then(function(body) {
+					expect(body).to.contain('<div class="build">1</div>');
+					expect(body).to.contain('<div class="patch">2</div>');
+					expect(body).to.contain('<div class="setup">1</div>');
+					expect(body).to.contain('<div id="loc">/back-patch.html?test=one</div>');
+					expect(body).to.contain('<div id="back">/back-patch.html</div>');
+					done();
+				}).catch(function(err) {
+					done(err);
+				});
+			}.bind(this), 500);
 		});
 	});
 });

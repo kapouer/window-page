@@ -170,28 +170,6 @@ describe("Rendering", function suite() {
 		});
 	});
 
-	it("should run build and patch then setup then patch then back then patch", function(done) {
-		Web.load(host + ':' + port + '/back-patch.html', {
-			stallTimeout: 100,
-			console: true,
-			navigation: true
-		}).once('idle', function() {
-			setTimeout(function() {
-				this.html().then(function(body) {
-					expect(body).to.contain('<div class="build">1</div>');
-					expect(body).to.contain('<div class="patch">2</div>');
-					expect(body).to.contain('<div class="setup">1</div>');
-					expect(body).to.contain('<div id="loc">/back.html?test=one</div>');
-					expect(body).to.contain('<div id="back">/back.html</div>');
-					expect(body).to.contain('<div id="listener">2</div>');
-					done();
-				}).catch(function(err) {
-					done(err);
-				});
-			}.bind(this), 500);
-		});
-	});
-
 	it("should run build and patch then setup then back then build", function(done) {
 		Web(function(err, page) {
 			page.load(host + ':' + port + '/templates/back-build.html', {
