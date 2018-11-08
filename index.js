@@ -223,13 +223,11 @@ PageClass.prototype.run = function(state) {
 			return self.runChain(ROUTE, state);
 		});
 	}).then(function() {
+		var prev = self.state;
+		state.emitter = prev.emitter;
 		self.state = state;
-		if (state.stage != ROUTE) {
-			if (self.state && self.state.emitter && !state.emitter) {
-				state.emitter = self.state.emitter;
-			}
-			return;
-		}
+		if (state.stage != ROUTE) return;
+		if (prev.stage) delete state.emitter;
 		self.clearListeners(document.body);
 		if (!state.document) return;
 		return self.importDocument(state.document, state).then(function() {
