@@ -247,5 +247,23 @@ describe("Rendering", function suite() {
 		});
 	});
 
+	it("should allow early setup on state.emitter but not twice for same function", function(done) {
+		Web(function(err, page) {
+			page.load(host + ':' + port + '/templates/early-setup.html', {
+				stallTimeout: 1000,
+				console: true,
+				navigation: true
+			}).when('idle', function() {
+				setTimeout(function() {
+					return page.html().then(function(body) {
+						expect(body).to.contain('data-page-stage="setup"');
+						expect(body).to.contain('<div class="testA">1</div>');
+						expect(body).to.contain('<div class="testB">1</div>');
+						done();
+					}).catch(done);
+				}, 150);
+			}).catch(done);
+		});
+	});
 });
 
