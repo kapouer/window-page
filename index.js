@@ -204,11 +204,12 @@ PageClass.prototype.run = function(state) {
 	}).then(function() {
 		if (state.stage != INIT) return;
 		self.stage(INIT);
-		if (self.state.pathname == state.pathname) {
+		if (state.initialStage !== INIT && self.state.pathname == state.pathname) {
 			debug("refer has same pathname", state.pathname);
 			return;
 		}
-		return self.runChain(ROUTE, state) || pGet(url, 500).then(function(client) {
+		var routed = self.runChain(ROUTE, state);
+		if (!routed && state.initialStage !== INIT) return pGet(url, 500).then(function(client) {
 			var doc = self.createDoc(client.responseText);
 			if (client.status >= 400 && (!doc.body || doc.body.children.length == 0)) {
 				throw new Error(client.statusText);
@@ -220,6 +221,7 @@ PageClass.prototype.run = function(state) {
 			}
 			state.document = doc;
 		});
+		return routed;
 	}).then(function() {
 		var prev = self.state;
 		state.emitter = prev.emitter;
