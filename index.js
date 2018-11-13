@@ -290,6 +290,7 @@ PageClass.prototype.clearListeners = function(node) {
 PageClass.prototype.trackListeners = function(node) {
 	var self = this;
 	if (!node) {
+		// eslint-disable-next-line no-console
 		console.warn("No node to track listeners");
 		return;
 	}
@@ -841,6 +842,7 @@ PageClass.prototype.createDoc = function(str) {
 		try {
 			doc.documentElement = doc.firstElementChild;
 		} catch(ex) {
+			// eslint-disable-next-line no-console
 			console.error(ex);
 		}
 	}
