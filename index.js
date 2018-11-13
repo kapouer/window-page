@@ -17,7 +17,6 @@ var urlHelper = document.createElement('a');
 function PageClass() {
 	this.name = "PageClass";
 	this.window = window;
-	this.debug = false;
 
 	this.reset();
 
@@ -804,10 +803,25 @@ function readyNode(node) {
 	});
 }
 
+var debugOn = null;
 function debug() {
-	var inst = window.Page || window.parent.Page;
-	// eslint-disable-next-line no-console
-	if (!inst || inst.debug) console.info.apply(console, Array.prototype.slice.call(arguments));
+	var args = Array.prototype.slice.call(arguments);
+	if (window.debug) {
+		window.debug.apply(null, args);
+	} else {
+		if (debugOn === null) {
+			debugOn = false;
+			if (window.localStorage) {
+				var str = window.localStorage.getItem('debug');
+				if (str !== null) debugOn = (str || '').toLowerCase().split(' ').indexOf('window-page') >= 0;
+			}
+		}
+		if (debugOn) {
+			// eslint-disable-next-line no-console
+			console.info.apply(console, Array.prototype.slice.call(arguments));
+		}
+	}
+}
 }
 
 PageClass.prototype.createDoc = function(str) {
