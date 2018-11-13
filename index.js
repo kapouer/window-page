@@ -802,24 +802,22 @@ function readyNode(node) {
 }
 
 var debugOn = null;
-function debug() {
-	var args = Array.prototype.slice.call(arguments);
-	if (window.debug) {
-		window.debug.apply(null, args);
-	} else {
-		if (debugOn === null) {
-			debugOn = false;
-			if (window.localStorage) {
-				var str = window.localStorage.getItem('debug');
-				if (str !== null) debugOn = (str || '').toLowerCase().split(' ').indexOf('window-page') >= 0;
-			}
-		}
-		if (debugOn) {
-			// eslint-disable-next-line no-console
-			console.info.apply(console, Array.prototype.slice.call(arguments));
+var debug = (function() {
+	if (window.debug) return window.debug;
+	if (debugOn === null) {
+		debugOn = false;
+		if (window.localStorage) {
+			var str = window.localStorage.getItem('debug');
+			if (str !== null) debugOn = (str || '').toLowerCase().split(' ').indexOf('window-page') >= 0;
 		}
 	}
-}
+	if (!debugOn) {
+		return function() {};
+	} else {
+		// eslint-disable-next-line no-console
+		return console.info.bind(console);
+	}
+})();
 
 function P() {
 	return Promise.resolve();
