@@ -319,10 +319,7 @@ PageClass.prototype.reset = function() {
 PageClass.prototype.runChain = function(name, state) {
 	state.stage = name;
 	var chain = this.chains[name];
-	if (!chain) {
-		debug("no chain", name);
-		return;
-	}
+	if (!chain) chain = this.chains[name] = {};
 	debug("run chain", name);
 	chain.count = 0;
 	chain.promise = P();
@@ -333,7 +330,6 @@ PageClass.prototype.runChain = function(name, state) {
 
 PageClass.prototype.stageListener = function(stage, fn, e) {
 	var chain = this.chains[stage];
-	if (!chain) chain = this.chains[stage] = {};
 	if (chain.count == null) chain.count = 0;
 	chain.count++;
 	chain.promise = chain.promise.then(function() {
@@ -359,6 +355,8 @@ PageClass.prototype.chain = function(stage, fn) {
 			em: emitter
 		};
 		emitter.addEventListener('page' + stage, lfn.fn);
+	} else {
+		debug("already chained", stage, fn);
 	}
 	var p;
 	var curNum = PageClass.Stages.indexOf(this.state.stage || INIT);
