@@ -17,6 +17,7 @@ var urlHelper = document.createElement('a');
 function PageClass() {
 	this.name = "PageClass";
 	this.window = window;
+	this.chains = {};
 
 	this.reset();
 
@@ -197,29 +198,27 @@ PageClass.prototype.run = function(state) {
 		}
 	}).then(function() {
 		var prevStage = state.stage;
-		return self.runChain(INIT, state).then(function() {
+		return (self.runChain(INIT, state) || P()).then(function() {
 			state.stage = prevStage;
 		});
 	}).then(function() {
 		if (state.stage != INIT) return;
 		self.stage(INIT);
-		return Promise.resolve().then(function() {
-			if (refer.pathname == state.pathname) return; // nothing to do
-			if (self.chains.route.count > 0) return;
-			return pGet(url, 500).then(function(client) {
-				var doc = self.createDoc(client.responseText);
-				if (client.status >= 400 && (!doc.body || doc.body.children.length == 0)) {
-					throw new Error(client.statusText);
-				} else if (!doc) {
-					setTimeout(function() {
-						document.location = url;
-					}, 500);
-					throw new Error("Cannot load remote document - redirecting...");
-				}
-				state.document = doc;
-			});
-		}).then(function() {
-			return self.runChain(ROUTE, state);
+		if (self.state.pathname == state.pathname) {
+			debug("refer has same pathname", state.pathname);
+			return;
+		}
+		return self.runChain(ROUTE, state) || pGet(url, 500).then(function(client) {
+			var doc = self.createDoc(client.responseText);
+			if (client.status >= 400 && (!doc.body || doc.body.children.length == 0)) {
+				throw new Error(client.statusText);
+			} else if (!doc) {
+				setTimeout(function() {
+					document.location = url;
+				}, 500);
+				throw new Error("Cannot load remote document - redirecting...");
+			}
+			state.document = doc;
 		});
 	}).then(function() {
 		var prev = self.state;
@@ -241,7 +240,7 @@ PageClass.prototype.run = function(state) {
 		});
 	}).then(function() {
 		if (state.stage != INIT && state.stage != ROUTE) return;
-		return self.runChain(BUILD, state).then(function() {
+		return (self.runChain(BUILD, state) || P()).then(function() {
 			return self.runChain(PATCH, state);
 		}).then(function() {
 			self.stage(BUILD);
@@ -249,11 +248,11 @@ PageClass.prototype.run = function(state) {
 	}).then(function() {
 		if (state.stage == SETUP) {
 			if (!self.samePath(state, refer)) {
-				return self.runChain(self.chains.patch.count ? PATCH : BUILD, state);
+				return self.runChain(PATCH, state) || self.runChain(BUILD, state);
 			}
 		} else return self.waitUiReady().then(function() {
 			if (state.abort) return Promise.reject("abort");
-			return self.runChain(SETUP, state).then(function() {
+			return (self.runChain(SETUP, state) || P()).then(function() {
 				self.stage(SETUP);
 			});
 		});
@@ -313,41 +312,41 @@ PageClass.prototype.reset = function() {
 	if (!root) {
 		this.root = root = document.querySelector('[data-page-stage]') || document.documentElement;
 	}
-	this.chains = {};
-	PageClass.Stages.forEach(function(stage) {
-		this.chains[stage] = {
-			count: 0
-		};
-	}, this);
 };
 
 PageClass.prototype.runChain = function(name, state) {
 	state.stage = name;
 	var chain = this.chains[name];
-	debug("run chain", name, "of length", chain.count);
+	if (!chain) {
+		debug("no chain", name);
+		return;
+	}
+	debug("run chain", name);
+	chain.count = 0;
 	chain.promise = P();
 	this.emit("page" + name, state);
-	return chain.promise;
+	debug("run chain count", name, chain.count);
+	if (chain.count) return chain.promise;
 };
 
 PageClass.prototype.stageListener = function(stage, fn, e) {
 	var chain = this.chains[stage];
-	var me = this;
+	if (!chain) chain = this.chains[stage] = {};
+	if (chain.count == null) chain.count = 0;
+	chain.count++;
 	chain.promise = chain.promise.then(function() {
 		return fn(e.detail);
 	}).catch(function(err) {
-		return me.catcher(stage, err, fn);
-	});
+		return this.catcher(stage, err, fn);
+	}.bind(this));
 };
 
 PageClass.prototype.chain = function(stage, fn) {
 	var ls = fn.pageListeners;
 	if (!ls) ls = fn.pageListeners = {};
 	var lfn = ls[stage];
-	var transient = false;
 	var emitter = document.currentScript;
 	if (!emitter) {
-		transient = true;
 		emitter = this.state.emitter;
 		if (!emitter) emitter = this.state.emitter = urlHelper.cloneNode();
 	}
@@ -357,7 +356,6 @@ PageClass.prototype.chain = function(stage, fn) {
 			fn: this.stageListener.bind(this, stage, fn),
 			em: emitter
 		};
-		if (!transient) this.chains[stage].count++;
 		emitter.addEventListener('page' + stage, lfn.fn);
 	}
 	var p;
@@ -383,7 +381,6 @@ PageClass.prototype.unchain = function(stage, fn) {
 	if (!ls) return;
 	var lfn = ls[stage];
 	if (!lfn) return;
-	if (lfn.em != this.state.emitter) this.chains[stage].count--;
 	delete ls[stage];
 	lfn.em.removeEventListener('page' + stage, lfn.fn);
 };
