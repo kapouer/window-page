@@ -325,7 +325,7 @@ PageClass.prototype.runChain = function(name, state) {
 	state.stage = name;
 	var chain = this.chains[name];
 	debug("run chain", name, "of length", chain.count);
-	chain.promise = Promise.resolve();
+	chain.promise = P();
 	this.emit("page" + name, state);
 	return chain.promise;
 };
@@ -373,7 +373,7 @@ PageClass.prototype.chain = function(stage, fn) {
 		});
 	} else {
 		debug("chain pending", stage);
-		p = Promise.resolve();
+		p = P();
 	}
 	return p;
 };
@@ -401,7 +401,7 @@ PageClass.prototype.waitUiReady = function() {
 		});
 		document.addEventListener('visibilitychange', listener, false);
 	} else {
-		p = Promise.resolve();
+		p = P();
 	}
 	return p.then(function() {
 		return waitStyles(document.head);
@@ -414,7 +414,7 @@ PageClass.prototype.waitUiReady = function() {
 };
 
 PageClass.prototype.waitReady = function() {
-	if (this.docReady) return Promise.resolve();
+	if (this.docReady) return P();
 	var solve;
 	var p = new Promise(function(resolve) {
 		solve = resolve;
@@ -443,7 +443,7 @@ PageClass.prototype.importDocument = function(doc, state) {
 	if (!state) state = this.state;
 	if (doc == document) {
 		debug("Do not import same document");
-		return Promise.resolve();
+		return P();
 	}
 	debug("Import new document");
 	var states = {};
@@ -483,7 +483,7 @@ PageClass.prototype.importDocument = function(doc, state) {
 	});
 
 	function loadNode(node) {
-		var p = Promise.resolve();
+		var p = P();
 		var src = node.src || node.href;
 		var state = states[src];
 		var old = state === true;
@@ -550,11 +550,11 @@ PageClass.prototype.importDocument = function(doc, state) {
 	var serials = queryAll(nroot, 'script[type="none"],link[rel="none"]');
 	var me = this;
 
-	return Promise.resolve().then(function() {
+	return P().then(function() {
 		me.updateHead(head, state);
 		return parallels;
 	}).then(function() {
-		return Promise.resolve().then(function() {
+		return P().then(function() {
 			return me.updateBody(body, state);
 		}).then(function(body) {
 			if (body && body.nodeName == "BODY") {
@@ -563,7 +563,7 @@ PageClass.prototype.importDocument = function(doc, state) {
 		});
 	}).then(function() {
 		// scripts must be run in order
-		var p = Promise.resolve();
+		var p = P();
 		serials.forEach(function(node) {
 			p = p.then(function() {
 				return loadNode(node);
@@ -659,7 +659,7 @@ PageClass.prototype.historyMethod = function(method, newState, state) {
 		if (method == "replace") console.info("Cannot replace to a different origin");
 		debug("redirecting to", url);
 		document.location = url;
-		return Promise.resolve();
+		return P();
 	}
 	debug("run", method, state);
 	return this.run(copy).then(function() {
@@ -731,7 +731,7 @@ function waitImports(doc) {
 	return Promise.all(imports.map(function(link) {
 		if (link.import && link.import.readyState == "complete") {
 			// no need to wait, wether native or polyfill
-			return Promise.resolve();
+			return P();
 		}
 		if (polyfill) {
 			// link.onload cannot be trusted
@@ -823,6 +823,9 @@ function debug() {
 		}
 	}
 }
+
+function P() {
+	return Promise.resolve();
 }
 
 PageClass.prototype.createDoc = function(str) {
