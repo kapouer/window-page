@@ -10,15 +10,12 @@ and integrates with:
 - visibility API, when prerendering is done on server
 - history API
 
-
 Chains
 ------
 
 Chains are always run after DOM is ready.
 
-- init, always called at start of a page run
-- route, allows one to load a remote document and import it with its assets
-  by setting state.document 
+- init, always called at start of a page run when document is ready
 - build, fetch data and fill document
 - patch, when query changes, fetch data and update document
 - setup, UI, events animations
@@ -28,7 +25,7 @@ Chains are always run after DOM is ready.
 
 A run is triggered by navigation (document.location changed).
 
-Route and build chains are called when pathname changes and if the page has not
+Build chain is called when pathname changes and if the page has not
 been built once and reopened (as with prerendering).
 
 Patch chain is called after build, and also when query changes.
@@ -38,30 +35,42 @@ Setup chain is called when document is visible and stylesheets are loaded.
 Hash chain is called when state.hash changed, after setup if any.
 
 
+Route
+-----
+
+To build a page one needs a document that depends on current location.
+
+The `state.route` method can be overriden during INIT chain, and shall return
+a document (possibly using `Page.get` and `Page.createDoc`).
+
+The init chain can override `state.route`, a method that defaults to loading the
+remote html document available at current url.
+
 Usage
 -----
 
 ```
 // get data and document from location
-Page.route(function(state) {
-	return fetch(page.pathname + '.json').then(function(res) {
-		return res.json();
-	}).then(function(data) {
-		// not mandatory property name, but a good idea to avoid future collisions
-		state.data = data;
-		return fetch(data.template).then(function(res) {
-			return res.text();
+Page.init(function(state) {
+	state.route = function() {
+		return fetch(page.pathname + '.json').then(function(res) {
+			return res.json();
+		}).then(function(data) {
+			// not mandatory property name, but a good idea to avoid future collisions
+			state.data = data;
+			return fetch(data.template).then(function(res) {
+				return res.text();
+			});
+		}).then(function(str) {
+			return Page.parseDoc(str);
 		});
-	}).then(function(str) {
-		state.document = document.cloneNode(false);
-		state.document.innerHTML = str;
-	});
+	};
 });
 
 // merge data into DOM (can fetch more remote data) - no user interactions yet
 // maybe called several times per imported document
 Page.build(function(state) {
-	if (state.data) Domt.merge(document.body, state.data);
+	matchdom(document.body, state.data);
 });
 
 // initialize user interactions, called only once per instantiated document,
@@ -91,13 +100,22 @@ current state as argument.
 
 Functions listening for a given stage are run serially.
 
-These listeners are either permanent or transient, depending on when they are added.
+Listeners are bound to `document.currentScript`:
+- if it is set, the listener is bound to it and is removed when node is removed.  
+  That can happen when loading a new document returned by `state.route`.
+- if it is not set, the listener is bound to current state: next state will just
+  drop it.
 
-- when scripts are being loaded, adding a listener makes it permanent: it is removed
-when the script node it originates from is removed (this can happen when importing
-a new document).
-- when page is ready, adding a listener makes it transient; it is removed as soon
-as page is closed (this is useful for custom elements).
+So to make sure a listener will get executed on each page run, declare it
+
+
+These listeners are either permanent or transient:
+- permanent: when scripts are being loaded, adding a listener makes it permanent,
+because `document.currentScript` is defined. The listener is bound to its script
+node, so it is removed if the node it originates from is removed (which can
+happen when importing a new document).
+- transient: inside Page chains, adding a listener makes it transient.
+It will be removed when the page is closed.
 
 
 ### state
@@ -107,7 +125,7 @@ The state object describes components of the url parsed with Page.parse()
 * state.pathname, state.query, state.hash  
   see also Page.format(state)
 
-*Important*: it is a bad idea to mutate those properties. Use `Page.parse()` to
+**Important**: do not mutate those properties, instead, use `Page.parse(state)` to
 get a copy, or pass an object with partial properties to `Page.push` or `Page.replace`.
 
 The state object is also the place to keep application data, if any
@@ -115,32 +133,26 @@ The state object is also the place to keep application data, if any
 * state.data    
   It is also a good idea to make sure that data is serializable.
 
-And it has some non-enumerable properties that are passed along to all chain
-functions:
+To redefine the default route, override `state.route` method, see below.
 
-* state.document  
-  the route chain is supposed to populate this with a DOM document, and when the
-  route chain is finished it is imported into window.document before the build
-  chain starts.
-
-It is possible to access `Page.state`, which is the page state of the last run.
-
-
-### window.Page.root
-
-Defaults to documentElement.
-
-If one needs to export a part of the document, that part should carry that
-attribute, to ensure Page will be able to resume loading at the correct stage.
+`Page.state` is the last successful state.
 
 
 ### Integration with Event delegation, removal of body listeners
 
-It is safer to add event listeners (during Page.setup) on `document.body`,
-because it is the part that is replaced by default when importing a document.
+When importing a document, two methods are called:
+- state.setHead(node)
+- state.setBody(node)
 
-If `Page.updateBody` is overwritten and customized to return the same body,
-the listeners added to it will be removed automatically anyway.
+The default `setHead` method do DOM diffing to keep existing script and link
+nodes.
+The default `setBody` method just replaces `document.body` with the new body.
+
+Thus it is safer to add event listeners (during Page.setup) on `document.body`,
+since it is replaced, listeners will be cleaned up automatically.
+
+However when overriding `state.setBody`, the new method could keep the same body,
+so Page will track and remove body listeners to match the default behavior.
 
 
 ### Integration with Custom Elements
@@ -168,9 +180,6 @@ When importing a document, scritps and link imports are serially loaded in order
 
 ### History
 
-* Page.window  
-  change history of which window, default to `window`
-
 * Page.state  
   the last successful state
 
@@ -187,16 +196,19 @@ When importing a document, scritps and link imports are serially loaded in order
   curState is optional, and must be given when push/replace is called before
   current state is final.
 
+* Page.save(state)  
+  state defaults to Page.state.  
+  Saves the state to history.
+
 * Page.reload()  
   reloads current page, starting from initial stage.
 
-* Page.historySave(method, state)  
-  method can be `replace` or `push`.  
-  Normalizes and saves state using history api.  
-  Used by previous methods, and to update state.data.
-
 
 ### Tools
+
+* Page.get(url, statusRejects)  
+  statusRejects defaults to 400.  
+  Fetch the url and return a string as promised.
 
 * Page.createDoc(str)  
   returns an HTML document from a string.
