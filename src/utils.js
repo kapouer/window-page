@@ -13,7 +13,7 @@ exports.get = function(url, statusRejects) {
 	});
 };
 
-exports.parseDoc = function(str) {
+exports.createDoc = function(str) {
 	var doc;
 	try {
 		doc = (new window.DOMParser()).parseFromString(str, "text/html");

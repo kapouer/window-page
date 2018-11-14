@@ -220,7 +220,7 @@ State.prototype.listener = function(stage, fn) {
 State.prototype.route = function(loc) {
 	var url = Loc.format(loc);
 	return Utils.get(url, 500).then(function(client) {
-		var doc = Utils.parseDoc(client.responseText);
+		var doc = Utils.createDoc(client.responseText);
 		if (client.status >= 400 && (!doc.body || doc.body.children.length == 0)) {
 			throw new Error(client.statusText);
 		} else if (!doc) {

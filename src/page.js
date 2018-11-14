@@ -6,6 +6,8 @@ var P = Utils.P;
 
 var W = exports;
 Object.assign(W, Loc);
+W.createDoc = Utils.createDoc;
+W.get = Utils.get;
 
 var supportsHistory = false;
 var queue;
