@@ -7,10 +7,6 @@ var debug = Utils.debug;
 
 module.exports = State;
 
-function State() {
-	this.data = {};
-}
-
 var INIT = "init";
 var BUILD = "build";
 var PATCH = "patch";
@@ -19,6 +15,11 @@ var CLOSE = "close";
 var ERROR = "error";
 var HASH = "hash";
 var Stages = [INIT, BUILD, PATCH, SETUP, HASH, ERROR, CLOSE];
+
+function State() {
+	this.data = {};
+	this.chains = {};
+}
 
 State.prototype.init = function(W) {
 	var state = this;
