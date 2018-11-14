@@ -31,6 +31,12 @@ State.prototype.init = function(W) {
 			return state.unchain(stage, fn);
 		};
 	});
+	W.route = function(fn) {
+		console.warn("Page.route is deprecated. Use `Page.init(function(state) { state.route = fn; })`");
+		W.init(function(state) {
+			state.route = fn;
+		});
+	};
 };
 
 State.prototype.run = function(W) {
