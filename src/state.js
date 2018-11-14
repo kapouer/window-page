@@ -69,7 +69,7 @@ State.prototype.run = function(W) {
 		}
 	}).then(function() {
 		var prevStage = state.stage;
-		return (W.runChain(INIT, state) || P()).then(function() {
+		return (state.runChain(INIT) || P()).then(function() {
 			state.stage = prevStage;
 		});
 	}).then(function() {
