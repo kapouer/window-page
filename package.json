@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "mocha",
-    "prepare": "browserify-lite $PWD/index.js --outfile $PWD/window-page.js"
+    "prepare": "browserify $PWD/index.js --outfile $PWD/window-page.js"
   },
   "files": [
     "window-page.js"
@@ -27,7 +27,7 @@
     "url": "https://github.com/kapouer/window-page/issues"
   },
   "devDependencies": {
-    "browserify-lite": "^0.5.0",
+    "browserify": "^16.2.3",
     "expect.js": "^0.3.1",
     "express": "^4.14.0",
     "express-dom": "^5.12.3",
