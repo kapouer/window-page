@@ -27,3 +27,13 @@ has the same value.
 - new: Page.unroute, unbuild, unsetup, unpatch... can unregister listeners.
 - page-data-state is now a string, which makes it easier to understand
 - Page.createDoc(str) to build a document out of a string
+
+5.0.0
+=====
+
+- Page.state, Page.referrer are no longer available, use chains to access state,
+and state.referrer.
+- Page.route(fn) is not a chain, it justs sets the router.
+- READY chain when document is ready after first load or after import.
+- Page history methods have all matching state methods, which are more natural.
+

@@ -11,12 +11,13 @@ W.get = Utils.get;
 
 var supportsHistory = false;
 var queue;
+var queuedState;
 
 W.run = function(state) {
 	if (!state) state = Loc.parse();
 	state.init(W);
 	if (queue) {
-		if (W.state && W.state.abort()) {
+		if (queuedState && queuedState.abort()) {
 			debug("aborting current run");
 		} else {
 			debug("queueing");
@@ -25,14 +26,17 @@ W.run = function(state) {
 			});
 		}
 	}
+	queuedState = state;
 	queue = state.run(W).then(function() {
 		queue = null;
+		queuedState = null;
 		return state;
 	});
 	return queue;
 };
 
-W.router = function(state, refer) {
+W.router = function(state) {
+	var refer = state.referrer;
 	if (!refer.stage || state.host == refer.host && state.pathname == refer.pathname) {
 		debug("Default router not running");
 		return;
@@ -58,7 +62,6 @@ W.route = function(fn) {
 
 W.reload = function(prev) {
 	debug("reload");
-	if (!prev) prev = W.state;
 	// copy state
 	var state = Loc.parse(prev);
 	// previous state must be closed but path comparisons must fail
@@ -66,21 +69,21 @@ W.reload = function(prev) {
 	delete prev.pathname;
 	delete prev.query;
 	delete prev.hash;
-
-	state.initial = prev.initial || true;
+	state.referrer = prev;
+	state.initial = prev.initial;
 	return W.run(state);
 };
 
-W.push = function(state, refer) {
-	return historyMethod('push', state, refer);
+W.push = function(loc, state) {
+	return historyMethod('push', loc, state);
 };
 
-W.replace = function(state, refer) {
-	return historyMethod('replace', state, refer);
+W.replace = function(loc, state) {
+	return historyMethod('replace', loc, state);
 };
 
 W.save = function(state) {
-	return historySave('replace', state || W.state);
+	return historySave('replace', state);
 };
 
 function historySave(method, state) {
@@ -90,16 +93,15 @@ function historySave(method, state) {
 	return true;
 }
 
-function historyMethod(method, state, refer) {
-	var copy = Loc.parse(Loc.format(state));
+function historyMethod(method, loc, state) {
+	if (!state) throw new Error("Missing state parameter");
+	var copy = Loc.parse(Loc.format(loc));
 	if (state.data != null) copy.data = state.data;
 	copy.stage = state.stage;
-
-	if (!refer) refer = W.state;
-	if (!Loc.sameDomain(refer, copy)) {
+	if (!Loc.sameDomain(state, copy)) {
 		// eslint-disable-next-line no-console
 		if (method == "replace") console.info("Cannot replace to a different origin");
-		document.location = Loc.format(state);
+		document.location = Loc.format(copy);
 		return P();
 	}
 	debug("run", method, copy);

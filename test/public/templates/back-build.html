@@ -23,7 +23,7 @@ Page.setup(function(state) {
 	});
 	if (state.pathname == "/templates/back-build.html")	{
 		setTimeout(function() {
-			Page.push({
+			state.push({
 				pathname: "/inexistent.html"
 			});
 		}, 5);

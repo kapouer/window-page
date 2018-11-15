@@ -31,7 +31,7 @@ Page.patch(function(state) {
 
 Page.setup(function(state) {
 	setTimeout(function() {
-		Page.replace({query: {toto: 1}});
+		state.replace({query: {toto: 1}});
 	}, 50);
 });
 

@@ -29,7 +29,7 @@ Page.setup(function(state) {
 		return;
 	}
 	setTimeout(function() {
-		Page.push({
+		state.push({
 			pathname: state.pathname,
 			query: {
 				test: "one"

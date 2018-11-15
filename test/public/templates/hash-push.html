@@ -6,7 +6,7 @@
 	<script>
 Page.setup(function(state) {
 	setTimeout(function() {
-		Page.push({hash: 'test'});
+		state.push({hash: 'test'});
 	}, 100);
 });
 Page.hash(function(state) {

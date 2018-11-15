@@ -30,14 +30,14 @@ Page.patch(function(state) {
 		document.querySelector('.url').innerHTML = Page.format(state);
 		setTimeout(function() {
 			document.querySelector('.location').innerHTML = document.location.pathname + document.location.search;
-			if (state.query.toto == 1) Page.push("?toto=2");
+			if (state.query.toto == 1) state.push("?toto=2");
 		}, 300);
 	}
 });
 
 Page.setup(function(state) {
 	setTimeout(function() {
-		Page.push({query: {toto:1}});
+		state.push({query: {toto:1}});
 	}, 300);
 });
 

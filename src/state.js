@@ -32,6 +32,18 @@ State.prototype.init = function(W) {
 			return state.unchain(stage, fn);
 		};
 	});
+	state.reload = function() {
+		return W.reload(state);
+	};
+	state.replace = function(loc) {
+		return W.replace(loc, state);
+	};
+	state.push = function(loc) {
+		return W.push(loc, state);
+	};
+	state.save = function() {
+		return W.save(state);
+	};
 };
 
 function stamp(stage) {
@@ -41,10 +53,9 @@ function stamp(stage) {
 	return stage;
 }
 
-
 State.prototype.run = function(W) {
 	var state = this;
-	var refer = W.state;
+	var refer = this.referrer;
 	if (!refer) {
 		if (document.referrer) {
 			refer = Loc.parse(document.referrer);
@@ -52,7 +63,7 @@ State.prototype.run = function(W) {
 			refer = new State();
 		}
 	}
-	W.referrer = refer;
+	state.referrer = refer;
 	return (state.runChain(INIT) || P()).then(function() {
 		return Wait.dom().then(function() {
 			if (refer.stage == SETUP && refer.pathname != state.pathname) {
@@ -67,7 +78,6 @@ State.prototype.run = function(W) {
 				if (!state.emitter) state.emitter = refer.emitter;
 			}
 		}).then(function(doc) {
-			W.state = state;
 			return state.load(doc || document);
 		});
 	}).then(function() {

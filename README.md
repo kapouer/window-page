@@ -117,6 +117,15 @@ get a copy, or pass an object with partial properties to `Page.push` or `Page.re
 * state.referrer  
   the previous parsable state.
 
+Shorthand state methods are also available:
+
+* state.save()  
+* state.replace(loc or url)  
+* state.push(loc or url)  
+* state.reload()  
+
+See Page history methods.
+
 
 ### Integration with Event delegation, removal of body listeners
 
@@ -160,9 +169,11 @@ When importing a document, scritps and link imports are serially loaded in order
 
 ### History
 
-* Page.push(state or url)  
+* Page.push(location or url, state)  
+  state must be the current state
 
-* Page.replace(state or url)  
+* Page.replace(location or url, state)  
+  state must be the current state
 
 * Page.save(state)  
   Saves the state to history.

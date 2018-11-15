@@ -23,7 +23,7 @@ Page.setup(function(state) {
 	}
 	window.reloaded = true;
 	setTimeout(function() {
-		Page.reload(state).catch(function(err) {
+		state.reload().catch(function(err) {
 			console.error(err);
 		});
 	}, 50);

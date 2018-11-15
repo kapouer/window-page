@@ -13,6 +13,7 @@ exports.parse = function(str) {
 		loc = str;
 	}
 	var obj = new State();
+	if (loc.referrer) obj.referrer = loc.referrer;
 	obj.pathname = loc.pathname;
 	obj.query = loc.query || Q.parse(loc.search);
 	if (!obj.pathname) obj.pathname = "/";

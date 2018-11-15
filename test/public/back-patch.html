@@ -37,7 +37,7 @@ Page.patch(function(state) {
 });
 
 Page.setup(function(state) {
-	Page.push({
+	state.push({
 		pathname: state.pathname,
 		query: {
 			test: "one"
