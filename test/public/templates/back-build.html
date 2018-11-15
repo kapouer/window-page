@@ -28,7 +28,7 @@ Page.setup(function(state) {
 			});
 		}, 5);
 	}	else if (state.pathname == "/inexistent.html") {
-
+		document.getElementById('nocall').textContent = "wrong";
 	}
 });
 
@@ -57,5 +57,6 @@ function checkNums(state) {
 <div id="query"></div>
 <div id="loc"></div>
 <div id="click"></div>
+<div id="nocall"></div>
 </body>
 </html>

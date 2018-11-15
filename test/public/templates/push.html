@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Sample replace page</title>
-	<script src="window-page.js"></script>
+	<title>Sample push page</title>
+	<script src="../window-page.js"></script>
 	<script>
 var nums = {
 	build: 0,
@@ -26,13 +26,19 @@ function checkNums(state) {
 }
 
 Page.patch(function(state) {
-	if (state.query.toto) document.querySelector('.url').innerHTML = Page.format(state);
+	if (state.query.toto) {
+		document.querySelector('.url').innerHTML = Page.format(state);
+		setTimeout(function() {
+			document.querySelector('.location').innerHTML = document.location.pathname + document.location.search;
+			if (state.query.toto == 1) Page.push("?toto=2");
+		}, 300);
+	}
 });
 
 Page.setup(function(state) {
 	setTimeout(function() {
-		Page.replace({query: {toto: 1}});
-	}, 50);
+		Page.push({query: {toto:1}});
+	}, 300);
 });
 
 	</script>
@@ -42,5 +48,6 @@ Page.setup(function(state) {
 <div class="patch"></div>
 <div class="setup"></div>
 <div class="url"></div>
+<div class="location"></div>
 </body>
 </html>

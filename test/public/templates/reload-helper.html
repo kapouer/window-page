@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Sample reload page helper</title>
+	<script>
+if (!window.nums) window.nums = {
+	setup: 0,
+	close: 0
+};
+Page.setup(saveNums);
+Page.close(saveNums);
+function saveNums(state) {
+	var stage = state.stage;
+	window.nums[stage] += 1;
+	Object.keys(window.nums).forEach(function(key) {
+		document.body.dataset[key] = window.nums[key];
+	});
+}
+Page.setup(function(state) {
+	if (window.reloaded) {
+		document.getElementById('reload').innerText = "reloaded";
+		return;
+	}
+	window.reloaded = true;
+	setTimeout(function() {
+		Page.reload(state).catch(function(err) {
+			console.error(err);
+		});
+	}, 50);
+});
+	</script>
+</head>
+<body>
+<div id="reload"></div>
+</body>
+</html>
