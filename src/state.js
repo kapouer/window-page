@@ -64,22 +64,21 @@ State.prototype.run = function(W) {
 		}
 	}
 	state.referrer = refer;
-	return (state.runChain(INIT) || P()).then(function() {
-		return Wait.dom().then(function() {
-			if (refer.stage == SETUP && refer.pathname != state.pathname) {
-				return refer.runChain(CLOSE);
-			}
-		}).then(function() {
-			// it is up to the default router to NOT load a document upon first load
-			// other routers might choose to do otherwise
-			if (refer.pathname != state.pathname || !refer.stage) {
-				return W.router(state, refer);
-			} else {
-				if (!state.emitter) state.emitter = refer.emitter;
-			}
-		}).then(function(doc) {
-			return state.load(doc || document);
-		});
+	return Wait.dom().then(function() {
+		return state.runChain(INIT);
+	}).then(function() {
+		if (refer.stage == SETUP && refer.pathname != state.pathname) {
+			return refer.runChain(CLOSE);
+		}
+		// it is up to the default router to NOT load a document upon first load
+		// other routers might choose to do otherwise
+		if (refer.pathname != state.pathname || !refer.stage) {
+			return W.router(state, refer);
+		} else {
+			if (!state.emitter) state.emitter = refer.emitter;
+		}
+	}).then(function(doc) {
+		return state.load(doc || document);
 	}).then(function() {
 		if (!state.initial) state.initial = stamp() || INIT;
 		state.stage = state.initial;

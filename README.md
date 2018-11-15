@@ -13,12 +13,10 @@ and integrates with:
 Chains
 ------
 
-Chains are always run after DOM is ready.
-
-- init, always called at start of a page run, a way to get state object first hand.
+- init, called before anything but after original document is ready
 - router, if pathname changes or page is new,
 - state.import(doc) which does nothing if document does not change
-- ready, when document is ready
+- ready, when imported document or original document is ready
 - build, fetch data and fill document if doc is not built or pathname has changed
 - patch, fetch additional data and update document if doc is not patched and query has changed
 - setup, when not prerendering
