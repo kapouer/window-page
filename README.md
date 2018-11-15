@@ -16,24 +16,18 @@ Chains
 Chains are always run after DOM is ready.
 
 - init, always called at start of a page run, a way to get state object first hand.
+- router, if pathname changes or page is new,
+- state.import(doc) which does nothing if document does not change
 - ready, when document is ready
-- build, fetch data and fill document
-- patch, when query changes, fetch data and update document
-- setup, UI, events animations
+- build, fetch data and fill document if doc is not built or pathname has changed
+- patch, fetch additional data and update document if doc is not patched and query has changed
+- setup, when not prerendering
+- hash, the location hash has changed, `state.hash` is set.
 - close, use it to clean what has been done in setup
 - error, a fatal error happened during page run, `state.error` is set.
-- hash, the location hash has changed, `state.hash` is set.
 
-A run is triggered by navigation (document.location changed).
-
-Build chain is called when pathname changes and if the page has not
-been built once and reopened (as with prerendering).
-
-Patch chain is called after build, and also when query changes.
-
-Setup chain is called when document is visible and stylesheets are loaded.
-
-Hash chain is called when state.hash changed, after setup if any.
+A run is triggered by navigation (document.location changed in any way, or
+page history methods called, see below).
 
 
 Route
@@ -117,12 +111,11 @@ The state object describes components of the url parsed with Page.parse()
 **Important**: do not mutate those properties, instead, use `Page.parse(state)` to
 get a copy, or pass an object with partial properties to `Page.push` or `Page.replace`.
 
-The state object is also the place to keep application data, if any
+* state.data  
+  the data must be JSON-serializable.
 
-* state.data    
-  It is also a good idea to make sure that data is serializable.
-
-`Page.state` is the last successful state.
+* state.referrer  
+  the previous parsable state.
 
 
 ### Integration with Event delegation, removal of body listeners
@@ -167,28 +160,15 @@ When importing a document, scritps and link imports are serially loaded in order
 
 ### History
 
-* Page.state  
-  the last successful state
+* Page.push(state or url)  
 
-* Page.referrer  
-  Initially a parsed `document.referrer` url object or null if no referrer was
-  found, then the previous url object.  
-  Available since version 3.3.0.
-
-* Page.push(state or url, curState?)  
-  curState is optional, and must be given when push/replace is called before
-  current state is final.
-
-* Page.replace(state or url, curState?)  
-  curState is optional, and must be given when push/replace is called before
-  current state is final.
+* Page.replace(state or url)  
 
 * Page.save(state)  
-  state defaults to Page.state.  
   Saves the state to history.
 
-* Page.reload()  
-  reloads current page, starting from initial stage.
+* Page.reload(state)  
+  reloads state
 
 
 ### Tools
