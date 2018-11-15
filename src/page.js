@@ -60,17 +60,17 @@ W.route = function(fn) {
 	W.router = fn;
 };
 
-W.reload = function(prev) {
+W.reload = function(state) {
 	debug("reload");
 	// copy state
-	var state = Loc.parse(prev);
+	var prev = Loc.parse(state);
 	// previous state must be closed but path comparisons must fail
 	// so set a state at previous stage without location
 	delete prev.pathname;
 	delete prev.query;
 	delete prev.hash;
+	prev.stage = state.stage;
 	state.referrer = prev;
-	state.initial = prev.initial;
 	return W.run(state);
 };
 
