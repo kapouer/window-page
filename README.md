@@ -15,7 +15,8 @@ Chains
 
 Chains are always run after DOM is ready.
 
-- init, always called at start of a page run when document is ready
+- init, always called at start of a page run, a way to get state object first hand.
+- ready, when document is ready
 - build, fetch data and fill document
 - patch, when query changes, fetch data and update document
 - setup, UI, events animations
@@ -40,31 +41,31 @@ Route
 
 To build a page one needs a document that depends on current location.
 
-The `state.route` method can be overriden during INIT chain, and shall return
-a document (possibly using `Page.get` and `Page.createDoc`).
+A page always start with some markup, so the default router is not run when
+the page is loaded before any change.
 
-The init chain can override `state.route`, a method that defaults to loading the
-remote html document available at current url.
+A router can be set using `Page.route(function(state) {...})` and shall return
+a document (possibly using `Page.get` and `Page.createDoc`).
+The default return value is current document.
+
 
 Usage
 -----
 
 ```
 // get data and document from location
-Page.init(function(state) {
-	state.route = function() {
-		return fetch(page.pathname + '.json').then(function(res) {
-			return res.json();
-		}).then(function(data) {
-			// not mandatory property name, but a good idea to avoid future collisions
-			state.data = data;
-			return fetch(data.template).then(function(res) {
-				return res.text();
-			});
-		}).then(function(str) {
-			return Page.parseDoc(str);
+Page.route(function(state) {
+	return fetch(page.pathname + '.json').then(function(res) {
+		return res.json();
+	}).then(function(data) {
+		// not mandatory property name, but a good idea to avoid future collisions
+		state.data = data;
+		return fetch(data.template).then(function(res) {
+			return res.text();
 		});
-	};
+	}).then(function(str) {
+		return Page.parseDoc(str);
+	});
 });
 
 // merge data into DOM (can fetch more remote data) - no user interactions yet
@@ -101,22 +102,10 @@ current state as argument.
 Functions listening for a given stage are run serially.
 
 Listeners are bound to `document.currentScript`:
-- if it is set, the listener is bound to it and is removed when node is removed.  
-  That can happen when loading a new document returned by `state.route`.
+- if it is set, listeners are bound to it and are removed as the node itself is.  
+  Script node removal can happen when loading a new document.
 - if it is not set, the listener is bound to current state: next state will just
   drop it.
-
-So to make sure a listener will get executed on each page run, declare it
-
-
-These listeners are either permanent or transient:
-- permanent: when scripts are being loaded, adding a listener makes it permanent,
-because `document.currentScript` is defined. The listener is bound to its script
-node, so it is removed if the node it originates from is removed (which can
-happen when importing a new document).
-- transient: inside Page chains, adding a listener makes it transient.
-It will be removed when the page is closed.
-
 
 ### state
 
@@ -132,8 +121,6 @@ The state object is also the place to keep application data, if any
 
 * state.data    
   It is also a good idea to make sure that data is serializable.
-
-To redefine the default route, override `state.route` method, see below.
 
 `Page.state` is the last successful state.
 
