@@ -12,13 +12,6 @@ W.get = Utils.get;
 var supportsHistory = false;
 var queue;
 
-W.stage = function(stage) {
-	var root = document.documentElement;
-	if (stage != null) root.setAttribute('data-page-stage', stage);
-	else stage = root.dataset.pageStage;
-	return stage;
-};
-
 W.run = function(state) {
 	if (!state) state = Loc.parse();
 	state.init(W);
@@ -39,28 +32,51 @@ W.run = function(state) {
 	return queue;
 };
 
-W.reload = function() {
-	// FIXME
-	// reload implies starting again from a fresh page
-	// but that might not be possible if the script from which routing was done has been removed
-	// during navigation
-	// interestingly, if we try to solve this by importing the original html,
-	// we end up having to execute route after importDocument, not before...
-	// if no route -> fetch then importDocument then maybe route if current stage is not INIT
-	// if route -> no importDocument what so ever, must be called by route explicitely ???
-	var state = Loc.parse(W.state);
-	W.stage(state.initialStage);
-	W.state = {stage: state.stage};
-	state.stage = state.initialStage;
+W.router = function(state, refer) {
+	if (!refer.stage || state.host == refer.host && state.pathname == refer.pathname) {
+		debug("Default router not running");
+		return;
+	}
+	var url = Loc.format(state);
+	return Utils.get(url, 500).then(function(client) {
+		var doc = Utils.createDoc(client.responseText);
+		if (client.status >= 400 && (!doc.body || doc.body.children.length == 0)) {
+			throw new Error(client.statusText);
+		} else if (!doc) {
+			setTimeout(function() {
+				document.location = url;
+			}, 500);
+			throw new Error("Cannot load remote document - redirecting...");
+		}
+		return doc;
+	});
+};
+
+W.route = function(fn) {
+	W.router = fn;
+};
+
+W.reload = function(prev) {
+	debug("reload");
+	if (!prev) prev = W.state;
+	// copy state
+	var state = Loc.parse(prev);
+	// previous state must be closed but path comparisons must fail
+	// so set a state at previous stage without location
+	delete prev.pathname;
+	delete prev.query;
+	delete prev.hash;
+
+	state.initial = prev.initial || true;
 	return W.run(state);
 };
 
-W.push = function(newState, state) {
-	return historyMethod('push', newState, state);
+W.push = function(state, refer) {
+	return historyMethod('push', state, refer);
 };
 
-W.replace = function(newState, state) {
-	return historyMethod('replace', newState, state);
+W.replace = function(state, refer) {
+	return historyMethod('replace', state, refer);
 };
 
 W.save = function(state) {
@@ -74,27 +90,19 @@ function historySave(method, state) {
 	return true;
 }
 
-function historyMethod(method, newState, state) {
-	var url;
-	if (typeof newState == "string") {
-		url = newState;
-		newState = {};
-	} else {
-		url = Loc.format(newState);
-	}
-	var copy = Loc.parse(url);
-	if (newState.data != null) copy.data = newState.data;
-	copy.stage = newState.stage;
+function historyMethod(method, state, refer) {
+	var copy = Loc.parse(Loc.format(state));
+	if (state.data != null) copy.data = state.data;
+	copy.stage = state.stage;
 
-	if (!state) state = W.state;
-	if (!Loc.sameDomain(state, copy)) {
+	if (!refer) refer = W.state;
+	if (!Loc.sameDomain(refer, copy)) {
 		// eslint-disable-next-line no-console
 		if (method == "replace") console.info("Cannot replace to a different origin");
-		debug("redirecting to", url);
-		document.location = url;
+		document.location = Loc.format(state);
 		return P();
 	}
-	debug("run", method, state);
+	debug("run", method, copy);
 	return W.run(copy).then(function() {
 		historySave(method, copy);
 	});

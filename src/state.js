@@ -8,13 +8,14 @@ var debug = Utils.debug;
 module.exports = State;
 
 var INIT = "init";
+var READY = "ready";
 var BUILD = "build";
 var PATCH = "patch";
 var SETUP = "setup";
 var CLOSE = "close";
 var ERROR = "error";
 var HASH = "hash";
-var Stages = [INIT, BUILD, PATCH, SETUP, HASH, ERROR, CLOSE];
+var Stages = [INIT, READY, BUILD, PATCH, SETUP, HASH, ERROR, CLOSE];
 
 function State() {
 	this.data = {};
@@ -31,88 +32,65 @@ State.prototype.init = function(W) {
 			return state.unchain(stage, fn);
 		};
 	});
-	W.route = function(fn) {
-		console.warn("Page.route is deprecated. Use `Page.init(function(state) { state.route = fn; })`");
-		W.init(function(state) {
-			state.route = fn;
-		});
-	};
 };
+
+function stamp(stage) {
+	var root = document.documentElement;
+	if (stage != null) root.setAttribute('data-page-stage', stage);
+	else stage = root.dataset.pageStage;
+	return stage;
+}
+
 
 State.prototype.run = function(W) {
 	var state = this;
-	var url = Loc.format(state); // converts path if any
-	var refer = W.state || document.referrer;
-	if (!W.state) {
-		W.state = Loc.parse(this);
-		delete W.state.hash;
+	var refer = W.state;
+	if (!refer) {
+		if (document.referrer) {
+			refer = Loc.parse(document.referrer);
+		} else {
+			refer = new State();
+		}
 	}
-	refer = W.referrer = refer ? Loc.parse(refer) : W.state;
-	return Wait.dom().then(function() {
-		Utils.trackListeners(document.body);
-		// not sure state.stage must be set here
-		state.initialStage = state.stage = W.stage();
-		debug("doc ready at stage", state.initialStage);
-
-		if (!Loc.sameDomain(refer, state)) {
-			throw new Error("Cannot route to a different domain:\n" + url);
-		}
-
-		if (refer.pathname != state.pathname) {
-			state.stage = INIT;
-		}
-		if (state.stage == INIT) {
-			if (refer.stage == SETUP) {
-				W.stage(CLOSE);
+	W.referrer = refer;
+	return (state.runChain(INIT) || P()).then(function() {
+		return Wait.dom().then(function() {
+			if (refer.stage == SETUP && refer.pathname != state.pathname) {
 				return refer.runChain(CLOSE);
 			}
-		}
-	}).then(function() {
-		var prevStage = state.stage;
-		return (state.runChain(INIT) || P()).then(function() {
-			state.stage = prevStage;
-		});
-	}).then(function() {
-		if (state.stage != INIT) return;
-		W.stage(INIT);
-		if (state.initialStage !== INIT && W.state.pathname == state.pathname) {
-			debug("refer has same pathname", state.pathname);
-			return;
-		}
-		return state.route();
-	}).then(function(doc) {
-		var prev = W.state;
-		state.emitter = prev.emitter;
-		W.state = state;
-		if (state.stage != INIT) return;
-		if (prev.stage) delete state.emitter;
-		Utils.clearListeners(document.body);
-		if (!doc) return;
-		state.stage = INIT;
-		return state.load(doc).then(function() {
-			var docStage = W.stage();
-			debug("imported doc at stage", docStage);
-			if (docStage == INIT) {
-				return state.route();
+		}).then(function() {
+			// it is up to the default router to NOT load a document upon first load
+			// other routers might choose to do otherwise
+			if (refer.pathname != state.pathname || !refer.stage) {
+				return W.router(state, refer);
+			} else {
+				if (!state.emitter) state.emitter = refer.emitter;
 			}
-			state.stage = docStage;
+		}).then(function(doc) {
+			W.state = state;
+			return state.load(doc || document);
 		});
 	}).then(function() {
-		if (state.stage != INIT) return;
+		if (!state.initial) state.initial = stamp() || INIT;
+		state.stage = state.initial;
+		debug("doc ready at stage", state.stage);
+		return state.runChain(READY);
+	}).then(function() {
+		if (state.initial != INIT) return;
 		return (state.runChain(BUILD) || P()).then(function() {
 			return state.runChain(PATCH);
 		}).then(function() {
-			W.stage(BUILD);
+			stamp(BUILD);
 		});
 	}).then(function() {
-		if (state.stage == SETUP) {
+		if (state.initial == SETUP) {
 			if (!Loc.samePath(state, refer)) {
 				return state.runChain(PATCH) || state.runChain(BUILD);
 			}
 		} else return Wait.ui().then(function() {
 			if (state._abort) return Promise.reject("abort");
 			return (state.runChain(SETUP) || P()).then(function() {
-				W.stage(SETUP);
+				stamp(SETUP);
 			});
 		});
 	}).then(function() {
@@ -123,7 +101,7 @@ State.prototype.run = function(W) {
 			// eslint-disable-next-line no-console
 			if (typeof err != "number") console.error(err);
 			state.error = err;
-			state.runChain(ERROR)
+			return state.runChain(ERROR)
 		}
 	}).then(function() {
 		return state;
@@ -143,7 +121,6 @@ State.prototype.emit = function(name) {
 		cancelable: true,
 		detail: this
 	});
-	e.state = this; // backward compat
 	Utils.all(document, 'script').forEach(function(node) {
 		node.dispatchEvent(e);
 	});
@@ -176,7 +153,7 @@ State.prototype.chain = function(stage, fn) {
 
 	if (!lfn) {
 		lfn = ls[stage] = {
-			fn: state.listener(stage, fn),
+			fn: chainListener(stage, fn),
 			em: emitter
 		};
 		emitter.addEventListener('page' + stage, lfn.fn);
@@ -209,10 +186,10 @@ State.prototype.unchain = function(stage, fn) {
 	lfn.em.removeEventListener('page' + stage, lfn.fn);
 };
 
-State.prototype.listener = function(stage, fn) {
-	var me = this;
+function chainListener(stage, fn) {
 	return function(e) {
-		var chain = me.chains[stage];
+		var state = e.detail;
+		var chain = state.chains[stage];
 		if (chain.count == null) chain.count = 0;
 		chain.count++;
 		chain.promise = chain.promise.then(function() {
@@ -222,30 +199,14 @@ State.prototype.listener = function(stage, fn) {
 			console.error("Uncaught error during", stage, err, fn);
 		});
 	};
-};
-
-State.prototype.route = function(loc) {
-	var url = Loc.format(loc);
-	return Utils.get(url, 500).then(function(client) {
-		var doc = Utils.createDoc(client.responseText);
-		if (client.status >= 400 && (!doc.body || doc.body.children.length == 0)) {
-			throw new Error(client.statusText);
-		} else if (!doc) {
-			setTimeout(function() {
-				document.location = url;
-			}, 500);
-			throw new Error("Cannot load remote document - redirecting...");
-		}
-		return doc;
-	});
-};
-
+}
 
 State.prototype.load = function(doc) {
 	if (doc == document) {
-		debug("Do not import same document");
+		Utils.trackListeners(document.body);
 		return P();
 	}
+	Utils.clearListeners(document.body);
 	debug("Import new document");
 	var states = {};
 	var selector = 'script:not([type]),script[type="text/javascript"],link[rel="import"]';
@@ -343,7 +304,7 @@ State.prototype.load = function(doc) {
 	for (var i=0; i < atts.length; i++) {
 		root.setAttribute(atts[i].name, atts[i].value);
 	}
-	atts = Array.prototype.slice.call(this.root.attributes);
+	atts = Array.prototype.slice.call(root.attributes);
 	for (var j=0; j < atts.length; j++) {
 		if (!nroot.hasAttribute(atts[j].name)) nroot.removeAttribute(atts[j].name);
 	}
