@@ -62,8 +62,8 @@ State.prototype.run = function(W) {
 		} else {
 			refer = new State();
 		}
+		this.referrer = refer;
 	}
-	state.referrer = refer;
 	return Wait.dom().then(function() {
 		return state.runChain(INIT);
 	}).then(function() {
