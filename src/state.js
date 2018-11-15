@@ -70,6 +70,7 @@ State.prototype.run = function(W) {
 		if (refer.stage == SETUP && refer.pathname != state.pathname) {
 			return refer.runChain(CLOSE);
 		}
+	}).then(function() {
 		// it is up to the default router to NOT load a document upon first load
 		// other routers might choose to do otherwise
 		if (refer.pathname != state.pathname || !refer.stage) {
