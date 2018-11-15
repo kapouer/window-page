@@ -64,7 +64,10 @@ State.prototype.run = function(W) {
 		}
 		this.referrer = refer;
 	}
-	delete state.emitter;
+	if (refer == state) {
+		throw new Error("state and referrer should be distinct");
+	}
+	delete this.emitter; // in case an already used state has been given
 	return Wait.dom().then(function() {
 		if (refer.stage == SETUP && refer.pathname != state.pathname) {
 			return refer.runChain(CLOSE);
