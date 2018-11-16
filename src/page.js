@@ -96,14 +96,15 @@ function historySave(method, state) {
 function historyMethod(method, loc, state) {
 	if (!state) throw new Error("Missing state parameter");
 	var copy = Loc.parse(Loc.format(loc));
-	if (state.data != null) copy.data = state.data;
-	copy.stage = state.stage;
 	if (!Loc.sameDomain(state, copy)) {
 		// eslint-disable-next-line no-console
 		if (method == "replace") console.info("Cannot replace to a different origin");
 		document.location = Loc.format(copy);
 		return P();
 	}
+	if (state.data != null) copy.data = state.data;
+	copy.stage = state.stage;
+	copy.referrer = state;
 	debug("run", method, copy);
 	return W.run(copy).then(function() {
 		historySave(method, copy);
