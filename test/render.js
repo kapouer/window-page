@@ -89,9 +89,9 @@ describe("Rendering", function suite() {
 			url: host + ':' + port + '/build.html'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
-			expect(body).to.contain('data-page-stage="setup"');
-			expect(body).to.contain('<div class="build">0</div>');
-			expect(body).to.contain('<div class="setup">0</div>');
+			expect(body).to.contain('data-prerender="true"');
+			expect(body).to.contain('<div class="build">1</div>');
+			expect(body).to.contain('<div class="setup">1</div>');
 			done();
 		});
 	});
@@ -102,7 +102,7 @@ describe("Rendering", function suite() {
 			url: host + ':' + port + '/patch.html'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
-			expect(body).to.contain('data-page-stage="setup"');
+			expect(body).to.contain('data-prerender="true"');
 			expect(body).to.contain('<div class="build">1</div>');
 			expect(body).to.contain('<div class="patch">1</div>');
 			expect(body).to.contain('<div class="setup">1</div>');
@@ -112,7 +112,7 @@ describe("Rendering", function suite() {
 
 	it("should run build and patch and setup, call replace and run patch again", function() {
 		return Render(host + ':' + port + '/templates/replace.html', {delay: 150}).then(function(body) {
-			expect(body).to.contain('data-page-stage="setup"');
+			expect(body).to.contain('data-prerender="true"');
 			expect(body).to.contain('<div class="build">1</div>');
 			expect(body).to.contain('<div class="patch">2</div>');
 			expect(body).to.contain('<div class="setup">1</div>');
@@ -122,7 +122,7 @@ describe("Rendering", function suite() {
 
 	it("should run build and patch and setup, call push and run patch again", function() {
 		return Render(host + ':' + port + '/templates/push.html', {delay: 150}).then(function(body) {
-			expect(body).to.contain('data-page-stage="setup"');
+			expect(body).to.contain('data-prerender="true"');
 			expect(body).to.contain('<div class="build">1</div>');
 			expect(body).to.contain('<div class="patch">3</div>');
 			expect(body).to.contain('<div class="setup">1</div>');
@@ -137,7 +137,7 @@ describe("Rendering", function suite() {
 			url: host + ':' + port + '/route.html?template=build'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
-			expect(body).to.contain('data-page-stage="setup"');
+			expect(body).to.contain('data-prerender="true"');
 			expect(body).to.contain('<div class="build">0</div>');
 			expect(body).to.contain('<div class="setup">0</div>');
 			done();
@@ -151,7 +151,7 @@ describe("Rendering", function suite() {
 			url: host + ':' + port + '/route.html?template=import'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
-			expect(body).to.contain('data-page-stage="setup"');
+			expect(body).to.contain('data-prerender="true"');
 			expect(body).to.contain("I'm setup0");
 			expect(body).to.contain("your body0");
 			done();
@@ -175,7 +175,7 @@ describe("Rendering", function suite() {
 			url: host + ':' + port + '/route.html?template=order-stylesheets-scripts'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
-			expect(body).to.contain('data-page-stage="setup"');
+			expect(body).to.contain('data-prerender="true"');
 			expect(body).to.contain('<div class="status">squared</div>');
 			done();
 		});
@@ -187,7 +187,7 @@ describe("Rendering", function suite() {
 			url: host + ':' + port + '/route.html?template=import-depending-on-script'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
-			expect(body).to.contain('data-page-stage="setup"');
+			expect(body).to.contain('data-prerender="true"');
 			expect(body).to.contain("I'm setup0");
 			expect(body).to.contain("your body770");
 			done();
@@ -214,15 +214,16 @@ describe("Rendering", function suite() {
 			}
 		}).then(function(body) {
 			expect(body).to.contain('<div class="build">2</div>');
-			expect(body).to.contain('<div class="setup">1</div>');
+			expect(body).to.contain('<div class="close">1</div>');
+			expect(body).to.contain('<div class="setup">2</div>');
 			expect(body).to.contain('<div id="click">1</div>');
-			expect(body).to.contain('<div id="nocall"></div>');
+			expect(body).to.contain('<div id="secondSetup">ok</div>');
 		});
 	});
 
 	it("should parse state.hash and run hash chain on click", function() {
 		return Render(host + ':' + port + '/templates/hash-click.html#test').then(function(body) {
-			expect(body).to.contain('data-page-stage="setup"');
+			expect(body).to.contain('data-prerender="true"');
 			expect(body).to.contain('<div class="hash">test</div>');
 			expect(body).to.contain('<div class="secondhash">toto</div>');
 		});
@@ -230,14 +231,14 @@ describe("Rendering", function suite() {
 
 	it("should run hash chain on push", function() {
 		return Render(host + ':' + port + '/templates/hash-push.html').then(function(body) {
-			expect(body).to.contain('data-page-stage="setup"');
+			expect(body).to.contain('data-prerender="true"');
 			expect(body).to.contain('<div class="hash">test</div>');
 		});
 	});
 
 	it("should allow early setup on state.emitter but not twice for same function", function() {
 		return Render(host + ':' + port + '/templates/early-setup.html').then(function(body) {
-			expect(body).to.contain('data-page-stage="setup"');
+			expect(body).to.contain('data-prerender="true"');
 			expect(body).to.contain('<div class="testA">1</div>');
 			expect(body).to.contain('<div class="testB">1</div>');
 		});
@@ -249,7 +250,7 @@ describe("Rendering", function suite() {
 		}).then(function(body) {
 			expect(body).to.contain('data-setup="2"');
 			expect(body).to.contain('data-close="1"');
-			expect(body).to.contain('data-page-stage="setup"');
+			expect(body).to.contain('data-prerender="true"');
 			expect(body).to.contain('<div id="reload">reloaded</div>');
 		});
 	});

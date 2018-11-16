@@ -41,7 +41,7 @@ Page.patch(function(state) {
 				backCalled = true;
 				window.history.back();
 			}
-		}, 50);
+		}, 400);
 	} else if (backCalled) {
 		document.getElementById('back').innerText = Page.format(state);
 	}

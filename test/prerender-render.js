@@ -66,7 +66,7 @@ describe("Two-phase rendering", function suite() {
 		app.set('views', __dirname + '/public');
 		app.get(/\.(json|js|css|png|templates)$/, express.static(app.get('views')));
 		app.get(/\/templates\/.+\.html$/, express.static(app.get('views')));
-		app.get(/\.html$/, dom().load());
+		app.get(/\.html$/, dom().load(debugPlugin));
 
 		server = app.listen(function(err) {
 			if (err) console.error(err);
@@ -86,13 +86,14 @@ describe("Two-phase rendering", function suite() {
 			url: host + ':' + port + '/build.html'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
-			expect(body).to.contain('<div class="build">0</div>');
+			expect(body).to.contain('data-prerender="true"');
+			expect(body).to.contain('<div class="build">1</div>');
 			expect(body).to.contain('<div class="setup"></div>');
 			dom(body).load({
 				plugins: renderPlugins
 			})(res.request.uri.href).then(function(state) {
-				expect(state.body).to.contain('<div class="build">0</div>');
-				expect(state.body).to.contain('<div class="setup">0</div>');
+				expect(state.body).to.contain('<div class="build">1</div>');
+				expect(state.body).to.contain('<div class="setup">1</div>');
 				done();
 			}).catch(function(err) {
 				done(err);
@@ -128,13 +129,12 @@ describe("Two-phase rendering", function suite() {
 			url: host + ':' + port + '/route.html?template=import'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
-			expect(body).to.contain('data-page-stage="build"');
+			expect(body).to.contain('data-prerender="true"');
 			expect(body).to.contain("I'm built0");
 			expect(body).to.contain("your body0");
 			dom(body).load({
 				plugins: renderPlugins
 			})(res.request.uri.href).then(function(state) {
-				expect(state.body).to.contain('data-page-stage="setup"');
 				expect(state.body).to.contain("I'm setup0");
 				done();
 			}).catch(function(err) {
@@ -202,7 +202,7 @@ describe("Two-phase rendering", function suite() {
 	it("should run build and patch then setup then patch then back then patch", function() {
 		return Render(host + ':' + port + '/back-patch.html', {delay: 500}).then(function(body) {
 			expect(body).to.contain('<div class="build">1</div>');
-			expect(body).to.contain('<div class="patch">2</div>');
+			expect(body).to.contain('<div class="patch">3</div>');
 			expect(body).to.contain('<div class="setup">1</div>');
 			expect(body).to.contain('<div id="loc">/back-patch.html?test=one</div>');
 			expect(body).to.contain('<div id="back">/back-patch.html</div>');

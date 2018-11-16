@@ -5,8 +5,9 @@
 	<script src="../window-page.js"></script>
 	<script>
 var nums = {
-	build: 1,
-	setup: 1
+	build: 0,
+	close: 0,
+	setup: 0
 };
 var reads = {};
 Page.route(function(state) {
@@ -15,6 +16,7 @@ Page.route(function(state) {
 });
 Page.build(checkNums);
 Page.setup(checkNums);
+Page.close(checkNums);
 
 var numClicks = 0;
 Page.setup(function(state) {
@@ -28,7 +30,7 @@ Page.setup(function(state) {
 			});
 		}, 5);
 	}	else if (state.pathname == "/inexistent.html") {
-		document.getElementById('nocall').textContent = "wrong";
+		document.getElementById('secondSetup').textContent = "ok";
 	}
 });
 
@@ -45,7 +47,7 @@ function checkNums(state) {
 		var int = parseInt(node.innerHTML);
 		if (!isNaN(int)) nums[stage] = int;
 	}
-	node.innerHTML = nums[stage]++;
+	node.innerHTML = ++nums[stage];
 }
 	</script>
 </head>
@@ -53,10 +55,11 @@ function checkNums(state) {
 <div id="once"></div>
 <div class="build"></div>
 <div class="patch"></div>
+<div class="close"></div>
 <div class="setup"></div>
 <div id="query"></div>
 <div id="loc"></div>
 <div id="click"></div>
-<div id="nocall"></div>
+<div id="secondSetup">ok</div>
 </body>
 </html>

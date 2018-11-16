@@ -46,17 +46,17 @@ State.prototype.init = function(W) {
 	};
 };
 
-function stamp(stage) {
+function prerender(ok) {
 	var root = document.documentElement;
-	if (stage != null) root.setAttribute('data-page-stage', stage);
-	else stage = root.dataset.pageStage;
-	return stage;
+	if (ok) root.setAttribute('data-prerender', 'true');
+	else return root.dataset.prerender == 'true';
 }
 
 State.prototype.run = function(W) {
 	var state = this;
 	var refer = this.referrer;
 	if (!refer) {
+		debug("new referrer");
 		if (document.referrer) {
 			refer = Loc.parse(document.referrer);
 		} else {
@@ -68,16 +68,15 @@ State.prototype.run = function(W) {
 		throw new Error("state and referrer should be distinct");
 	}
 	delete this.emitter; // in case an already used state has been given
+	var samePathname = Loc.samePathname(refer, state);
 	return Wait.dom().then(function() {
-		if (refer.stage == SETUP && refer.pathname != state.pathname) {
-			return refer.runChain(CLOSE);
-		}
+		if (!samePathname && refer.stage) return refer.runChain(CLOSE);
 	}).then(function() {
 		return state.runChain(INIT);
 	}).then(function() {
 		// it is up to the default router to NOT load a document upon first load
 		// other routers might choose to do otherwise
-		if (refer.pathname != state.pathname || !refer.stage) {
+		if (!samePathname || !refer.prerender) {
 			return W.router(state, refer);
 		} else {
 			if (!state.emitter) state.emitter = refer.emitter;
@@ -85,28 +84,24 @@ State.prototype.run = function(W) {
 	}).then(function(doc) {
 		return state.load(doc || document);
 	}).then(function() {
-		if (!state.initial) state.initial = stamp() || INIT;
-		state.stage = state.initial;
+		if (state.prerender == null) state.prerender = prerender();
+		state.stage = state.prerender ? SETUP : INIT;
 		debug("doc ready at stage", state.stage);
 		return state.runChain(READY);
 	}).then(function() {
-		if (state.initial != INIT) return;
-		return (state.runChain(BUILD) || P()).then(function() {
+		if (!state.prerender && !samePathname) return (state.runChain(BUILD) || P()).then(function() {
 			return state.runChain(PATCH);
-		}).then(function() {
-			stamp(BUILD);
 		});
 	}).then(function() {
-		if (state.initial == SETUP) {
-			if (!Loc.samePath(state, refer)) {
-				return state.runChain(PATCH) || state.runChain(BUILD);
-			}
-		} else return Wait.ui().then(function() {
-			if (state._abort) return Promise.reject("abort");
-			return (state.runChain(SETUP) || P()).then(function() {
-				stamp(SETUP);
+		if (!samePathname) {
+			prerender(true);
+			return Wait.ui().then(function() {
+				if (state._abort) return Promise.reject("abort");
+				return state.runChain(SETUP);
 			});
-		});
+		} else if (samePathname && !Loc.sameQuery(state, refer)) {
+			return state.runChain(PATCH) || state.runChain(BUILD);
+		}
 	}).then(function() {
 		if (state.hash != refer.hash) return state.runChain(HASH);
 	}).catch(function(err) {
@@ -216,11 +211,11 @@ function chainListener(stage, fn) {
 }
 
 State.prototype.load = function(doc) {
+	Utils.clearListeners(document.body);
 	if (doc == document) {
-		Utils.trackListeners(document.body);
+		Utils.trackListeners(doc.body);
 		return P();
 	}
-	Utils.clearListeners(document.body);
 	debug("Import new document");
 	var states = {};
 	var selector = 'script:not([type]),script[type="text/javascript"],link[rel="import"]';

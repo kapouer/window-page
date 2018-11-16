@@ -9,12 +9,12 @@ Object.assign(W, Loc);
 W.createDoc = Utils.createDoc;
 W.get = Utils.get;
 
-var supportsHistory = false;
 var queue;
 var queuedState;
 
 W.run = function(state) {
 	if (!state) state = Loc.parse();
+	debug("run", state.pathname, state.query);
 	state.init(W);
 	if (queue) {
 		if (queuedState && queuedState.abort()) {
@@ -27,6 +27,11 @@ W.run = function(state) {
 		}
 	}
 	queuedState = state;
+	if (state.referrer && state.referrer.historyListener) {
+		window.removeEventListener('popstate', state.referrer.historyListener);
+	}
+	state.historyListener = historyListener.bind(null, state);
+	window.addEventListener('popstate', state.historyListener);
 	queue = state.run(W).then(function() {
 		queue = null;
 		queuedState = null;
@@ -37,8 +42,8 @@ W.run = function(state) {
 
 W.router = function(state) {
 	var refer = state.referrer;
-	if (!refer.stage || state.host == refer.host && state.pathname == refer.pathname) {
-		debug("Default router not running");
+	if (!refer.prerender) {
+		debug("Default router disabled after non-prerendered referrer");
 		return;
 	}
 	var url = Loc.format(state);
@@ -64,8 +69,6 @@ W.reload = function(state) {
 	debug("reload");
 	// copy state
 	var prev = Loc.parse(state);
-	// previous state must be closed but path comparisons must fail
-	// so set a state at previous stage without location
 	delete prev.pathname;
 	delete prev.query;
 	delete prev.hash;
@@ -87,8 +90,9 @@ W.save = function(state) {
 };
 
 function historySave(method, state) {
-	if (!supportsHistory) return false;
+	if (!window.history) return false;
 	var to = stateTo(state);
+	debug("history", method, to);
 	window.history[method + 'State'](to, document.title, to.href);
 	return true;
 }
@@ -103,7 +107,7 @@ function historyMethod(method, loc, state) {
 		return P();
 	}
 	if (state.data != null) copy.data = state.data;
-	copy.stage = state.stage;
+	copy.prerender = state.prerender;
 	copy.referrer = state;
 	debug("run", method, copy);
 	return W.run(copy).then(function() {
@@ -111,29 +115,28 @@ function historyMethod(method, loc, state) {
 	});
 }
 
-function historyListener(e) {
+function historyListener(refer, e) {
 	var state = stateFrom(e.state) || Loc.parse();
-	debug("history event", e.type, state);
+	debug("history event", e.type, e.state);
+	state.referrer = refer;
 	W.run(state);
 }
 
 function stateTo(state) {
 	return {
 		href: Loc.format(state),
-		data: state.data
+		data: state.data,
+		prerender: false,
+		stage: state.stage
 	};
 }
 
 function stateFrom(from) {
 	if (!from || !from.href) return;
 	var state = Loc.parse(from.href);
-	state.data = from.data || {};
+	delete from.href;
+	Object.assign(state, from);
 	return state;
-}
-
-if (window.history) {
-	supportsHistory = true;
-	window.addEventListener('popstate', historyListener);
 }
 
 W.run().then(function(state) {
@@ -141,4 +144,3 @@ W.run().then(function(state) {
 		historySave("replace", state);
 	}
 });
-
