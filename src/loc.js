@@ -76,15 +76,6 @@ exports.format = function(obj) {
 	return str;
 };
 
-exports.samePath = function(a, b) {
-	if (typeof a == "string") a = exports.parse(a);
-	if (typeof b == "string") b = exports.parse(b);
-	var aquery = a.query || Q.parse(a.search);
-	var bquery = b.query || Q.parse(b.search);
-	return a.pathname == b.pathname &&
-		Q.stringify(aquery) == Q.stringify(bquery);
-};
-
 exports.sameDomain = function(a, b) {
 	if (typeof a == "string") a = exports.parse(a);
 	if (typeof b == "string") b = exports.parse(b);
@@ -94,3 +85,32 @@ exports.sameDomain = function(a, b) {
 	var po = loc.port;
 	return (a.protocol || pr) == (b.protocol || pr) && (a.hostname || hn) == (b.hostname || hn) && (a.port || po) == (b.port || po);
 };
+
+exports.samePathname = function(a, b) {
+	if (typeof a == "string") a = exports.parse(a);
+	if (typeof b == "string") b = exports.parse(b);
+	if (exports.sameDomain(a, b)) {
+		return a.pathname == b.pathname;
+	} else {
+		return false;
+	}
+};
+
+exports.sameQuery = function(a, b) {
+	if (typeof a == "string") a = exports.parse(a);
+	if (typeof b == "string") b = exports.parse(b);
+	var aquery = a.query || Q.parse(a.search);
+	var bquery = b.query || Q.parse(b.search);
+	return Q.stringify(aquery) == Q.stringify(bquery);
+};
+
+exports.samePath = function(a, b) {
+	if (typeof a == "string") a = exports.parse(a);
+	if (typeof b == "string") b = exports.parse(b);
+	if (exports.samePathname(a, b)) {
+		return exports.sameQuery(a, b);
+	} else {
+		return false;
+	}
+};
+
