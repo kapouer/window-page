@@ -404,8 +404,7 @@ State.prototype.push = function(loc) {
 
 State.prototype.reload = function() {
 	debug("reload");
-	var prev = Loc.parse(this);
-	Object.assign(prev, this);
+	var prev = this.copy();
 	delete prev.pathname;
 	delete prev.query;
 	delete prev.hash;
@@ -415,6 +414,10 @@ State.prototype.reload = function() {
 
 State.prototype.save = function() {
 	return historySave('replace', this);
+};
+
+State.prototype.copy = function() {
+	return Object.assign(Loc.parse(this), this);
 };
 
 State.prototype.router = function() {
