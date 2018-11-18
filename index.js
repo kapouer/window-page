@@ -2,9 +2,11 @@ var Utils = require('./src/utils');
 var Loc = require('./src/loc');
 
 var W = window.Page = {};
+
 Object.assign(W, Loc);
 W.createDoc = Utils.createDoc;
 W.get = Utils.get;
+W.extend = Utils.extend;
 
 // shortcut
 W.route = function(fn) {

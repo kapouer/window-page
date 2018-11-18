@@ -97,3 +97,29 @@ exports.trackListeners = function() {
 	});
 };
 
+exports.extend = function(node) {
+	var conn = node.connectedCallback;
+	var disc = node.disconnectedCallback;
+	var fns = {};
+	Object.keys(['build', 'patch', 'setup', 'close']).forEach(function(k) {
+		var fn = node[k];
+		if (!fn) return;
+		fns[k] = fn.bind(node);
+	});
+
+	node.connectedCallback = function() {
+		Object.keys(fns).forEach(function(k) {
+			window.Page[k](fns[k]);
+		});
+		conn.call(node);
+	};
+	node.disconnectedCallback = function() {
+		Object.keys(fns).forEach(function(k) {
+			window.Page['un' + k](fns[k]);
+			if (k == 'close') fns.close();
+		});
+		disc.call(node);
+	};
+	return node;
+};
+
