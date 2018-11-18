@@ -264,6 +264,13 @@ use the chain methods.
 window-page is also a commonjs module, so it can be used with `require`.
 
 
+Debug log
+---------
+
+Either set `window.debug` to a custom log function, add set local storage:
+`window.localStorage.setItem('debug', 'window-page')`.
+
+
 License
 -------
 
