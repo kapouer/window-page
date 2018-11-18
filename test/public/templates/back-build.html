@@ -20,7 +20,7 @@ Page.close(checkNums);
 
 var numClicks = 0;
 Page.setup(function(state) {
-	document.body.addEventListener('click', function(e) {
+	document.addEventListener('click', function(e) {
 		e.target.innerText = ++numClicks;
 	});
 	if (state.pathname == "/templates/back-build.html")	{
