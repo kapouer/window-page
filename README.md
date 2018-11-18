@@ -31,14 +31,24 @@ page history methods called, see below).
 Route
 -----
 
-To build a page one needs a document that depends on current location.
+A router returns a DOM document from current state.
 
 A page always start with some markup, so the default router is not run when
-the page is loaded before any change.
+the page is loaded before any change. This means pure SPA needs to define a
+custom router, while prerendered websites can just use the default router.
 
-A router can be set using `Page.route(function(state) {...})` and shall return
-a document (possibly using `Page.get` and `Page.createDoc`).
-The default return value is current document.
+A router can be set within `Page.init`:
+```
+Page.init(function(state) {
+  state.router = function(state) {
+    return Page.get(state).then(function(str) {
+      return Page.createDoc(str);
+    });
+  };
+});
+```
+Alternatively, it can be set with `Page.route(function(state) {...})`, which
+does exactly the same (it overwrites router).
 
 
 Usage
@@ -73,6 +83,9 @@ Page.setup(function(state) {
 	// if a build function adds more dropdowns, it is responsible for initializing
 	// them altogether.
 	$('.dropdown').dropdown();
+	$('#open').on('click', function() {
+		state.push(this.href);
+	});
 });
 
 ```
@@ -89,7 +102,7 @@ current state as argument.
 * Page[chain](fn)  
   runs fn right now if the chain is reached, or wait the chain to be run
 * Page[`un${chain}`](fn)  
-  removes fn from a chain
+  removes fn from a chain, mostly needed for custom elements.
 
 Functions listening for a given stage are run serially.
 
@@ -106,8 +119,8 @@ The state object describes components of the url parsed with Page.parse()
 * state.pathname, state.query, state.hash  
   see also Page.format(state)
 
-**Important**: do not mutate those properties, instead, use `Page.parse(state)` to
-get a copy, or pass an object with partial properties to `Page.push` or `Page.replace`.
+**Important**: do not mutate those properties.
+The state history methods accept partial objects.
 
 * state.data  
   the data must be JSON-serializable.
@@ -115,50 +128,57 @@ get a copy, or pass an object with partial properties to `Page.push` or `Page.re
 * state.referrer  
   the previous parsable state.
 
-Shorthand state methods are also available:
 
-* state.save()  
-* state.replace(loc or url)  
-* state.push(loc or url)  
-* state.reload()  
+### Document import
 
-See Page history methods.
+When importing a document, two methods (that can return a promise) are called:
+- state.mergeHead(head, prev)
+- state.mergeBody(body, prev)
 
-
-### Integration with Event delegation, removal of body listeners
-
-When importing a document, two methods are called:
-- state.setHead(node)
-- state.setBody(node)
-
-The default `setHead` method do DOM diffing to keep existing script and link
+The default `mergeHead` method do DOM diffing to keep existing script and link
 nodes.
-The default `setBody` method just replaces `document.body` with the new body.
+The default `mergeBody` method just replaces `document.body` with the new body.
 
-Thus it is safer to add event listeners (during Page.setup) on `document.body`,
-since it is replaced, listeners will be cleaned up automatically.
+These methods can be overriden from `Page.init` or `Page.route`.
 
-However when overriding `state.setBody`, the new method could keep the same body,
-so Page will track and remove body listeners to match the default behavior.
+
+### Event listeners on window, document are tracked and removed
+
+So if there is a special need to avoid that behavior, register listeners on
+documentElement or body.
 
 
 ### Integration with Custom Elements
 
-Typical example with patch chain:
+A custom element having `build`, `patch`, `setup`, `close` methods can be
+plugged into Page using:
+
+* Page.extend(node)
+
 ```
 init() {
-  this.patch = this.patch.bind(this);
-}
-connectedCallback() {
-  Page.patch(this.patch);
-}
-disconnectedCallback() {
-  Page.unpatch(this.patch);
+  // can be done from constructor but there are known issues with them
+  Page.extend(this);
 }
 patch(state) {
-  // do something with state.query...
+  var index = state.query.index || 0;
+  if (this.slider.index != index) {
+    this.slider.setIndex(index);
+  }
+}
+setup(state) {
+  this.slider = new Slider(this, {
+    change: function(index) {
+      state.push({query: {index: index}});
+    }
+  });
+}
+close(state) {
+  if (this.slider) this.slider.destroy();
+  delete this.slider;
 }
 ```
+
 
 ### Integration with link imports
 
@@ -167,17 +187,15 @@ When importing a document, scritps and link imports are serially loaded in order
 
 ### History
 
-* Page.push(location or url, state)  
-  state must be the current state
+These methods will run all chains on new state and return a promise:
 
-* Page.replace(location or url, state)  
-  state must be the current state
+* state.push(location or url)  
+* state.replace(location or url)
+* state.reload()
 
-* Page.save(state)  
-  Saves the state to history.
+A convenient method only replaces current window history:
 
-* Page.reload(state)  
-  reloads state
+* state.save()
 
 
 ### Tools
@@ -197,11 +215,18 @@ When importing a document, scritps and link imports are serially loaded in order
   format a parsed url to a string with only what was defined,  
   converts obj.path to pathname, query then stringify query obj if any.
 
-* Page.samePath(a, b)  
-  compare paths (pathname + querystring without hash) of two url or objects.
-
 * Page.sameDomain(a, b)  
   compare domains (protocol + hostname + port) of two url or objects.
+
+* Page.samePathname(a, b)  
+  compare domains and pathname of two url or objects.
+
+* Page.sameQuery(a, b)  
+  compare query strings of two url or objects.
+
+* Page.samePath(a, b)  
+  compare domain, pathname, querystring (without hash) of two url or objects.
+
 
 
 ### BrowserStack and Browser support
