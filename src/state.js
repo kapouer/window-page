@@ -466,18 +466,19 @@ function historySave(method, state) {
 	return true;
 }
 
-function historyMethod(method, loc, state) {
-	if (!state) throw new Error("Missing state parameter");
+function historyMethod(method, loc, refer) {
+	if (!refer) throw new Error("Missing referrer parameter");
 	var copy = Loc.parse(Loc.format(loc));
-	if (!Loc.sameDomain(state, copy)) {
+	if (!Loc.sameDomain(refer, copy)) {
 		// eslint-disable-next-line no-console
 		if (method == "replace") console.info("Cannot replace to a different origin");
 		document.location = Loc.format(copy);
 		return P();
 	}
-	if (state.data != null) copy.data = state.data;
-	copy.prerender = state.prerender;
-	copy.referrer = state;
+	// in case of state.push({data: ..., pathname:...})
+	if (typeof loc != "string" && loc.data != null) copy.data = loc.data;
+	copy.prerender = refer.prerender;
+	copy.referrer = refer;
 	debug("run", method, copy);
 	return copy.run().then(function(state) {
 		historySave(method, state);
