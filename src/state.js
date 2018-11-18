@@ -173,7 +173,7 @@ State.prototype.chain = function(stage, fn) {
 		p = new Promise(function(resolve) {
 			setTimeout(resolve);
 		}).then(function() {
-			return fn(state);
+			return runFn(stage, fn, state);
 		});
 	} else {
 		debug("chain pending", stage);
@@ -198,12 +198,17 @@ function chainListener(stage, fn) {
 		if (chain.count == null) chain.count = 0;
 		chain.count++;
 		chain.promise = chain.promise.then(function() {
-			return fn(e.detail);
+			return runFn(stage, fn, state);
 		}).catch(function(err) {
 			// eslint-disable-next-line no-console
 			console.error(stage, "stage", err);
 		});
 	};
+}
+
+function runFn(stage, fn, state) {
+	if (typeof fn == "object" && fn[stage]) return fn[stage](state);
+	else return fn(state);
 }
 
 State.prototype.load = function(doc) {

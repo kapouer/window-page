@@ -6,7 +6,8 @@ var W = window.Page = {};
 Object.assign(W, Loc);
 W.createDoc = Utils.createDoc;
 W.get = Utils.get;
-W.extend = Utils.extend;
+W.connect = Utils.connect;
+W.disconnect = Utils.disconnect;
 
 // shortcut
 W.route = function(fn) {

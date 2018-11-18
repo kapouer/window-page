@@ -153,12 +153,15 @@ documentElement or body.
 A custom element having `build`, `patch`, `setup`, `close` methods can be
 plugged into Page using:
 
-* Page.extend(node)
+* Page.connect(node)
+* Page.disconnect(node)
 
 ```
-init() {
-  // can be done from constructor but there are known issues with them
-  Page.extend(this);
+connectedCallback() {
+  Page.connect(this);
+}
+disconnectedCallback() {
+  Page.disconnect(this);
 }
 patch(state) {
   var index = state.query.index || 0;
@@ -173,7 +176,7 @@ setup(state) {
     }
   });
 }
-close(state) {
+close() {
   if (this.slider) this.slider.destroy();
   delete this.slider;
 }
