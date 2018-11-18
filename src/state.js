@@ -147,8 +147,8 @@ State.prototype.runChain = function(name) {
 
 State.prototype.chain = function(stage, fn) {
 	var state = this;
-	var ls = fn.pageListeners;
-	if (!ls) ls = fn.pageListeners = {};
+	var ls = fn._pageListeners;
+	if (!ls) ls = fn._pageListeners = {};
 	var lfn = ls[stage];
 	var emitter = document.currentScript;
 	if (!emitter) {
@@ -183,7 +183,7 @@ State.prototype.chain = function(stage, fn) {
 };
 
 State.prototype.unchain = function(stage, fn) {
-	var ls = fn.pageListeners;
+	var ls = fn._pageListeners;
 	if (!ls) return;
 	var lfn = ls[stage];
 	if (!lfn) return;
