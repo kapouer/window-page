@@ -72,30 +72,28 @@ exports.all = function(node, selector) {
 	return Array.prototype.slice.call(list);
 };
 
-var trackedListeners;
-exports.clearListeners = function(node) {
-	(trackedListeners || []).forEach(function(obj) {
-		node.removeEventListener(obj.name, obj.fn, obj.opts);
+var listeners;
+exports.clearListeners = function() {
+	(listeners || []).forEach(function(obj) {
+		obj.emitter.removeEventListener(obj.name, obj.fn, obj.opts);
 	});
-	trackedListeners = [];
+	listeners = [];
 };
 
-exports.trackListeners = function(node) {
-	if (!node) {
-		// eslint-disable-next-line no-console
-		console.warn("No node to track listeners");
-		return;
-	}
-	if (node.addEventListener == Node.prototype.addEventListener) {
-		trackedListeners = [];
+exports.trackListeners = function() {
+	if (!listeners) listeners = [];
+	Array.prototype.forEach.call(arguments, function(node) {
+		var Proto = node.constructor.prototype;
+		if (node.addEventListener != Proto.addEventListener) return;
 		node.addEventListener = function(name, fn, opts) {
-			trackedListeners.push({
+			listeners.push({
+				emitter: node,
 				name: name,
 				fn: fn,
 				opts: opts
 			});
-			return Node.prototype.addEventListener.call(this, name, fn, opts);
+			return Proto.addEventListener.call(this, name, fn, opts);
 		};
-	}
+	});
 };
 

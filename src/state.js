@@ -17,12 +17,15 @@ var ERROR = "error";
 var HASH = "hash";
 var Stages = [INIT, READY, BUILD, PATCH, SETUP, HASH, ERROR, CLOSE];
 
+var queue;
+
 function State() {
 	this.data = {};
 	this.chains = {};
 }
 
-State.prototype.init = function(W) {
+State.prototype.init = function() {
+	var W = window.Page;
 	var state = this;
 	Stages.forEach(function(stage) {
 		W[stage] = function(fn) {
@@ -32,18 +35,18 @@ State.prototype.init = function(W) {
 			return state.unchain(stage, fn);
 		};
 	});
-	state.reload = function() {
-		return W.reload(state);
-	};
-	state.replace = function(loc) {
-		return W.replace(loc, state);
-	};
-	state.push = function(loc) {
-		return W.push(loc, state);
-	};
-	state.save = function() {
-		return W.save(state);
-	};
+};
+
+State.prototype.run = function() {
+	var state = this;
+	if (queue) queue = queue.then(function() {
+		return state.run();
+	});
+	else queue = run(state).then(function(state) {
+		queue = null;
+		return state;
+	});
+	return queue;
 };
 
 function prerender(ok) {
@@ -52,9 +55,9 @@ function prerender(ok) {
 	else return root.dataset.prerender == 'true';
 }
 
-State.prototype.run = function(W) {
-	var state = this;
-	var refer = this.referrer;
+function run(state) {
+	state.init();
+	var refer = state.referrer;
 	if (!refer) {
 		debug("new referrer");
 		if (document.referrer) {
@@ -62,14 +65,15 @@ State.prototype.run = function(W) {
 		} else {
 			refer = new State();
 		}
-		this.referrer = refer;
+		state.referrer = refer;
 	}
 	if (refer == state) {
 		throw new Error("state and referrer should be distinct");
 	}
-	delete this.emitter; // in case an already used state has been given
+	delete state.emitter; // in case an already used state has been given
 	var samePathname = Loc.samePathname(refer, state);
 	return Wait.dom().then(function() {
+		Utils.clearListeners(document);
 		if (!samePathname && refer.stage) return refer.runChain(CLOSE);
 	}).then(function() {
 		return state.runChain(INIT);
@@ -77,11 +81,13 @@ State.prototype.run = function(W) {
 		// it is up to the default router to NOT load a document upon first load
 		// other routers might choose to do otherwise
 		if (!samePathname || !refer.prerender) {
-			return W.router(state, refer);
+			return state.router();
 		} else {
 			if (!state.emitter) state.emitter = refer.emitter;
 		}
 	}).then(function(doc) {
+		Utils.trackListeners(document, window);
+		window.addEventListener('popstate', historyListener.bind(state));
 		return state.load(doc || document);
 	}).then(function() {
 		if (state.prerender == null) state.prerender = prerender();
@@ -96,7 +102,6 @@ State.prototype.run = function(W) {
 		if (!samePathname) {
 			prerender(true);
 			return Wait.ui().then(function() {
-				if (state._abort) return Promise.reject("abort");
 				return state.runChain(SETUP);
 			});
 		} else if (samePathname && !Loc.sameQuery(state, refer)) {
@@ -105,23 +110,14 @@ State.prototype.run = function(W) {
 	}).then(function() {
 		if (state.hash != refer.hash) return state.runChain(HASH);
 	}).catch(function(err) {
-		delete state._abort;
-		if (err != "abort") {
-			// eslint-disable-next-line no-console
-			if (typeof err != "number") console.error(err);
-			state.error = err;
-			return state.runChain(ERROR)
-		}
+		// eslint-disable-next-line no-console
+		if (typeof err != "number") console.error(err);
+		state.error = err;
+		return state.runChain(ERROR)
 	}).then(function() {
 		return state;
 	});
-};
-
-State.prototype.abort = function() {
-	if (this.stage != BUILD) return false;
-	this._abort = true;
-	return true;
-};
+}
 
 State.prototype.emit = function(name) {
 	var e = new CustomEvent(name, {
@@ -205,15 +201,13 @@ function chainListener(stage, fn) {
 			return fn(e.detail);
 		}).catch(function(err) {
 			// eslint-disable-next-line no-console
-			console.error("Uncaught error during", stage, err, fn);
+			console.error(err, "\nduring stage", stage);
 		});
 	};
 }
 
 State.prototype.load = function(doc) {
-	Utils.clearListeners(document.body);
 	if (doc == document) {
-		Utils.trackListeners(doc.body);
 		return P();
 	}
 	debug("Import new document");
@@ -306,8 +300,6 @@ State.prototype.load = function(doc) {
 	var head = nroot.querySelector('head');
 	var body = nroot.querySelector('body');
 
-	Utils.trackListeners(body);
-
 	var atts = nroot.attributes;
 
 	for (var i=0; i < atts.length; i++) {
@@ -324,11 +316,11 @@ State.prototype.load = function(doc) {
 	var state = this;
 
 	return P().then(function() {
-		state.setHead(head);
+		state.mergeHead(head, document.head);
 		return parallels;
 	}).then(function() {
 		return P().then(function() {
-			return state.setBody(body);
+			return state.mergeBody(body, document.body);
 		});
 	}).then(function() {
 		// scripts must be run in order
@@ -342,12 +334,12 @@ State.prototype.load = function(doc) {
 	});
 };
 
-State.prototype.setHead = function(node) {
+State.prototype.mergeHead = function(node) {
 	this.updateAttributes(document.head, node);
 	this.updateChildren(document.head, node);
 };
 
-State.prototype.setBody = function(node) {
+State.prototype.mergeBody = function(node) {
 	document.body.parentNode.replaceChild(node, document.body);
 };
 
@@ -401,4 +393,97 @@ State.prototype.updateChildren = function(from, to) {
 		}
 	});
 };
+
+State.prototype.replace = function(loc) {
+	return historyMethod('replace', loc, this);
+};
+
+State.prototype.push = function(loc) {
+	return historyMethod('push', loc, this);
+};
+
+State.prototype.reload = function() {
+	debug("reload");
+	var prev = Loc.parse(this);
+	Object.assign(prev, this);
+	delete prev.pathname;
+	delete prev.query;
+	delete prev.hash;
+	this.referrer = prev;
+	return this.run();
+};
+
+State.prototype.save = function() {
+	return historySave('replace', this);
+};
+
+State.prototype.router = function() {
+	var refer = this.referrer;
+	if (!refer.prerender) {
+		debug("Default router disabled after non-prerendered referrer");
+		return;
+	}
+	var url = Loc.format(this);
+	return Utils.get(url, 500).then(function(client) {
+		var doc = Utils.createDoc(client.responseText);
+		if (client.status >= 400 && (!doc.body || doc.body.children.length == 0)) {
+			throw new Error(client.statusText);
+		} else if (!doc) {
+			setTimeout(function() {
+				document.location = url;
+			}, 500);
+			throw new Error("Cannot load remote document - redirecting...");
+		}
+		return doc;
+	});
+};
+
+function stateTo(state) {
+	return {
+		href: Loc.format(state),
+		data: state.data,
+		prerender: false,
+		stage: state.stage
+	};
+}
+
+function stateFrom(from) {
+	if (!from || !from.href) return;
+	var state = Loc.parse(from.href);
+	delete from.href;
+	Object.assign(state, from);
+	return state;
+}
+
+function historySave(method, state) {
+	if (!window.history) return false;
+	var to = stateTo(state);
+	debug("history", method, to);
+	window.history[method + 'State'](to, document.title, to.href);
+	return true;
+}
+
+function historyMethod(method, loc, state) {
+	if (!state) throw new Error("Missing state parameter");
+	var copy = Loc.parse(Loc.format(loc));
+	if (!Loc.sameDomain(state, copy)) {
+		// eslint-disable-next-line no-console
+		if (method == "replace") console.info("Cannot replace to a different origin");
+		document.location = Loc.format(copy);
+		return P();
+	}
+	if (state.data != null) copy.data = state.data;
+	copy.prerender = state.prerender;
+	copy.referrer = state;
+	debug("run", method, copy);
+	return copy.run().then(function(state) {
+		historySave(method, state);
+	});
+}
+function historyListener(e) {
+	var state = stateFrom(e.state) || Loc.parse();
+	debug("history event", e.type, e.state);
+	state.referrer = this;
+	state.run();
+}
 
