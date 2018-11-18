@@ -207,10 +207,18 @@ function chainListener(stage, fn) {
 }
 
 function runFn(stage, fn, state) {
-	if (typeof fn == "object" && typeof fn[stage] == "function") {
-		return fn[stage](state);
-	} else {
+	if (typeof fn == "object") {
+		if (typeof fn[stage] == "function") {
+			return fn[stage](state);
+		} else {
+			// eslint-disable-next-line no-console
+			console.warn("Missing object." + stage + " method");
+		}
+	} else if (typeof fn == "function") {
 		return fn(state);
+	} else {
+		// eslint-disable-next-line no-console
+		console.warn("Missing function");
 	}
 }
 
