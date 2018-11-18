@@ -201,7 +201,7 @@ function chainListener(stage, fn) {
 			return runFn(stage, fn, state);
 		}).catch(function(err) {
 			// eslint-disable-next-line no-console
-			console.error(stage, "stage", err);
+			console.error("Page." + stage, err);
 		});
 	};
 }
