@@ -104,6 +104,9 @@ current state as argument.
 * Page[`un${chain}`](fn)  
   removes fn from a chain, mostly needed for custom elements.
 
+The fn parameter can be a function or an object with a `<chain>` property that
+is a function - which is a handy way to keep the value of `this`.
+
 Functions listening for a given stage are run serially.
 
 Listeners are bound to `document.currentScript`:

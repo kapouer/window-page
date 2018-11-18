@@ -207,8 +207,11 @@ function chainListener(stage, fn) {
 }
 
 function runFn(stage, fn, state) {
-	if (typeof fn == "object" && fn[stage]) return fn[stage](state);
-	else return fn(state);
+	if (typeof fn == "object" && typeof fn[stage] == "function") {
+		return fn[stage](state);
+	} else {
+		return fn(state);
+	}
 }
 
 State.prototype.load = function(doc) {
