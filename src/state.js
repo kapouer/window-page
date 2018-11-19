@@ -83,10 +83,15 @@ function run(state) {
 	var prerendered = false;
 
 	return Wait.dom().then(function() {
-		Utils.clearListeners();
+		var p;
+		if (!samePathname && refer.stage) {
+			p = refer.runChain(CLOSE);
+			Utils.clearListeners();
+		}
+		if (refer.stage) window.removeEventListener('popstate', refer);
+		window.addEventListener('popstate', state);
 		Utils.trackListeners(document, window);
-		window.addEventListener('popstate', historyListener.bind(state));
-		if (!samePathname && refer.stage) return refer.runChain(CLOSE);
+		return p;
 	}).then(function() {
 		return state.runChain(INIT);
 	}).then(function() {
@@ -112,7 +117,7 @@ function run(state) {
 			return Wait.ui().then(function() {
 				return state.runChain(SETUP);
 			});
-		} else if (samePathname && !Loc.sameQuery(state, refer)) {
+		} else if (!Loc.sameQuery(refer, state)) {
 			return state.runChain(PATCH) || state.runChain(BUILD);
 		}
 	}).then(function() {
@@ -462,6 +467,15 @@ State.prototype.router = function() {
 	});
 };
 
+State.prototype.handleEvent = function(e) {
+	if (e.type == "popstate") {
+		debug("history event from", this.pathname, this.query, "to", e.state && e.state.href || null);
+		var state = stateFrom(e.state) || Loc.parse();
+		state.referrer = this;
+		state.run();
+	}
+};
+
 function stateTo(state) {
 	return {
 		href: Loc.format(state),
@@ -503,10 +517,5 @@ function historyMethod(method, loc, refer) {
 		historySave(method, state);
 	});
 }
-function historyListener(e) {
-	debug("history event from", this.pathname, this.query, "to", e.state && e.state.href || null);
-	var state = stateFrom(e.state) || Loc.parse();
-	state.referrer = this;
-	state.run();
-}
+
 
