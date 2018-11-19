@@ -21,11 +21,21 @@ var renderPlugins = [
 	dom.plugins.html
 ];
 
-function debugPlugin(page, settings) {
+function debugPlugin(page, settings, req) {
 	if (process.env.DEBUG) {
 		if (!settings.scripts) settings.scripts = [];
+		if (req) {
+			settings.scripts.push(function(n) {
+				window.debug = console.error.bind(console, '*');
+			});
+		} else {
+			settings.scripts.push(function(n) {
+				window.debug = console.error.bind(console);
+			});
+		}
+	} else {
 		settings.scripts.push(function(n) {
-			window.debug = console.error.bind(console);
+			window.debug = function() {};
 		});
 	}
 }
