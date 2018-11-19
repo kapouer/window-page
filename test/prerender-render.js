@@ -87,11 +87,13 @@ describe("Two-phase rendering", function suite() {
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
 			expect(body).to.contain('data-prerender="true"');
+			expect(body).to.contain('<div class="init">1</div>');
 			expect(body).to.contain('<div class="build">1</div>');
 			expect(body).to.contain('<div class="setup"></div>');
 			dom(body).load({
 				plugins: renderPlugins
 			})(res.request.uri.href).then(function(state) {
+				expect(state.body).to.contain('<div class="init">2</div>');
 				expect(state.body).to.contain('<div class="build">1</div>');
 				expect(state.body).to.contain('<div class="setup">1</div>');
 				done();

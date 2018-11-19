@@ -169,7 +169,7 @@ State.prototype.chain = function(stage, fn) {
 		debug("already chained", stage, fn);
 	}
 	var p;
-	var curNum = state.stage ? Stages.indexOf(state.stage) : 0;
+	var curNum = state.stage ? Stages.indexOf(state.stage) : -1;
 	var tryNum = Stages.indexOf(stage);
 	if (tryNum <= curNum) {
 		debug("chain has run, execute fn now", stage);

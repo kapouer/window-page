@@ -5,16 +5,22 @@
 	<script src="window-page.js"></script>
 	<script>
 var nums = {
+	init: 0,
 	build: 0,
 	setup: 0
 };
 var reads = {};
+Page.init(checkNums);
 Page.build(checkNums);
 Page.setup(checkNums);
 
 function checkNums(state) {
 	var stage = state.stage;
 	var node = document.querySelector('.' + stage);
+	if (!node) {
+		nums.init++;
+		return;
+	}
 	if (!reads[stage]) {
 		reads[stage] = true;
 		var int = parseInt(node.innerHTML);
@@ -25,6 +31,7 @@ function checkNums(state) {
 	</script>
 </head>
 <body>
+<div class="init"></div>
 <div class="build"></div>
 <div class="setup"></div>
 </body>
