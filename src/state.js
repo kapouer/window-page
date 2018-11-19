@@ -78,7 +78,9 @@ function run(state) {
 	var prerendered = false;
 
 	return Wait.dom().then(function() {
-		Utils.clearListeners(document);
+		Utils.clearListeners();
+		Utils.trackListeners(document, window);
+		window.addEventListener('popstate', historyListener.bind(state));
 		if (!samePathname && refer.stage) return refer.runChain(CLOSE);
 	}).then(function() {
 		return state.runChain(INIT);
@@ -89,8 +91,6 @@ function run(state) {
 			if (!state.emitter) state.emitter = refer.emitter;
 		}
 	}).then(function(doc) {
-		Utils.trackListeners(document, window);
-		window.addEventListener('popstate', historyListener.bind(state));
 		if (doc && doc != document) return load(state, doc);
 	}).then(function(doc) {
 		if (!refer.stage || doc) prerendered = prerender();
