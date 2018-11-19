@@ -19,6 +19,6 @@ W.route = function(fn) {
 };
 
 Loc.parse().run().then(function(state) {
-	state.save();
+	if (!window.history.state) state.save();
 });
 
