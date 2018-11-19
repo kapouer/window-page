@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+	<script src="window-page.js"></script>
+	<script src="assets/build.js"></script>
+	<script>
+Page.setup(function(state) {
+	setTimeout(function() {
+		if (state.referrer.pathname == "/nav-2.html") {
+			console.error("arrived at nav-1 from nav-2 OK");
+		} else if (state.referrer.pathname == null) {
+			console.log("going to nav2");
+			state.push({pathname: '/nav-2.html'});
+		} else {
+			console.error("bad referrer", state.referrer.pathname, "at", state.pathname, "really nav-1");
+		}
+	}, 50);
+});
+	</script>
+</head>
+<body>
+</body>
+</html>
