@@ -51,8 +51,10 @@ State.prototype.run = function() {
 
 function prerender(ok) {
 	var root = document.documentElement;
-	if (ok) root.setAttribute('data-prerender', 'true');
-	else return root.dataset.prerender == 'true';
+	if (ok === undefined) ok = root.dataset.prerender == 'true';
+	else if (ok === true) root.setAttribute('data-prerender', 'true');
+	else if (ok === false) root.removeAttribute('data-prerender');
+	return ok;
 }
 
 function run(state) {
@@ -71,16 +73,17 @@ function run(state) {
 		throw new Error("state and referrer should be distinct");
 	}
 	delete state.emitter; // in case an already used state has been given
-	var samePathname = Loc.samePathname(refer, state);
+	var samePathname = Loc.samePathname(refer, state) && refer.stage;
+
+	var prerendered = false;
+
 	return Wait.dom().then(function() {
 		Utils.clearListeners(document);
 		if (!samePathname && refer.stage) return refer.runChain(CLOSE);
 	}).then(function() {
 		return state.runChain(INIT);
 	}).then(function() {
-		// it is up to the default router to NOT load a document upon first load
-		// other routers might choose to do otherwise
-		if (!samePathname || !refer.prerender) {
+		if (!samePathname) {
 			return state.router();
 		} else {
 			if (!state.emitter) state.emitter = refer.emitter;
@@ -88,14 +91,14 @@ function run(state) {
 	}).then(function(doc) {
 		Utils.trackListeners(document, window);
 		window.addEventListener('popstate', historyListener.bind(state));
-		return state.load(doc || document);
-	}).then(function() {
-		if (state.prerender == null) state.prerender = prerender();
-		state.stage = state.prerender ? SETUP : INIT;
-		debug("doc ready at stage", state.stage);
+		if (doc && doc != document) return load(state, doc);
+	}).then(function(doc) {
+		if (!refer.stage || doc) prerendered = prerender();
+		else prerendered = false;
+		debug("prerendered", prerendered);
 		return state.runChain(READY);
 	}).then(function() {
-		if (!state.prerender && !samePathname) return (state.runChain(BUILD) || P()).then(function() {
+		if (!prerendered && !samePathname) return (state.runChain(BUILD) || P()).then(function() {
 			return state.runChain(PATCH);
 		});
 	}).then(function() {
@@ -222,10 +225,7 @@ function runFn(stage, fn, state) {
 	}
 }
 
-State.prototype.load = function(doc) {
-	if (doc == document) {
-		return P();
-	}
+function load(state, doc) {
 	debug("Import new document");
 	var states = {};
 	var selector = 'script:not([type]),script[type="text/javascript"],link[rel="import"]';
@@ -237,7 +237,7 @@ State.prototype.load = function(doc) {
 	// if there is no HTMLImports support, some loaded script might contain
 	// the HTMLImports polyfill itself, which will load imports however it likes
 	// so it's hard to decide which order is good, and it's also impossible to know
-	// if that polyfill will be available - so state.load does not preload
+	// if that polyfill will be available - so load(state) does not preload
 	// imports nor does it let them run on insert
 	// if there is native support then it's like other resources.
 
@@ -329,8 +329,6 @@ State.prototype.load = function(doc) {
 	var parallels = Wait.styles(head, document.head);
 	var serials = Utils.all(nroot, 'script[type="none"],link[rel="none"]');
 
-	var state = this;
-
 	return P().then(function() {
 		state.mergeHead(head, document.head);
 		return parallels;
@@ -347,8 +345,10 @@ State.prototype.load = function(doc) {
 			});
 		});
 		return p;
+	}).then(function() {
+		return doc;
 	});
-};
+}
 
 State.prototype.mergeHead = function(node) {
 	this.updateAttributes(document.head, node);
@@ -438,8 +438,8 @@ State.prototype.copy = function() {
 
 State.prototype.router = function() {
 	var refer = this.referrer;
-	if (!refer.prerender) {
-		debug("Default router disabled after non-prerendered referrer");
+	if (!refer.stage) {
+		debug("Default router starts after navigation");
 		return;
 	}
 	var url = Loc.format(this);
@@ -461,7 +461,6 @@ function stateTo(state) {
 	return {
 		href: Loc.format(state),
 		data: state.data,
-		prerender: false,
 		stage: state.stage
 	};
 }
@@ -493,7 +492,6 @@ function historyMethod(method, loc, refer) {
 	}
 	// in case of state.push({data: ..., pathname:...})
 	if (typeof loc != "string" && loc.data != null) copy.data = loc.data;
-	copy.prerender = refer.prerender;
 	copy.referrer = refer;
 	debug("run", method, copy);
 	return copy.run().then(function(state) {
@@ -501,8 +499,8 @@ function historyMethod(method, loc, refer) {
 	});
 }
 function historyListener(e) {
+	debug("history event from", this.pathname, this.query, "to", e.state && e.state.href || null);
 	var state = stateFrom(e.state) || Loc.parse();
-	debug("history event", e.type, e.state);
 	state.referrer = this;
 	state.run();
 }
