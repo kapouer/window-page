@@ -183,16 +183,11 @@ State.prototype.chain = function(stage, fn) {
 	var tryNum = Stages.indexOf(stage);
 	if (tryNum <= curNum) {
 		debug("chain has run, execute fn now", stage);
-		p = new Promise(function(resolve) {
-			setTimeout(resolve);
-		}).then(function() {
-			return runFn(stage, fn, state);
-		});
+		return lfn.fn({detail: state});
 	} else {
 		debug("chain pending", stage);
-		p = P();
+		return P();
 	}
-	return p;
 };
 
 State.prototype.unchain = function(stage, fn) {
@@ -216,6 +211,7 @@ function chainListener(stage, fn) {
 			// eslint-disable-next-line no-console
 			console.error("Page." + stage, err);
 		});
+		return chain.promise;
 	};
 }
 

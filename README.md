@@ -109,6 +109,10 @@ is a function - which is a handy way to keep the value of `this`.
 
 Functions listening for a given stage are run serially.
 
+If a stage chain is already resolved, new listeners are just appended to it.
+So to append a listener at the end of the chain, just do:
+`Page.patch(() => Page.patch(fn))`.
+
 Listeners are bound to `document.currentScript`:
 - if it is set, listeners are bound to it and are removed as the node itself is.  
   Script node removal can happen when loading a new document.
