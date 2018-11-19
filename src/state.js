@@ -39,8 +39,13 @@ State.prototype.init = function() {
 
 State.prototype.run = function() {
 	var state = this;
-	if (queue) queue = queue.then(function() {
-		return state.run();
+	if (queue) queue = queue.then(function(old) {
+		if (Loc.samePath(state, old)) {
+			queue = null;
+			return old;
+		} else {
+			return state.run();
+		}
 	});
 	else queue = run(state).then(function(state) {
 		queue = null;
