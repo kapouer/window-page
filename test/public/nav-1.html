@@ -8,9 +8,9 @@
 Page.setup(function(state) {
 	setTimeout(function() {
 		if (state.referrer.pathname == "/nav-2.html") {
-			console.error("arrived at nav-1 from nav-2 OK");
+			debug("arrived at nav-1 from nav-2 OK");
 		} else if (state.referrer.pathname == null) {
-			console.log("going to nav2");
+			debug("going to nav2");
 			state.push({pathname: '/nav-2.html'});
 		} else {
 			console.error("bad referrer", state.referrer.pathname, "at", state.pathname, "really nav-1");
