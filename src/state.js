@@ -178,11 +178,8 @@ State.prototype.chain = function(stage, fn) {
 	} else {
 		debug("already chained", stage, fn);
 	}
-	var p;
-	var curNum = state.stage ? Stages.indexOf(state.stage) : -1;
-	var tryNum = Stages.indexOf(stage);
-	if (tryNum <= curNum) {
-		debug("chain has run, execute fn now", stage);
+	if (this.chains[stage]) {
+		debug("chain already reached", stage);
 		return lfn.fn({detail: state});
 	} else {
 		debug("chain pending", stage);
