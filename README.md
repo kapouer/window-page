@@ -14,41 +14,43 @@ Chains
 ------
 
 - init, called before anything but after original document is ready
-- router, if pathname changes or page is new,
-- state.import(doc) which does nothing if document does not change
 - ready, when imported document or original document is ready
 - build, fetch data and fill document if doc is not built or pathname has changed
 - patch, fetch additional data and update document if doc is not patched and query has changed
-- setup, when not prerendering
+- setup, when not prerendering, global listeners are not called when patch is called
 - hash, the location hash has changed, `state.hash` is set.
 - close, use it to clean what has been done in setup
 - error, a fatal error happened during page run, `state.error` is set.
+
+Between init and ready, when the pathname changes, `state.router` can import
+a new document, see below.
 
 A run is triggered by navigation (document.location changed in any way, or
 page history methods called, see below).
 
 
-Route
------
+Router
+------
 
-A router returns a DOM document from current state.
+State instances have a default router which assumes prerendered web pages:
+- it does not run on first page load
+- it does fetch a remote web page, to be imported as new document when pathname
+changes.
 
-A page always start with some markup, so the default router is not run when
-the page is loaded before any change. This means pure SPA needs to define a
-custom router, while prerendered websites can just use the default router.
+It can be overriden using `Page.route(method)`.
 
-A router can be set within `Page.init`:
+A page defining a custom router should use the default router if it is
+prerendered (which happens if the script calling `Page.route` is not in the
+prerendered page).
+
+Basic example:
 ```
-Page.init(function(state) {
-  state.router = function(state) {
-    return Page.get(state).then(function(str) {
-      return Page.createDoc(str);
-    });
-  };
+Page.route(function(state) {
+  return Page.get(state).then(function(str) {
+    return Page.createDoc(str);
+  });
 });
 ```
-Alternatively, it can be set with `Page.route(function(state) {...})`, which
-does exactly the same (it overwrites router).
 
 
 Usage

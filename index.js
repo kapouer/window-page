@@ -1,7 +1,8 @@
 var Utils = require('./src/utils');
 var Loc = require('./src/loc');
+var State = require('./src/state');
 
-var W = window.Page = {};
+var W = State.Page = window.Page = {};
 
 Object.assign(W, Loc);
 W.createDoc = Utils.createDoc;
@@ -9,13 +10,10 @@ W.get = Utils.get;
 W.connect = Utils.connect;
 W.disconnect = Utils.disconnect;
 
-// shortcut
 W.route = function(fn) {
-	return W.init(function(state) {
-		state.router = function() {
-			return fn(state);
-		};
-	});
+	State.prototype.router = function() {
+		return fn(this);
+	};
 };
 
 Loc.parse().run().then(function(state) {

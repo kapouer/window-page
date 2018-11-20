@@ -25,7 +25,7 @@ function State() {
 }
 
 State.prototype.init = function() {
-	var W = window.Page;
+	var W = State.Page;
 	var state = this;
 	Stages.forEach(function(stage) {
 		W[stage] = function(fn) {
