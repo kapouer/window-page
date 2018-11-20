@@ -319,15 +319,7 @@ function load(state, doc) {
 	var head = nroot.querySelector('head');
 	var body = nroot.querySelector('body');
 
-	var atts = nroot.attributes;
-
-	for (var i=0; i < atts.length; i++) {
-		root.setAttribute(atts[i].name, atts[i].value);
-	}
-	atts = Array.prototype.slice.call(root.attributes);
-	for (var j=0; j < atts.length; j++) {
-		if (!nroot.hasAttribute(atts[j].name)) nroot.removeAttribute(atts[j].name);
-	}
+	state.updateAttributes(root, nroot);
 
 	var parallels = Wait.styles(head, document.head);
 	var serials = Utils.all(nroot, 'script[type="none"],link[rel="none"]');
