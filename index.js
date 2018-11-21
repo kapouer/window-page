@@ -7,8 +7,6 @@ var W = State.Page = window.Page = {};
 Object.assign(W, Loc);
 W.createDoc = Utils.createDoc;
 W.get = Utils.get;
-W.connect = Utils.connect;
-W.disconnect = Utils.disconnect;
 
 W.route = function(fn) {
 	State.prototype.router = function() {

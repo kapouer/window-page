@@ -35,6 +35,20 @@ State.prototype.init = function() {
 			return state.unchain(stage, fn);
 		};
 	});
+	var NodeEvents = ['build', 'patch', 'setup', 'close'];
+	W.connect = function(node) {
+		NodeEvents.forEach(function(k) {
+			if (node[k]) W[k](node);
+		});
+	};
+	W.disconnect = function(node) {
+		NodeEvents.forEach(function(k) {
+			if (node[k]) {
+				W['un' + k](node);
+				if (k == 'close') node.close();
+			}
+		});
+	};
 };
 
 State.prototype.run = function() {

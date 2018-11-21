@@ -97,18 +97,3 @@ exports.trackListeners = function() {
 	});
 };
 
-var NodeEvents = ['build', 'patch', 'setup', 'close'];
-exports.connect = function(node) {
-	NodeEvents.forEach(function(k) {
-		if (node[k]) window.Page[k](node);
-	});
-};
-exports.disconnect = function(node) {
-	NodeEvents.forEach(function(k) {
-		if (node[k]) {
-			window.Page['un' + k](node);
-			if (k == 'close') node.close();
-		}
-	});
-};
-
