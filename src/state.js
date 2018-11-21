@@ -169,10 +169,12 @@ State.prototype.runChain = function(name) {
 	debug("run chain", name);
 	chain.count = 0;
 	chain.promise = P();
-	chain.final = P();
+	var finalize;
+	chain.final = new Promise(function(r) {	finalize = r; });
 	this.emit("page" + name);
 	debug("run chain count", name, chain.count);
 	if (chain.count) return chain.promise.then(function() {
+		finalize();
 		return chain.final;
 	});
 };

@@ -111,9 +111,9 @@ is a function - which is a handy way to keep the value of `this`.
 
 Functions listening for a given stage are run serially.
 
-If a stage chain is already resolved, new listeners are just appended to it.
-So to append a listener at the end of a chain, just do:
-`Page.patch(() => Page.patch(fn))`.
+If a stage chain is already resolved, new listeners are just added immediately
+to the promise chain. To append a function at the end of the current chain, use
+`state.finally(fn)`.
 
 Listeners are bound to `document.currentScript`:
 - if it is set, listeners are bound to it and are removed as the node itself is.  
@@ -183,6 +183,9 @@ setup(state) {
     change: function(index) {
       state.push({query: {index: index}});
     }
+  });
+  state.finally(function() {
+    // do something at the end of the setup chain
   });
 }
 close() {
