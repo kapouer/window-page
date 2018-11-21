@@ -29,10 +29,7 @@ function State() {
 State.prototype.init = function() {
 	var W = State.Page;
 	var state = this;
-	W.filter = function(fn) {
-		if (!fn) delete State.filter;
-		else State.filter = fn;
-	};
+
 	Stages.forEach(function(stage) {
 		W[stage] = function(fn) {
 			return state.chain(stage, fn);
@@ -557,7 +554,6 @@ function historyMethod(method, loc, refer) {
 	var copy = Loc.parse(Loc.format(loc));
 	if (typeof loc != "string" && loc.data != null) copy.data = loc.data;
 	copy.referrer = refer;
-	if (State.filter) State.filter(copy);
 	if (!Loc.sameDomain(refer, copy)) {
 		// eslint-disable-next-line no-console
 		if (method == "replace") console.info("Cannot replace to a different origin");
