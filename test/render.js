@@ -47,7 +47,11 @@ function Render(url, opts) {
 				if (opts.ready) page.run(opts.ready);
 			});
 			page.when('idle', function() {
-				setTimeout(function() {
+				if (opts.idle) page.run(opts.idle, function(err, str) {
+					if (err) reject(err);
+					else resolve(str);
+				});
+				else setTimeout(function() {
 					page.html().then(resolve);
 				}, opts.delay);
 			}).catch(reject);
@@ -252,6 +256,28 @@ describe("Rendering", function suite() {
 			expect(body).to.contain('data-close="1"');
 			expect(body).to.contain('data-prerender="true"');
 			expect(body).to.contain('<div id="reload">reloaded</div>');
+		});
+	});
+
+	it("should set a router and run it and next page, and on previous page", function() {
+		return Render(host + ':' + port + '/templates/route-spa.html', {
+			idle: function(cb) {
+				cb(null, window.test1 + window.test2);
+			}
+		}).then(function(str) {
+			expect(str.replace(/[\n\t]+/g, '')).to.equal(`
+<html lang="en" data-prerender="true"><head>
+	<title>first</title>
+	<script src="/spa.js"></script>
+</head>
+<body>first
+</body></html>
+<html lang="fr" data-removed="true" data-prerender="true"><head>
+	<title>two</title>
+	<script src="/spa.js"></script>
+</head>
+<body>two
+</body></html>`.replace(/[\n\t]+/g, ''));
 		});
 	});
 });
