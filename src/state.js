@@ -39,7 +39,9 @@ State.prototype.init = function() {
 			return state.unchain(stage, fn);
 		};
 	});
+
 	var NodeEvents = ['build', 'patch', 'setup', 'close'];
+
 	W.connect = function(node) {
 		NodeEvents.forEach(function(k) {
 			if (node[k]) W[k](node);
@@ -68,6 +70,7 @@ State.prototype.init = function() {
 			if (_close) return _close.call(node, Array.from(arguments));
 		};
 	};
+
 	W.disconnect = function(node) {
 		NodeEvents.forEach(function(k) {
 			if (node[k]) {
