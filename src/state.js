@@ -42,6 +42,29 @@ State.prototype.init = function() {
 		NodeEvents.forEach(function(k) {
 			if (node[k]) W[k](node);
 		});
+		var events = Object.getOwnPropertyNames(node.constructor.prototype).filter(function(name) {
+			return name.startsWith('handle');
+		}).map(function(name) {
+			return name.slice(6);
+		});
+		var listeners = {};
+		W.setup(function(state) {
+			events.forEach(function(name) {
+				var type = name.toLowerCase();
+				listeners[type] = function(e) {
+					node['handle'+name].call(node, e, state);
+				};
+				node.addEventListener(type, listeners[type]);
+			});
+		});
+		var _close = node.close;
+		node.close = function() {
+			for (var type in listeners) {
+				node.removeEventListener(type, listeners[type]);
+			}
+			listeners = {};
+			if (_close) return _close.call(node, Array.from(arguments));
+		};
 	};
 	W.disconnect = function(node) {
 		NodeEvents.forEach(function(k) {

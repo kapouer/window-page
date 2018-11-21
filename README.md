@@ -159,11 +159,17 @@ documentElement or body.
 
 ### Integration with Custom Elements
 
-A custom element having `build`, `patch`, `setup`, `close` methods can be
+An object having `build`, `patch`, `setup`, `close` methods can be
 plugged into Page using:
 
 * Page.connect(node)
 * Page.disconnect(node)
+
+Furthermore, if the object owns methods named `handle${Type}`, they will be
+used as `type` event listeners receiving arguments `(e, state)`.
+
+These event listeners are automatically added during setup, and removed during
+close (or disconnect).
 
 ```
 connectedCallback() {
@@ -179,7 +185,6 @@ patch(state) {
   }
 }
 setup(state) {
-  this.addEventListener('click', this);
   this.slider = new Slider(this, {
     change: function(index) {
       state.push({query: {index: index}});
@@ -190,14 +195,11 @@ setup(state) {
   });
 }
 close() {
-  this.removeEventListener('click', this);
   if (this.slider) this.slider.destroy();
   delete this.slider;
 }
-handleEvent(e) {
-  Page.setup(function(state) {
-      state.push(e.target.href);
-  });
+handleClick(e, state) {
+  if (e.target.href) state.push(e.target.href);
 }
 ```
 
