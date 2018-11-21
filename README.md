@@ -179,6 +179,7 @@ patch(state) {
   }
 }
 setup(state) {
+  this.addEventListener('click', this);
   this.slider = new Slider(this, {
     change: function(index) {
       state.push({query: {index: index}});
@@ -189,8 +190,14 @@ setup(state) {
   });
 }
 close() {
+  this.removeEventListener('click', this);
   if (this.slider) this.slider.destroy();
   delete this.slider;
+}
+handleEvent(e) {
+  Page.setup(function(state) {
+      state.push(e.target.href);
+  });
 }
 ```
 
