@@ -29,6 +29,10 @@ function State() {
 State.prototype.init = function() {
 	var W = State.Page;
 	var state = this;
+	W.filter = function(fn) {
+		if (!fn) delete State.filter;
+		else State.filter = fn;
+	};
 	Stages.forEach(function(stage) {
 		W[stage] = function(fn) {
 			return state.chain(stage, fn);
@@ -78,18 +82,21 @@ State.prototype.init = function() {
 
 State.prototype.run = function() {
 	var state = this;
-	if (queue) queue = queue.then(function(old) {
-		if (Loc.samePath(state, old)) {
+	if (queue) {
+		queue = queue.then(function(old) {
+			if (Loc.samePath(state, old)) {
+				queue = null;
+				return old;
+			} else {
+				return state.run();
+			}
+		});
+	} else {
+		queue = run(state).then(function(state) {
 			queue = null;
-			return old;
-		} else {
-			return state.run();
-		}
-	});
-	else queue = run(state).then(function(state) {
-		queue = null;
-		return state;
-	});
+			return state;
+		});
+	}
 	return queue;
 };
 
@@ -548,15 +555,15 @@ function historySave(method, state) {
 function historyMethod(method, loc, refer) {
 	if (!refer) throw new Error("Missing referrer parameter");
 	var copy = Loc.parse(Loc.format(loc));
+	if (typeof loc != "string" && loc.data != null) copy.data = loc.data;
+	copy.referrer = refer;
+	if (State.filter) State.filter(copy);
 	if (!Loc.sameDomain(refer, copy)) {
 		// eslint-disable-next-line no-console
 		if (method == "replace") console.info("Cannot replace to a different origin");
 		document.location = Loc.format(copy);
 		return P();
 	}
-	// in case of state.push({data: ..., pathname:...})
-	if (typeof loc != "string" && loc.data != null) copy.data = loc.data;
-	copy.referrer = refer;
 	debug("run", method, copy);
 	return copy.run().then(function(state) {
 		historySave(method, state);

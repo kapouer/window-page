@@ -221,6 +221,13 @@ A convenient method only replaces current window history:
 
 * state.save()
 
+And a way to filter push/replace calls:
+
+* Page.filter(function(state) {})
+
+The function passed as argument receives the new state just before it is pushed
+or replaced, allowing systematic modification of the url.
+
 
 ### Tools
 
