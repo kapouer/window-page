@@ -72,28 +72,3 @@ exports.all = function(node, selector) {
 	return Array.prototype.slice.call(list);
 };
 
-var listeners;
-exports.clearListeners = function() {
-	(listeners || []).forEach(function(obj) {
-		obj.emitter.removeEventListener(obj.name, obj.fn, obj.opts);
-	});
-	listeners = [];
-};
-
-exports.trackListeners = function() {
-	if (!listeners) listeners = [];
-	Array.prototype.forEach.call(arguments, function(node) {
-		var Proto = node.constructor.prototype;
-		if (node.addEventListener != Proto.addEventListener) return;
-		node.addEventListener = function(name, fn, opts) {
-			listeners.push({
-				emitter: node,
-				name: name,
-				fn: fn,
-				opts: opts
-			});
-			return Proto.addEventListener.call(this, name, fn, opts);
-		};
-	});
-};
-

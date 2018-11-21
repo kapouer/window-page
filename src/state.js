@@ -1,4 +1,5 @@
 var Utils = require('./utils');
+var Tracker = require('./tracker');
 var Loc = require('./loc');
 var Wait = require('./wait');
 var Diff = require('levenlistdiff');
@@ -22,6 +23,7 @@ var queue;
 function State() {
 	this.data = {};
 	this.chains = {};
+	this.tracker = new Tracker();
 }
 
 State.prototype.init = function() {
@@ -100,11 +102,13 @@ function run(state) {
 		var p;
 		if (!samePathname && refer.stage) {
 			p = refer.runChain(CLOSE);
-			Utils.clearListeners();
+			refer.tracker.stop();
+		} else {
+			state.tracker = refer.tracker;
 		}
 		if (refer.stage) window.removeEventListener('popstate', refer);
 		window.addEventListener('popstate', state);
-		Utils.trackListeners(document, window);
+		state.tracker.start(document, window);
 		return p;
 	}).then(function() {
 		return state.runChain(INIT);
