@@ -230,6 +230,21 @@ describe("Two-phase rendering", function suite() {
 		});
 	});
 
+	it("should run setup and finally", function() {
+		return Render(host + ':' + port + '/setup.html', {delay: 1000}).then(function(body) {
+			expect(body).to.contain('<div class="setup">1</div>');
+			expect(body).to.contain('<div class="orders">setup,setup2,setup21,finally</div>');
+		});
+	});
+
+	it("should run setup and finally, then setup then close", function() {
+		return Render(host + ':' + port + '/setup.html?close', {delay: 1000}).then(function(body) {
+			expect(body).to.contain('<div class="setup">2</div>');
+			expect(body).to.contain('<div class="close">1</div>');
+			expect(body).to.contain('<div class="orders">setup,setup2,setup21,setup,setup2,setup21,finally,close</div>');
+		});
+	});
+
 	it("should route two pages forward, then two pages backward", function() {
 		this.timeout(4000);
 		return Render(host + ':' + port + '/nav-1.html', {delay: 500}).then(function(body) {
