@@ -169,9 +169,12 @@ State.prototype.runChain = function(name) {
 	debug("run chain", name);
 	chain.count = 0;
 	chain.promise = P();
+	chain.final = P();
 	this.emit("page" + name);
 	debug("run chain count", name, chain.count);
-	if (chain.count) return chain.promise;
+	if (chain.count) return chain.promise.then(function() {
+		return chain.final;
+	});
 };
 
 
@@ -202,6 +205,17 @@ State.prototype.chain = function(stage, fn) {
 		debug("chain pending", stage);
 		return P();
 	}
+};
+
+State.prototype.finally = function(fn) {
+	var state = this;
+	var stage = this.stage;
+	var chain = this.chains[stage];
+	if (!chain) throw new Error("Cannot call finally now " + stage);
+	chain.final = chain.final.then(function() {
+		return runFn(stage, fn, state);
+	});
+	return this;
 };
 
 State.prototype.unchain = function(stage, fn) {
