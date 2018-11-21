@@ -99,18 +99,6 @@ function run(state) {
 	var prerendered = false;
 
 	return Wait.dom().then(function() {
-		var p;
-		if (!samePathname && refer.stage) {
-			p = refer.runChain(CLOSE);
-			refer.tracker.stop();
-		} else {
-			state.tracker = refer.tracker;
-		}
-		if (refer.stage) window.removeEventListener('popstate', refer);
-		window.addEventListener('popstate', state);
-		state.tracker.start(document, window);
-		return p;
-	}).then(function() {
 		return state.runChain(INIT);
 	}).then(function() {
 		if (!samePathname) {
@@ -133,9 +121,20 @@ function run(state) {
 		if (!samePathname) {
 			prerender(true);
 			return Wait.ui().then(function() {
+				refer.tracker.stop();
+				state.tracker.start(document, window);
+				window.addEventListener('popstate', state);
 				return state.runChain(SETUP);
+			}).then(function() {
+				if (refer.stage) return refer.runChain(CLOSE);
 			});
 		} else if (!Loc.sameQuery(refer, state)) {
+			// switch state and refer
+			refer.referrer = state;
+			var query = state.query;
+			state.query = refer.query;
+			state = refer;
+			state.query = query;
 			return state.runChain(PATCH) || state.runChain(BUILD);
 		}
 	}).then(function() {

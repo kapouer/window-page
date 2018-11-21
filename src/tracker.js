@@ -1,13 +1,17 @@
 module.exports = Tracker;
 
 function Tracker() {
-	this.list = [];
+	this.listeners = [];
+	this.nodes = [];
+
 }
 Tracker.prototype.start = function() {
-	var list = this.list;
+	var list = this.listeners;
+	var nodes = [];
+
 	Array.prototype.forEach.call(arguments, function(node) {
-		var Proto = node.constructor.prototype;
-		if (node.addEventListener != Proto.addEventListener) return;
+		var _meth = node.addEventListener;
+		nodes.push({node: node, meth: _meth});
 		node.addEventListener = function(name, fn, opts) {
 			list.push({
 				emitter: node,
@@ -15,14 +19,18 @@ Tracker.prototype.start = function() {
 				fn: fn,
 				opts: opts
 			});
-			return Proto.addEventListener.call(this, name, fn, opts);
+			return _meth.call(this, name, fn, opts);
 		};
 	});
 };
 Tracker.prototype.stop = function() {
-	this.list.forEach(function(obj) {
+	this.listeners.forEach(function(obj) {
 		obj.emitter.removeEventListener(obj.name, obj.fn, obj.opts);
 	});
-	this.list = [];
+	this.listeners = [];
+	this.nodes.forEach(function(obj) {
+		obj.node.addEventListener = obj._meth;
+	});
+	this.nodes = [];
 };
 

@@ -19,7 +19,7 @@ Chains
 - patch, fetch additional data and update document if doc is not patched and query has changed
 - setup, when not prerendering, global listeners are not called when patch is called
 - hash, the location hash has changed, `state.hash` is set.
-- close, use it to clean what has been done in setup
+- close, use it to clean what has been done in setup of referrer
 - error, a fatal error happened during page run, `state.error` is set.
 
 Between init and ready, when the pathname changes, `state.router` can import
@@ -112,7 +112,7 @@ is a function - which is a handy way to keep the value of `this`.
 Functions listening for a given stage are run serially.
 
 If a stage chain is already resolved, new listeners are just appended to it.
-So to append a listener at the end of the chain, just do:
+So to append a listener at the end of a chain, just do:
 `Page.patch(() => Page.patch(fn))`.
 
 Listeners are bound to `document.currentScript`:
