@@ -113,7 +113,7 @@ Functions listening for a given stage are run serially.
 
 If a stage chain is already resolved, new listeners are just added immediately
 to the promise chain. To append a function at the end of the current chain, use
-`state.finally(fn)`.
+`state.finish(fn)`.
 
 Listeners are bound to `document.currentScript`:
 - if it is set, listeners are bound to it and are removed as the node itself is.  
@@ -184,7 +184,7 @@ setup(state) {
       state.push({query: {index: index}});
     }
   });
-  state.finally(function() {
+  state.finish(function() {
     // do something at the end of the setup chain
   });
 }

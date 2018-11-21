@@ -209,14 +209,18 @@ State.prototype.chain = function(stage, fn) {
 	}
 };
 
-State.prototype.finally = function(fn) {
+State.prototype.finish = function(fn) {
 	var state = this;
 	var stage = this.stage;
 	var chain = this.chains[stage];
-	if (!chain) throw new Error("Cannot call finally now " + stage);
-	chain.final = chain.final.then(function() {
-		return runFn(stage, fn, state);
-	});
+	if (!chain) {
+		// eslint-disable-next-line no-console
+		console.warn("state.finish must be called from chain listener");
+	} else {
+		chain.final = chain.final.then(function() {
+			return runFn(stage, fn, state);
+		});
+	}
 	return this;
 };
 
