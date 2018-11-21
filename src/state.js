@@ -24,6 +24,7 @@ function State() {
 	this.data = {};
 	this.chains = {};
 	this.tracker = new Tracker();
+	this.query = {};
 }
 
 State.prototype.init = function() {
