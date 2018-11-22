@@ -485,7 +485,7 @@ State.prototype.reload = function() {
 	debug("reload");
 	var prev = this.copy();
 	delete prev.pathname;
-	delete prev.query;
+	prev.query = {};
 	delete prev.hash;
 	this.referrer = prev;
 	return this.run();
