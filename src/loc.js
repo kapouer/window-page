@@ -15,7 +15,7 @@ exports.parse = function(str) {
 	var obj = new State();
 	if (loc.referrer) obj.referrer = loc.referrer;
 	obj.pathname = loc.pathname;
-	obj.query = loc.query || Q.parse(loc.search);
+	obj.query = loc.query ? Object.assign({}, loc.query) : Q.parse(loc.search);
 	if (!obj.pathname) obj.pathname = "/";
 	else if (obj.pathname[0] != "/") obj.pathname = "/" + obj.pathname;
 

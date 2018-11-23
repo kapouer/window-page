@@ -470,10 +470,8 @@ State.prototype.push = function(loc) {
 
 State.prototype.reload = function() {
 	debug("reload");
-	var prev = this.copy();
-	delete prev.pathname;
-	prev.query = {};
-	delete prev.hash;
+	var prev = new State();
+	prev.stage = this.stage;
 	this.referrer = prev;
 	return this.run();
 };
@@ -483,7 +481,7 @@ State.prototype.save = function() {
 };
 
 State.prototype.copy = function() {
-	return Object.assign(Loc.parse(this), this);
+	return Loc.parse(this);
 };
 
 State.prototype.router = function() {
