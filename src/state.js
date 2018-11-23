@@ -423,33 +423,20 @@ State.prototype.mergeBody = function(node) {
 };
 
 State.prototype.updateAttributes = function(from, to) {
-	var attFrom = from.attributes;
-	var attTo = to.attributes;
-	Diff(attFrom, attTo, function(att) {
-		return att.name + "_" + att.value;
-	}).forEach(function(patch) {
-		var att = attFrom[patch.index];
-		switch (patch.type) {
-		case Diff.INSERTION:
-			if (patch.item.value) {
-				from.setAttribute(patch.item.name, patch.item.value);
-			}
-			break;
-		case Diff.SUBSTITUTION:
-			if (att.name != patch.item.name) {
-				from.removeAttribute(att.name);
-			}
-			if (patch.item.value) {
-				from.setAttribute(patch.item.name, patch.item.value);
-			} else {
-				from.removeAttribute(patch.item.name);
-			}
-			break;
-		case Diff.DELETION:
-			from.removeAttribute(att.name);
-			break;
-		}
+	var map = {};
+	Array.prototype.forEach.call(to.attributes, function(att) {
+		map[att.name] = att.value;
 	});
+	Array.prototype.forEach.call(from.attributes, function(att) {
+		var val = map[att.name];
+		if (val === undefined) {
+			from.removeAttribute(att.name);
+		} else if (val != att.value) {
+			from.setAttribute(att.name, val);
+		}
+		delete map[att.name];
+	});
+	for (var name in map) from.setAttribute(name, map[name]);
 };
 
 State.prototype.updateChildren = function(from, to) {
