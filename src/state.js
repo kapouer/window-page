@@ -47,7 +47,7 @@ State.prototype.init = function() {
 			if (node[k]) W[k](node);
 		});
 		var events = Object.getOwnPropertyNames(node.constructor.prototype).filter(function(name) {
-			return name.startsWith('handle');
+			return name.startsWith('handle') && name != 'handleEvent';
 		}).map(function(name) {
 			return name.slice(6);
 		});
