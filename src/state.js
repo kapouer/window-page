@@ -125,7 +125,7 @@ function run(state) {
 		throw new Error("state and referrer should be distinct");
 	}
 	delete state.emitter; // in case an already used state has been given
-	var samePathname = Loc.samePathname(refer, state) && refer.stage;
+	var samePathname = Loc.samePathname(refer, state) && !!refer.stage;
 
 	var prerendered = false;
 
