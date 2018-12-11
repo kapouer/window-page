@@ -149,23 +149,26 @@ function run(state) {
 			return state.runChain(PATCH);
 		});
 	}).then(function() {
-		if (!samePathname) {
-			prerender(true);
-			return Wait.ui().then(function() {
+		prerender(true);
+		return Wait.ui().then(function() {
+			if (!samePathname) {
 				refer.tracker.stop();
+			}
+			window.removeEventListener('popstate', refer);
+			window.addEventListener('popstate', state);
+			if (!samePathname) {
 				state.tracker.start(document, window);
-				window.addEventListener('popstate', state);
 				return state.runChain(SETUP);
-			}).then(function() {
-				if (refer.stage) return refer.runChain(CLOSE);
-			});
-		} else if (!Loc.sameQuery(refer, state)) {
-			// switch state and refer
-			refer.referrer = state;
-			var query = state.query;
-			state.query = refer.query;
-			state = refer;
-			state.query = query;
+			}
+		}).then(function() {
+			if (refer.stage) return refer.runChain(CLOSE);
+		});
+	}).then(function() {
+		if (samePathname && !Loc.sameQuery(refer, state)) {
+			state.tracker = refer.tracker;
+			state.emitter = refer.emitter;
+			state.stage = refer.stage;
+			state.chains = refer.chains;
 			return state.runChain(PATCH) || state.runChain(BUILD);
 		}
 	}).then(function() {
