@@ -165,10 +165,9 @@ function run(state) {
 		});
 	}).then(function() {
 		if (samePathname && !Loc.sameQuery(refer, state)) {
-			state.tracker = refer.tracker;
-			state.emitter = refer.emitter;
-			state.stage = refer.stage;
-			state.chains = refer.chains;
+			['chains', 'emitter', 'tracker', 'referrer'].forEach(function(key) {
+				state[key] = refer[key];
+			});
 			return state.runChain(PATCH) || state.runChain(BUILD);
 		}
 	}).then(function() {
