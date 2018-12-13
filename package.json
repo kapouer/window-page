@@ -30,7 +30,7 @@
     "browserify": "^16.2.3",
     "expect.js": "^0.3.1",
     "express": "^4.14.0",
-    "express-dom": "^5.12.3",
+    "express-dom": "^5.12.4",
     "gport": "^1.1.0",
     "levenlistdiff": "^1.0.1",
     "mocha": "^3.2.0",
