@@ -31,7 +31,7 @@ exports.dom = function() {
 
 exports.ui = function() {
 	var solve;
-	if (document.visibilityState == "prerender") {
+	if (document.hidden) {
 		var p = new Promise(function(resolve) {
 			solve = resolve;
 		});
