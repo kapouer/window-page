@@ -516,6 +516,10 @@ State.prototype.handleEvent = function(e) {
 	}
 };
 
+State.prototype.toString = function() {
+	return Loc.format(this);
+};
+
 function stateTo(state) {
 	return {
 		href: Loc.format(state),
