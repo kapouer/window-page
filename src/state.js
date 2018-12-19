@@ -164,7 +164,7 @@ function run(state) {
 			if (refer.stage) return refer.runChain(CLOSE);
 		});
 	}).then(function() {
-		if (samePathname && !Loc.sameQuery(refer, state)) {
+		if (samePathname) {
 			['chains', 'emitter', 'tracker', 'referrer'].forEach(function(key) {
 				state[key] = refer[key];
 			});
