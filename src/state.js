@@ -161,7 +161,9 @@ function run(state) {
 				return state.runChain(SETUP);
 			}
 		}).then(function() {
-			if (refer.stage) return refer.runChain(CLOSE);
+			if (refer.stage && !samePathname) {
+				return refer.runChain(CLOSE);
+			}
 		});
 	}).then(function() {
 		if (samePathname) {
