@@ -1,13 +1,30 @@
-exports.get = function(url, statusRejects) {
+exports.get = function(url, statusRejects, type) {
+	if (!statusRejects) statusRejects = 400;
 	return new Promise(function(resolve, reject) {
 		var xhr = new XMLHttpRequest();
 		xhr.open("GET", url, true);
+		var aborted = false;
 		xhr.onreadystatechange = function() {
-			if (this.readyState != 4) return;
+			if (aborted) return;
+			var rs = this.readyState;
+			if (rs < 2) return;
 			var code = this.status;
-			if (!statusRejects) statusRejects = 400;
-			if (code >= 200 && code < statusRejects) resolve(this);
-			else reject(code);
+			if (code < 200 || code >= statusRejects) {
+				aborted = true;
+				this.abort();
+				reject(code);
+				return;
+			}
+			if (type) {
+				var ctype = this.getResponseHeader("Content-Type") || "";
+				if (!ctype.startsWith(type)) {
+					aborted = true;
+					this.abort();
+					resolve(this);
+					return;
+				}
+			}
+			if (rs == 4) resolve(this);
 		};
 		xhr.send();
 	});

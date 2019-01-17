@@ -176,7 +176,7 @@ function run(state) {
 		if (state.hash != refer.hash) return state.runChain(HASH);
 	}).catch(function(err) {
 		state.error = err;
-		return state.runChain(ERROR).then(function() {
+		return (state.runChain(ERROR) || P()).then(function() {
 			if (state.error) {
 				var err = state.error;
 				delete state.error;
@@ -499,21 +499,15 @@ State.prototype.router = function() {
 		return;
 	}
 	var url = Loc.format(this);
-	return Utils.get(url, 500).then(function(client) {
-		var type = client.getResponseHeader("Content-Type");
+	return Utils.get(url, 500, 'text/html').then(function(client) {
 		var doc;
-		if (type && type.startsWith('text/html')) {
+		if (client.status >= 200) {
 			doc = Utils.createDoc(client.responseText);
 			if (client.status >= 400 && (!doc.body || doc.body.children.length == 0)) {
 				throw new Error(client.statusText);
 			}
 		}
-		if (!doc) {
-			setTimeout(function() {
-				document.location = url;
-			}, 500);
-			throw new Error("Cannot load remote document - redirecting...");
-		}
+		if (!doc) throw new Error("Cannot load remote document");
 		return doc;
 	});
 };
@@ -563,13 +557,20 @@ function historyMethod(method, loc, refer) {
 	if (!Loc.sameDomain(refer, copy)) {
 		// eslint-disable-next-line no-console
 		if (method == "replace") console.info("Cannot replace to a different origin");
-		document.location = Loc.format(copy);
+		document.location.assign(Loc.format(copy));
 		return P();
 	}
 	debug("run", method, copy);
 	return copy.run().then(function(state) {
 		historySave(method, state);
+	}).catch(function(err) {
+		// eslint-disable-next-line no-console
+		console.error(err);
+		var url = Loc.format(copy);
+		setTimeout(function() {
+			if (method == "replace") document.location.replace(url);
+			else document.location.assign(url);
+		}, 500);
 	});
 }
-
 
