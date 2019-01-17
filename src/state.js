@@ -496,10 +496,15 @@ State.prototype.router = function() {
 	}
 	var url = Loc.format(this);
 	return Utils.get(url, 500).then(function(client) {
-		var doc = Utils.createDoc(client.responseText);
-		if (client.status >= 400 && (!doc.body || doc.body.children.length == 0)) {
-			throw new Error(client.statusText);
-		} else if (!doc) {
+		var type = client.getResponseHeader("Content-Type");
+		var doc;
+		if (type && type.startsWith('text/html')) {
+			doc = Utils.createDoc(client.responseText);
+			if (client.status >= 400 && (!doc.body || doc.body.children.length == 0)) {
+				throw new Error(client.statusText);
+			}
+		}
+		if (!doc) {
 			setTimeout(function() {
 				document.location = url;
 			}, 500);
