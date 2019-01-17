@@ -208,10 +208,15 @@ PageClass.prototype.run = function(state) {
 			if (refer.pathname == state.pathname) return; // nothing to do
 			if (self.chains.route.count > 0) return;
 			return pGet(url, 500).then(function(client) {
-				var doc = self.createDoc(client.responseText);
-				if (client.status >= 400 && (!doc.body || doc.body.children.length == 0)) {
-					throw new Error(client.statusText);
-				} else if (!doc) {
+				var type = client.getResponseHeader("Content-Type");
+				var doc;
+				if (type && type.startsWith('text/html')) {
+					doc = self.createDoc(client.responseText);
+					if (client.status >= 400 && (!doc.body || doc.body.children.length == 0)) {
+						throw new Error(client.statusText);
+					}
+				}
+				if (!doc) {
 					setTimeout(function() {
 						document.location = url;
 					}, 500);
