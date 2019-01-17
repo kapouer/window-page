@@ -175,10 +175,14 @@ function run(state) {
 	}).then(function() {
 		if (state.hash != refer.hash) return state.runChain(HASH);
 	}).catch(function(err) {
-		// eslint-disable-next-line no-console
-		if (typeof err != "number") console.error(err);
 		state.error = err;
-		return state.runChain(ERROR)
+		return state.runChain(ERROR).then(function() {
+			if (state.error) {
+				var err = state.error;
+				delete state.error;
+				throw err;
+			}
+		});
 	}).then(function() {
 		return state;
 	});
