@@ -207,10 +207,9 @@ PageClass.prototype.run = function(state) {
 		return Promise.resolve().then(function() {
 			if (refer.pathname == state.pathname) return; // nothing to do
 			if (self.chains.route.count > 0) return;
-			return pGet(url, 500).then(function(client) {
-				var type = client.getResponseHeader("Content-Type");
+			return pGet(url, 500, 'text/html').then(function(client) {
 				var doc;
-				if (type && type.startsWith('text/html')) {
+				if (client.status >= 200) {
 					doc = self.createDoc(client.responseText);
 					if (client.status >= 400 && (!doc.body || doc.body.children.length == 0)) {
 						throw new Error(client.statusText);
@@ -668,7 +667,7 @@ PageClass.prototype.historyMethod = function(method, newState, state) {
 	}
 	debug("run", method, state);
 	return this.run(copy).then(function() {
-		this.historySave(method, copy);
+		if (!copy.error) this.historySave(method, copy);
 	}.bind(this));
 };
 
@@ -754,16 +753,33 @@ function queryAll(doc, selector) {
 	return Array.prototype.slice.call(list);
 }
 
-function pGet(url, statusRejects) {
+function pGet(url, statusRejects, type) {
+	if (!statusRejects) statusRejects = 400;
 	return new Promise(function(resolve, reject) {
 		var xhr = new XMLHttpRequest();
 		xhr.open("GET", url, true);
+		var aborted = false;
 		xhr.onreadystatechange = function() {
-			if (this.readyState != 4) return;
+			if (aborted) return;
+			var rs = this.readyState;
+			if (rs < 2) return;
 			var code = this.status;
-			if (!statusRejects) statusRejects = 400;
-			if (code >= 200 && code < statusRejects) resolve(this);
-			else reject(code);
+			if (code < 200 || code >= statusRejects) {
+				aborted = true;
+				this.abort();
+				reject(code);
+				return;
+			}
+			if (type) {
+				var ctype = this.getResponseHeader("Content-Type") || "";
+				if (!ctype.startsWith(type)) {
+					aborted = true;
+					this.abort();
+					resolve(this);
+					return;
+				}
+			}
+			if (rs == 4) resolve(this);
 		};
 		xhr.send();
 	});
