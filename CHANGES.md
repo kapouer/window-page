@@ -37,3 +37,17 @@ and state.referrer.
 - READY chain when document is ready after first load or after import.
 - Page history methods have all matching state methods, which are more natural.
 
+6.0.0
+=====
+
+- better integration with custom elements
+- use actual dom nodes to track events across page loads
+- finally method
+
+7.0.0
+=====
+
+state.push, state.replace, state.reload default to document.location assign or
+replace in case of non-recuperable errors.
+
+

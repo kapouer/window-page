@@ -28,6 +28,9 @@ a new document, see below.
 A run is triggered by navigation (document.location changed in any way, or
 page history methods called, see below).
 
+If the `state.error` object is removed from state during the error chain,
+the navigation will continue as if the error did not happen.
+
 
 Router
 ------
@@ -213,9 +216,15 @@ When importing a document, scritps and link imports are serially loaded in order
 
 These methods will run all chains on new state and return a promise:
 
-* state.push(location or url)  
-* state.replace(location or url)
+* state.push(location or url)    
+* state.replace(location or url)  
 * state.reload()
+
+Internal errors are caught and replaced by calls to document.location's
+assign or replace methods accordingly.
+
+The error chain can be used to remove `state.error` and continue on with
+normal behavior.
 
 A convenient method only replaces current window history:
 
