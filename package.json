@@ -4,7 +4,7 @@
   "description": "Route, setup, and build web pages",
   "main": "index.js",
   "scripts": {
-    "test": "mocha",
+    "test": "npm run prepare && mocha",
     "prepare": "browserify $PWD/index.js --outfile $PWD/window-page.js"
   },
   "files": [
