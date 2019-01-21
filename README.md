@@ -220,7 +220,7 @@ no preloading is done (due to limitations of cross origin requests).
 
 These methods will run all chains on new state and return a promise:
 
-* state.push(location or url)    
+* state.push(location or url)  
 * state.replace(location or url)  
 * state.reload()
 
