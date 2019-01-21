@@ -333,9 +333,9 @@ function load(state, doc) {
 		var src = node.src || node.href;
 		if (!src) return;
 		if (states[src] === true) return;
-		// not data-uri
-		if (src.slice(0, 5) == 'data:') return;
-		states[src] = Utils.get(src, 400).then(function() {
+		var loc = Loc.parse(src);
+		if (loc.protocol == "data:") return;
+		if (Loc.sameDomain(loc, state)) states[src] = Utils.get(src, 400).then(function() {
 			debug("preloaded", src);
 		}).catch(function(err) {
 			debug("not preloaded", src, err);
