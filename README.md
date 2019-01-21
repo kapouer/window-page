@@ -207,9 +207,13 @@ handleClick(e, state) {
 ```
 
 
-### Integration with link imports
+### Loading of scripts and stylesheets
 
-When importing a document, scritps and link imports are serially loaded in order.
+When importing a document, scripts (and link imports, though it's deprecated)
+are executed in order, and stylesheets are inserted all at once.
+
+Preloading is done using XHR for same-origin scripts and stylesheets, otherwise
+no preloading is done (due to limitations of cross origin requests).
 
 
 ### History
