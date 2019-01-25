@@ -111,25 +111,29 @@ function prerender(ok) {
 
 function run(state) {
 	state.init();
-	var refer = state.referrer;
-	if (!refer) {
-		debug("new referrer");
-		if (document.referrer) {
-			refer = Loc.parse(document.referrer);
-		} else {
-			refer = new State();
-		}
-		state.referrer = refer;
-	}
-	if (refer == state) {
-		throw new Error("state and referrer should be distinct");
-	}
 	delete state.emitter; // in case an already used state has been given
-	var samePathname = Loc.samePathname(refer, state) && !!refer.stage;
-
-	var prerendered = false;
+	var refer = state.referrer;
+	var prerendered;
+	var samePathname;
 
 	return Wait.dom().then(function() {
+		prerendered = prerender();
+		if (!refer) {
+			debug("new referrer");
+			if (document.referrer) {
+				refer = state.referrer = Loc.parse(document.referrer);
+			} else {
+				refer = state.referrer = new State();
+				if (prerendered) {
+					refer = state.copy();
+					delete refer.hash;
+				}
+			}
+		}
+		if (refer == state) {
+			throw new Error("state and referrer should be distinct");
+		}
+		samePathname = Loc.samePathname(refer, state) && !!refer.stage;
 		return state.runChain(INIT);
 	}).then(function() {
 		if (!samePathname) {
@@ -170,7 +174,9 @@ function run(state) {
 			['chains', 'emitter', 'tracker', 'referrer'].forEach(function(key) {
 				state[key] = refer[key];
 			});
-			return state.runChain(PATCH) || state.runChain(BUILD);
+			if (!Loc.sameQuery(refer, state)) {
+				return state.runChain(PATCH) || state.runChain(BUILD);
+			}
 		}
 	}).then(function() {
 		if (state.hash != refer.hash) return state.runChain(HASH);
