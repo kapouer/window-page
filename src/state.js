@@ -117,26 +117,24 @@ function run(state) {
 	var samePathname;
 
 	return Wait.dom().then(function() {
-		prerendered = prerender();
 		if (!refer) {
 			debug("new referrer");
 			if (document.referrer) {
 				refer = state.referrer = Loc.parse(document.referrer);
 			} else {
-				refer = state.referrer = new State();
-				if (prerendered) {
-					refer = state.copy();
-					delete refer.hash;
-				}
+				state.referrer = new State();
+				refer = state.copy();
+				delete refer.hash;
 			}
 		}
 		if (refer == state) {
 			throw new Error("state and referrer should be distinct");
 		}
-		samePathname = Loc.samePathname(refer, state) && !!refer.stage;
+		prerendered = prerender();
+		samePathname = Loc.samePathname(refer, state);
 		return state.runChain(INIT);
 	}).then(function() {
-		if (!samePathname) {
+		if (!samePathname || !prerendered) {
 			return state.router();
 		} else {
 			if (!state.emitter) state.emitter = refer.emitter;
@@ -144,23 +142,22 @@ function run(state) {
 	}).then(function(doc) {
 		if (doc && doc != document) return load(state, doc);
 	}).then(function(doc) {
-		if (!refer.stage || doc) prerendered = prerender();
-		else prerendered = false;
+		if (doc) prerendered = prerender();
 		debug("prerendered", prerendered);
 		return state.runChain(READY);
 	}).then(function() {
-		if (!prerendered && !samePathname) return (state.runChain(BUILD) || P()).then(function() {
+		if (!prerendered || !samePathname) return (state.runChain(BUILD) || P()).then(function() {
 			return state.runChain(PATCH);
 		});
 	}).then(function() {
 		prerender(true);
 		return Wait.ui().then(function() {
-			if (!samePathname) {
+			if (!refer.stage || !samePathname) {
 				refer.tracker.stop();
 			}
 			window.removeEventListener('popstate', refer);
 			window.addEventListener('popstate', state);
-			if (!samePathname) {
+			if (!refer.stage || !samePathname) {
 				state.tracker.start(document, window);
 				return state.runChain(SETUP);
 			}
@@ -170,7 +167,7 @@ function run(state) {
 			}
 		});
 	}).then(function() {
-		if (samePathname) {
+		if (samePathname && prerendered) {
 			['chains', 'emitter', 'tracker', 'referrer'].forEach(function(key) {
 				state[key] = refer[key];
 			});
