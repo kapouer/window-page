@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+	<script src="window-page.js"></script>
+	<script src="assets/x-link.js"></script>
+	<script>
+Page.patch(function(state) {
+	state.finish(function(state) {
+		if (state.query.test >= 5) return;
+		Page.setup(function() {
+			window.id1.dispatchEvent(new MouseEvent('click', {
+				view: window,
+				bubbles: true,
+				cancelable: true
+			}));
+		});
+	});
+});
+	</script>
+	<style>
+	x-link:after {
+		content: attr(href);
+	}
+	</style>
+</head>
+<body>
+	<x-link href="?test=bad" id="id1"></x-link>
+</body>
+</html>

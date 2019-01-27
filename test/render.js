@@ -280,5 +280,13 @@ describe("Rendering", function suite() {
 </body></html>`.replace(/[\n\t]+/g, ''));
 		});
 	});
+
+	it("should connect custom element and keep handler across patch nav", function() {
+		return Render(host + ':' + port + '/custom-elements.html', {
+			delay: 250
+		}).then(function(body) {
+			expect(body).to.contain('?test=6');
+		});
+	});
 });
 
