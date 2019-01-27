@@ -9,7 +9,7 @@ Page.setup(function(state) {
 	setTimeout(function() {
 		if (state.referrer.pathname == "/nav-2.html") {
 			debug("arrived at nav-1 from nav-2 OK");
-		} else if (state.referrer.pathname == null) {
+		} else if (state.referrer.pathname == state.pathname && state.pathname == "/nav-1.html") {
 			debug("going to nav2");
 			state.push({pathname: '/nav-2.html'});
 		} else {
