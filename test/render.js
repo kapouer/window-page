@@ -282,8 +282,8 @@ describe("Rendering", function suite() {
 	});
 
 	it("should connect custom element and keep handler across patch nav", function() {
-		return Render(host + ':' + port + '/custom-elements.html', {
-			delay: 250
+		return Render(host + ':' + port + '/templates/custom-elements.html', {
+			delay: 1000
 		}).then(function(body) {
 			expect(body).to.contain('?test=6');
 		});

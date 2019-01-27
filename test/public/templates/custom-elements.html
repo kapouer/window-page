@@ -2,8 +2,8 @@
 <html>
 <head>
 	<title></title>
-	<script src="window-page.js"></script>
-	<script src="assets/x-link.js"></script>
+	<script src="../window-page.js"></script>
+	<script src="../assets/x-link.js"></script>
 	<script>
 function trigger() {
 	// doing UI things on patch is bad, and done here only for the sake of the test
@@ -16,16 +16,12 @@ function trigger() {
 	}, 50);
 }
 Page.patch(function(state) {
-	Page.setup(function(state) {
+	state.finish(function(state) {
 		if (state.query.test >= 5) return;
 		trigger();
 	});
 });
 
-Page.setup(function() {
-	// called once
-	trigger();
-});
 	</script>
 	<style>
 	x-link:after {

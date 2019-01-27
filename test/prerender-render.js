@@ -251,5 +251,13 @@ describe("Two-phase rendering", function suite() {
 			expect(body).to.contain('|/nav-1.html|/nav-2.html|/nav-3.html|/nav-2.html|/nav-1.html');
 		});
 	});
+
+	it("should connect custom element and keep handler across patch nav", function() {
+		return Render(host + ':' + port + '/custom-elements.html', {
+			delay: 1000
+		}).then(function(body) {
+			expect(body).to.contain('?test=6');
+		});
+	});
 });
 
