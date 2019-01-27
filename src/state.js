@@ -111,33 +111,40 @@ function prerender(ok) {
 
 function run(state) {
 	state.init();
-	delete state.emitter; // in case an already used state has been given
 	var refer = state.referrer;
+
+	if (!refer) {
+		debug("new referrer");
+		if (document.referrer) {
+			refer = Loc.parse(document.referrer);
+		} else {
+			refer = state.copy();
+			delete refer.hash;
+		}
+		state.referrer = refer;
+	}
+	if (refer == state) {
+		throw new Error("state and referrer should be distinct");
+	}
+
 	var prerendered;
-	var samePathname;
+	var samePathname = Loc.samePathname(refer, state);
+	var sameQuery = Loc.sameQuery(refer, state);
+
+	if (samePathname && refer.emitter) {
+		['chains', 'emitter', 'tracker'].forEach(function(key) {
+			state[key] = refer[key];
+		});
+	} else {
+		delete state.emitter; // in case state had an emitter - shouldn't happen
+	}
 
 	return Wait.dom().then(function() {
-		if (!refer) {
-			debug("new referrer");
-			if (document.referrer) {
-				refer = state.referrer = Loc.parse(document.referrer);
-			} else {
-				state.referrer = new State();
-				refer = state.copy();
-				delete refer.hash;
-			}
-		}
-		if (refer == state) {
-			throw new Error("state and referrer should be distinct");
-		}
 		prerendered = prerender();
-		samePathname = Loc.samePathname(refer, state);
 		return state.runChain(INIT);
 	}).then(function() {
 		if (!samePathname || !prerendered) {
 			return state.router();
-		} else {
-			if (!state.emitter) state.emitter = refer.emitter;
 		}
 	}).then(function(doc) {
 		if (doc && doc != document) return load(state, doc);
@@ -167,13 +174,8 @@ function run(state) {
 			}
 		});
 	}).then(function() {
-		if (samePathname && prerendered) {
-			['chains', 'emitter', 'tracker', 'referrer'].forEach(function(key) {
-				state[key] = refer[key];
-			});
-			if (!Loc.sameQuery(refer, state)) {
-				return state.runChain(PATCH) || state.runChain(BUILD);
-			}
+		if (samePathname && prerendered && !sameQuery) {
+			return state.runChain(PATCH) || state.runChain(BUILD);
 		}
 	}).then(function() {
 		if (state.hash != refer.hash) return state.runChain(HASH);
