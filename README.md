@@ -171,6 +171,8 @@ plugged into Page using:
 Furthermore, if the object owns methods named `handle${Type}`, they will be
 used as `type` event listeners receiving arguments `(e, state)`.
 
+To use "capture" listeners, just name the methods `capture<Type>` (new in 7.1.0).
+
 These event listeners are automatically added during setup, and removed during
 close (or disconnect).
 
