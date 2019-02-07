@@ -46,27 +46,27 @@ State.prototype.init = function() {
 		NodeEvents.forEach(function(k) {
 			if (node[k]) W[k](node);
 		});
-		var events = Object.getOwnPropertyNames(node.constructor.prototype).filter(function(name) {
-			return name.startsWith('handle') && name != 'handleEvent';
-		}).map(function(name) {
-			return name.slice(6);
+		var methods = [];
+		Object.getOwnPropertyNames(node.constructor.prototype).filter(function(name) {
+			if (name.startsWith('handle') && name != 'handleEvent') {
+				methods.push([name, name.slice(6).toLowerCase(), false]);
+			} else if (name.startsWith('capture') && name != 'captureEvent') {
+				methods.push([name, name.slice(7).toLowerCase(), true]);
+			}
 		});
-		var listeners = {};
 		W.setup(function(state) {
-			events.forEach(function(name) {
-				var type = name.toLowerCase();
-				listeners[type] = function(e) {
-					node['handle'+name].call(node, e, state);
+			methods.forEach(function(name) {
+				name[3] = function(e) {
+					node[name[0]].call(node, e, state);
 				};
-				node.addEventListener(type, listeners[type]);
+				node.addEventListener(name[1], name[3], name[2]);
 			});
 		});
 		var _close = node.close;
 		node.close = function() {
-			for (var type in listeners) {
-				node.removeEventListener(type, listeners[type]);
-			}
-			listeners = {};
+			methods.forEach(function(name) {
+				node.removeEventListener(name[1], name[3], name[2]);
+			});
 			if (_close) return _close.call(node, Array.from(arguments));
 		};
 	};
