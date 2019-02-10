@@ -530,7 +530,14 @@ State.prototype.handleEvent = function(e) {
 		debug("history event from", this.pathname, this.query, "to", e.state && e.state.href || null);
 		var state = stateFrom(e.state) || Loc.parse();
 		state.referrer = this;
-		state.run();
+		state.run().catch(function(err) {
+			// eslint-disable-next-line no-console
+			console.error(err);
+			var url = Loc.format(state);
+			setTimeout(function() {
+				document.location.replace(url);
+			}, 50);
+		});
 	}
 };
 
@@ -583,7 +590,7 @@ function historyMethod(method, loc, refer) {
 		setTimeout(function() {
 			if (method == "replace") document.location.replace(url);
 			else document.location.assign(url);
-		}, 500);
+		}, 50);
 	});
 }
 
