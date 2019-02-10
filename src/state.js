@@ -399,15 +399,19 @@ function load(state, doc) {
 
 	var parallels = Wait.styles(head, document.head);
 	var serials = Utils.all(nroot, 'script[type="none"],link[rel="none"]');
+	var oldstyles = [];
 
 	return P().then(function() {
-		state.mergeHead(head, document.head);
+		oldstyles = state.mergeHead(head, document.head);
 		return parallels;
 	}).then(function() {
 		return P().then(function() {
 			return state.mergeBody(body, document.body);
 		});
 	}).then(function() {
+		oldstyles.forEach(function(node) {
+			node.remove();
+		});
 		// scripts must be run in order
 		var p = P();
 		serials.forEach(function(node) {
@@ -423,7 +427,37 @@ function load(state, doc) {
 
 State.prototype.mergeHead = function(node) {
 	this.updateAttributes(document.head, node);
-	this.updateChildren(document.head, node);
+	var from = document.head;
+	var to = node;
+	var collect = [];
+	Diff(from.children, to.children, function(node) {
+		var key = node.src || node.href;
+		if (key) return node.nodeName + '_' + key;
+		else return node.outerHTML;
+	}).forEach(function(patch) {
+		var node = from.children[patch.index];
+		switch (patch.type) {
+		case Diff.INSERTION:
+			from.insertBefore(patch.item, node);
+			break;
+		case Diff.SUBSTITUTION:
+			if (node.nodeName == "LINK" && node.rel == "stylesheet") {
+				from.insertBefore(patch.item, node);
+				collect.push(node);
+			} else {
+				from.replaceChild(patch.item, node);
+			}
+			break;
+		case Diff.DELETION:
+			if (node.nodeName == "LINK" && node.rel == "stylesheet") {
+				collect.push(node);
+			} else {
+				node.remove();
+			}
+			break;
+		}
+	});
+	return collect;
 };
 
 State.prototype.mergeBody = function(node) {
@@ -445,27 +479,6 @@ State.prototype.updateAttributes = function(from, to) {
 		delete map[att.name];
 	});
 	for (var name in map) from.setAttribute(name, map[name]);
-};
-
-State.prototype.updateChildren = function(from, to) {
-	Diff(from.children, to.children, function(node) {
-		var key = node.src || node.href;
-		if (key) return node.nodeName + '_' + key;
-		else return node.outerHTML;
-	}).forEach(function(patch) {
-		var node = from.children[patch.index];
-		switch (patch.type) {
-		case Diff.INSERTION:
-			from.insertBefore(patch.item, node);
-			break;
-		case Diff.SUBSTITUTION:
-			from.replaceChild(patch.item, node);
-			break;
-		case Diff.DELETION:
-			node.remove();
-			break;
-		}
-	});
 };
 
 State.prototype.replace = function(loc) {
