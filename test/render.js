@@ -259,6 +259,14 @@ describe("Rendering", function suite() {
 		});
 	});
 
+	it("should run state and queue a reload", function() {
+		return Render(host + ':' + port + '/templates/queue-reload.html', {
+			delay: 250
+		}).then(function(body) {
+			expect(body).to.contain('Sampleaa');
+		});
+	});
+
 	it("should set a router and run it and next page, and on previous page", function() {
 		return Render(host + ':' + port + '/templates/route-spa.html', {
 			idle: function(cb) {
