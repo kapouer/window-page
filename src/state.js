@@ -81,14 +81,14 @@ State.prototype.init = function() {
 	};
 };
 
-State.prototype.run = function() {
+State.prototype.run = function(reload) {
 	var state = this;
 	if (queue) {
 		queue = queue.then(function() {
-			return state.run();
+			return state.run(reload);
 		});
 	} else {
-		queue = run(state).then(function(state) {
+		queue = run(state, reload).then(function(state) {
 			queue = null;
 			return state;
 		});
@@ -104,7 +104,7 @@ function prerender(ok) {
 	return ok;
 }
 
-function run(state) {
+function run(state, reload) {
 	state.init();
 	var refer = state.referrer;
 
@@ -123,8 +123,8 @@ function run(state) {
 	}
 
 	var prerendered;
-	var samePathname = Loc.samePathname(refer, state);
-	var sameQuery = Loc.sameQuery(refer, state);
+	var samePathname = Loc.samePathname(refer, state) && !reload;
+	var sameQuery = Loc.sameQuery(refer, state) && !reload;
 
 	if (samePathname && refer.emitter) {
 		['chains', 'emitter', 'tracker'].forEach(function(key) {
@@ -486,10 +486,9 @@ State.prototype.push = function(loc) {
 
 State.prototype.reload = function() {
 	debug("reload");
-	var prev = new State();
-	prev.stage = this.stage;
-	this.referrer = prev;
-	return this.run();
+	var cur = this.copy();
+	cur.referrer = this;
+	return cur.run(true);
 };
 
 State.prototype.save = function() {
