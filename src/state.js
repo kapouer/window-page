@@ -487,6 +487,7 @@ State.prototype.push = function(loc) {
 State.prototype.reload = function() {
 	debug("reload");
 	var cur = this.copy();
+	cur.data = this.data;
 	cur.referrer = this;
 	return cur.run(true);
 };
