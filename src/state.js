@@ -173,7 +173,7 @@ function run(state, reload) {
 			return state.runChain(PATCH) || state.runChain(BUILD);
 		}
 	}).then(function() {
-		if (state.hash != refer.hash) return state.runChain(HASH);
+		if (state.hash != refer.hash || reload) return state.runChain(HASH);
 	}).catch(function(err) {
 		state.error = err;
 		return (state.runChain(ERROR) || P()).then(function() {
