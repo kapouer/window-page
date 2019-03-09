@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+	<script src="../window-page.js"></script>
+	<script src="../assets/x-link-reload.js"></script>
+	<script>
+Page.route(function() {});
+function trigger() {
+	// doing UI things on patch is bad, and done here only for the sake of the test
+	setTimeout(function() {
+		window.id1.dispatchEvent(new MouseEvent('click', {
+			view: window,
+			bubbles: true,
+			cancelable: true
+		}));
+	}, 50);
+}
+Page.patch(function(state) {
+	if (window.reloaded) return;
+	window.reloaded = true;
+	state.finish(function(state) {
+		state.reload();
+	});
+});
+
+Page.setup(function() {
+	trigger();
+});
+
+	</script>
+	<style>
+	x-link:after {
+		content: attr(href);
+	}
+	</style>
+</head>
+<body>
+	<x-link-reload href="?test=bad" id="id1"></x-link-reload>
+</body>
+</html>

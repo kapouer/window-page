@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+	<script src="../window-page.js"></script>
+	<script>
+//Page.route(function() {});
+Page.patch(function(state) {
+	if (window.reloaded) return;
+	window.reloaded = true;
+	state.finish(function(state) {
+		state.reload();
+	});
+});
+
+Page.setup(function() {
+	document.documentElement.dataset.setups = (parseInt(document.documentElement.dataset.setups) || 0) + 1;
+});
+
+	</script>
+</head>
+<body>test</body>
+</html>

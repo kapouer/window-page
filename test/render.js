@@ -293,7 +293,24 @@ describe("Rendering", function suite() {
 		return Render(host + ':' + port + '/templates/custom-elements.html', {
 			delay: 1000
 		}).then(function(body) {
+			expect(body).to.contain('data-clicks="5"');
 			expect(body).to.contain('?test=6');
+		});
+	});
+
+	it("should reload current document and not run inline scripts handlers during import", function() {
+		return Render(host + ':' + port + '/templates/reload-setup.html', {
+			delay: 1000
+		}).then(function(body) {
+			expect(body).to.contain('data-setups="2"');
+		});
+	});
+
+	it("should connect custom element and survive a reload without document import", function() {
+		return Render(host + ':' + port + '/templates/custom-elements-reload.html', {
+			delay: 1000
+		}).then(function(body) {
+			expect(body).to.contain('data-clicks="2"');
 		});
 	});
 });
