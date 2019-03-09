@@ -34,7 +34,7 @@
     "gport": "^1.1.0",
     "levenlistdiff": "^1.0.1",
     "mocha": "^3.2.0",
-    "query-string": "^6.1.0",
+    "query-string": "^6.3.0",
     "request": "^2.79.0",
     "selenium-webdriver": "^3.0.1",
     "webcomponents.js": "^0.7.23",
