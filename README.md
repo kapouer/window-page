@@ -220,11 +220,27 @@ no preloading is done (due to limitations of cross origin requests).
 
 ### History
 
-These methods will run all chains on new state and return a promise:
-
+These methods will run chains on new state and return a promise:
 * state.push(location or url)  
 * state.replace(location or url)  
-* state.reload()
+
+The chains are run depending on how the url changes:
+- pathname: runs `route`, then runs build chain on new state
+- query: runs patch chain on new state
+- hash: runs hash chain on new state
+
+The close chain is run on current state, after the new state has finished
+(to allow proper management of page transitions).
+
+Chains `init` and `ready` are always run.
+
+Chain `setup` is only run if the document is visible (not prerendering, not hidden).
+
+It is possible to reload a document entirely using:
+* state.reload()  
+  a bit like replace, however history is not changed and build/patch/hash chains
+  are run again, unlike replace (which would not run them).  
+  state.data is preserved, so under-the-table data can be passed that way.
 
 Internal errors are caught and replaced by calls to document.location's
 assign or replace methods accordingly.
@@ -232,9 +248,10 @@ assign or replace methods accordingly.
 The error chain can be used to remove `state.error` and continue on with
 normal behavior.
 
-A convenient method only replaces current window history:
+A convenient method only that only replaces current window.history entry:
 
-* state.save()
+* state.save()  
+  useful to save current state.data.
 
 
 ### Tools
