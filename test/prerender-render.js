@@ -246,8 +246,8 @@ describe("Two-phase rendering", function suite() {
 	});
 
 	it("should route two pages forward, then two pages backward", function() {
-		this.timeout(4000);
-		return Render(host + ':' + port + '/nav-1.html', {delay: 500}).then(function(body) {
+		this.timeout(6000);
+		return Render(host + ':' + port + '/nav-1.html', {delay: 2000}).then(function(body) {
 			expect(body).to.contain('|/nav-1.html|/nav-2.html|/nav-3.html|/nav-2.html|/nav-1.html');
 		});
 	});
