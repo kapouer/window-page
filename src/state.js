@@ -83,7 +83,7 @@ State.prototype.init = function() {
 
 State.prototype.run = function(reload) {
 	var state = this;
-	if (queue) {
+	if (queue && !reload) {
 		queue = queue.then(function() {
 			return state.run(reload);
 		});
