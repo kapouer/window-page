@@ -167,13 +167,13 @@ function run(state, reload) {
 			if (refer.stage && !samePathname) {
 				return refer.runChain(CLOSE);
 			}
+		}).then(function() {
+			if (samePathname && prerendered && !sameQuery) {
+				return state.runChain(PATCH) || state.runChain(BUILD);
+			}
+		}).then(function() {
+			if (state.hash != refer.hash || reload) return state.runChain(HASH);
 		});
-	}).then(function() {
-		if (samePathname && prerendered && !sameQuery) {
-			return state.runChain(PATCH) || state.runChain(BUILD);
-		}
-	}).then(function() {
-		if (state.hash != refer.hash || reload) return state.runChain(HASH);
 	}).catch(function(err) {
 		state.error = err;
 		return (state.runChain(ERROR) || P()).then(function() {
