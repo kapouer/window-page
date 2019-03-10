@@ -136,5 +136,15 @@ describe("Prerendering", function suite() {
 		});
 	});
 
+	it("should reload document during prerendering", function(done) {
+		request({
+			method: 'GET',
+			url: host + ':' + port + '/route.html?template=reload-patch'
+		}, function(err, res, body) {
+			expect(body).to.contain('data-patchs="2"');
+			done();
+		});
+	});
+
 });
 
