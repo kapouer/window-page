@@ -50,4 +50,11 @@ and state.referrer.
 state.push, state.replace, state.reload default to document.location assign or
 replace in case of non-recuperable errors.
 
+7.4.0
+=====
+
+State chains are always resolved now: before they could hang on waiting for
+document to become visible, which would prevent prerendering "internal redirections".
+Consequently, when multiple states are pushed, only the last one runs its setup
+chain, and only the first one its close chain.
 
