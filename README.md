@@ -115,8 +115,13 @@ is a function - which is a handy way to keep the value of `this`.
 Functions listening for a given stage are run serially.
 
 If a stage chain is already resolved, new listeners are just added immediately
-to the promise chain. To append a function at the end of the current chain, use
-`state.finish(fn)`.
+to the promise chain.
+
+To append a function at the end of the current chain, use:  
+
+* state.finish(fn)  
+  fn can return a promise.  
+  To avoid deadlocks, fn must not return calls to state history methods.
 
 Listeners are bound to `document.currentScript`:
 - if it is set, listeners are bound to it and are removed as the node itself is.  
