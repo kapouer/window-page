@@ -19,6 +19,7 @@ var HASH = "hash";
 var Stages = [INIT, READY, BUILD, PATCH, SETUP, HASH, ERROR, CLOSE];
 
 var queue;
+var uiQueue;
 
 function State() {
 	this.data = {};
@@ -152,29 +153,34 @@ function run(state, opts) {
 		if (!prerendered || !samePathname) return (state.runChain(BUILD) || P()).then(function() {
 			return state.runChain(PATCH);
 		});
+		else if (!sameQuery) {
+			return state.runChain(PATCH) || state.runChain(BUILD);
+		}
 	}).then(function() {
 		prerender(true);
-		return Wait.ui().then(function() {
-			if (!refer.stage || !samePathname) {
-				refer.tracker.stop();
-			}
-			window.removeEventListener('popstate', refer);
-			window.addEventListener('popstate', state);
-			if (!refer.stage || !samePathname) {
-				state.tracker.start(document, window);
-				return state.runChain(SETUP);
-			}
-		}).then(function() {
-			if (refer.stage && !samePathname) {
-				return refer.runChain(CLOSE);
-			}
-		}).then(function() {
-			if (samePathname && prerendered && !sameQuery) {
-				return state.runChain(PATCH) || state.runChain(BUILD);
-			}
-		}).then(function() {
-			if (state.hash != refer.hash || opts.vary) return state.runChain(HASH);
-		});
+		// if multiple runs are made without ui,
+		// only the first refer is closed, and the last state is setup
+		if (!uiQueue) uiQueue = Wait.ui(refer);
+		uiQueue.fn = function(refer) {
+			uiQueue = null;
+			return Promise.resolve().then(function() {
+				if (!refer.stage || !samePathname) {
+					refer.tracker.stop();
+				}
+				window.removeEventListener('popstate', refer);
+				window.addEventListener('popstate', state);
+				if (!refer.stage || !samePathname) {
+					state.tracker.start(document, window);
+					return state.runChain(SETUP);
+				}
+			}).then(function() {
+				if (refer.stage && !samePathname) {
+					return refer.runChain(CLOSE);
+				}
+			}).then(function() {
+				if (state.hash != refer.hash || opts.vary) return state.runChain(HASH);
+			});
+		};
 	}).catch(function(err) {
 		state.error = err;
 		return (state.runChain(ERROR) || P()).then(function() {

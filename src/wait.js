@@ -29,7 +29,7 @@ exports.dom = function() {
 	});
 };
 
-exports.ui = function() {
+exports.ui = function(val) {
 	var solve;
 	if (document.hidden) {
 		var p = new Promise(function(resolve) {
@@ -39,9 +39,12 @@ exports.ui = function() {
 	} else {
 		p = P();
 	}
-	return p.then(function() {
+	var sp = p.then(function() {
 		return exports.styles(document.head);
+	}).then(function() {
+		return sp.fn(val);
 	});
+	return sp;
 
 	function listener() {
 		document.removeEventListener('visibilitychange', listener, false);
