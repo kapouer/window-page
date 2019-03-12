@@ -241,7 +241,7 @@ describe("Two-phase rendering", function suite() {
 		return Render(host + ':' + port + '/setup.html?close', {delay: 1000}).then(function(body) {
 			expect(body).to.contain('<div class="setup">2</div>');
 			expect(body).to.contain('<div class="close">1</div>');
-			expect(body).to.contain('<div class="orders">setup,setup2,setup21,setup,setup2,setup21,finally,close</div>');
+			expect(body).to.contain('<div class="orders">setup,setup2,setup21-true,setup,setup2,setup21-false,finally,close</div>');
 		});
 	});
 

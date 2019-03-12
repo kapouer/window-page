@@ -29,9 +29,10 @@ function delay(str, ms) {
 }
 
 Page.setup(function(state) {
-	if (state.query.close !== undefined) {
+	if (state.query.close !== undefined) state.finish(function() {
 		state.push('/close.html');
-	} else state.finish(function(state) {
+	});
+	else state.finish(function() {
 		return delay("finally", 50).then(function() {
 			document.querySelector('.orders').textContent = orders.join(',');
 		});
@@ -40,7 +41,7 @@ Page.setup(function(state) {
 });
 Page.setup(function(state) {
 	Page.setup(function(state) {
-		orders.push("setup21");
+		orders.push("setup21-" + (state.query.close !== undefined));
 	});
 	return delay("setup2", 20);
 });
