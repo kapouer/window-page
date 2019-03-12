@@ -81,14 +81,14 @@ State.prototype.init = function() {
 	};
 };
 
-State.prototype.run = function(reload) {
+State.prototype.run = function(opts) {
 	var state = this;
-	if (queue && !reload) {
+	if (queue) {
 		queue = queue.then(function() {
-			return state.run(reload);
+			return state.run(opts);
 		});
 	} else {
-		queue = run(state, reload).then(function(state) {
+		queue = run(state, opts).then(function(state) {
 			queue = null;
 			return state;
 		});
@@ -104,7 +104,8 @@ function prerender(ok) {
 	return ok;
 }
 
-function run(state, reload) {
+function run(state, opts) {
+	if (!opts) opts = {};
 	state.init();
 	var refer = state.referrer;
 
@@ -123,8 +124,8 @@ function run(state, reload) {
 	}
 
 	var prerendered;
-	var samePathname = Loc.samePathname(refer, state) && !reload;
-	var sameQuery = Loc.sameQuery(refer, state) && !reload;
+	var samePathname = Loc.samePathname(refer, state) && !opts.vary;
+	var sameQuery = Loc.sameQuery(refer, state) && !opts.vary;
 
 	if (samePathname && refer.emitter) {
 		['chains', 'emitter', 'tracker'].forEach(function(key) {
@@ -172,7 +173,7 @@ function run(state, reload) {
 				return state.runChain(PATCH) || state.runChain(BUILD);
 			}
 		}).then(function() {
-			if (state.hash != refer.hash || reload) return state.runChain(HASH);
+			if (state.hash != refer.hash || opts.vary) return state.runChain(HASH);
 		});
 	}).catch(function(err) {
 		state.error = err;
@@ -476,20 +477,19 @@ State.prototype.updateAttributes = function(from, to) {
 	for (var name in map) from.setAttribute(name, map[name]);
 };
 
-State.prototype.replace = function(loc) {
-	return historyMethod('replace', loc, this);
+State.prototype.replace = function(loc, opts) {
+	return historyMethod('replace', loc, this, opts);
 };
 
-State.prototype.push = function(loc) {
-	return historyMethod('push', loc, this);
+State.prototype.push = function(loc, opts) {
+	return historyMethod('push', loc, this, opts);
 };
 
 State.prototype.reload = function() {
 	debug("reload");
-	var cur = this.copy();
-	cur.data = this.data;
-	cur.referrer = this;
-	return cur.run(true);
+	return this.replace(this, {
+		vary: true
+	});
 };
 
 State.prototype.save = function() {
@@ -564,7 +564,7 @@ function historySave(method, state) {
 	return true;
 }
 
-function historyMethod(method, loc, refer) {
+function historyMethod(method, loc, refer, opts) {
 	if (!refer) throw new Error("Missing referrer parameter");
 	var copy = Loc.parse(Loc.format(loc));
 	if (typeof loc != "string" && loc.data != null) copy.data = loc.data;
@@ -575,8 +575,8 @@ function historyMethod(method, loc, refer) {
 		document.location.assign(Loc.format(copy));
 		return P();
 	}
-	debug("run", method, copy);
-	return copy.run().then(function(state) {
+	debug("run", method, copy, opts);
+	return copy.run(opts).then(function(state) {
 		historySave(method, state);
 	}).catch(function(err) {
 		// eslint-disable-next-line no-console

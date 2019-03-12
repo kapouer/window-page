@@ -221,8 +221,18 @@ no preloading is done (due to limitations of cross origin requests).
 ### History
 
 These methods will run chains on new state and return a promise:
-* state.push(location or url)  
-* state.replace(location or url)  
+* state.push(location or url, opts)  
+* state.replace(location or url, opts)
+
+Options:
+
+- vary (boolean, default false)  
+  force all chains to be run again regardless of url changes.  
+  Example: reload after a form login.
+
+* state.reload()  
+  a shortcut for `state.replace(state, {vary: true})`.
+
 
 The chains are run depending on how the url changes:
 - pathname: runs `route`, then runs build chain on new state
@@ -235,12 +245,6 @@ The close chain is run on current state, after the new state has finished
 Chains `init` and `ready` are always run.
 
 Chain `setup` is only run if the document is visible (not prerendering, not hidden).
-
-It is possible to reload a document entirely using:
-* state.reload()  
-  a bit like replace, however history is not changed and build/patch/hash chains
-  are run again, unlike replace (which would not run them).  
-  state.data is preserved, so under-the-table data can be passed that way.
 
 Internal errors are caught and replaced by calls to document.location's
 assign or replace methods accordingly.
