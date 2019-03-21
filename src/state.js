@@ -124,9 +124,18 @@ function run(state, opts) {
 		throw new Error("state and referrer should be distinct");
 	}
 
-	var prerendered;
-	var samePathname = Loc.samePathname(refer, state) && !opts.vary;
-	var sameQuery = Loc.sameQuery(refer, state) && !opts.vary;
+	var prerendered, samePathname, sameQuery, sameHash;
+	var vary = opts.vary;
+	if (vary === true || vary == "build") {
+		sameHash = sameQuery = samePathname = false;
+	} else if (vary == "patch") {
+		sameHash = sameQuery = false;
+	} else if (vary == "hash") {
+		sameHash = false;
+	}
+	if (samePathname == null) samePathname = Loc.samePathname(refer, state);
+	if (sameQuery == null) sameQuery = Loc.sameQuery(refer, state);
+	if (sameHash == null) sameHash = state.hash == refer.hash;
 
 	if (samePathname && refer.emitter) {
 		['chains', 'emitter', 'tracker'].forEach(function(key) {
@@ -175,7 +184,7 @@ function run(state, opts) {
 					return refer.runChain(CLOSE);
 				}
 			}).then(function() {
-				if (state.hash != refer.hash || opts.vary) return state.runChain(HASH);
+				if (!sameHash) return state.runChain(HASH);
 			});
 		};
 	}).catch(function(err) {

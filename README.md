@@ -75,10 +75,19 @@ Page.route(function(state) {
 	});
 });
 
-// merge data into DOM (can fetch more remote data) - no user interactions yet
-// maybe called several times per imported document
+// merge data into DOM
 Page.build(function(state) {
 	matchdom(document.body, state.data);
+});
+
+// fetch additional data depending on state.query values
+Page.patch(function(state) {
+	if (state.query.id != null) return fetch('/getdata?id=' + state.query.id)
+	.then(function(res) {
+		return res.json();
+	}).then(function(data) {
+		matchdom(template, data);
+	});
 });
 
 // initialize user interactions, called only once per instantiated document,
@@ -231,8 +240,9 @@ These methods will run chains on new state and return a promise:
 
 Options:
 
-- vary (boolean, default false)  
-  force all chains to be run again regardless of url changes.  
+- vary (boolean, or "build", "patch", "hash", default false)  
+  Override how pathname, query, hash are compared to previous state.  
+  `true` is like `"build"`; and varying on a chain runs the next chains too.  
   Example: reload after a form login.
 
 * state.reload()  
