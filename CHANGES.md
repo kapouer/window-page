@@ -58,3 +58,10 @@ document to become visible, which would prevent prerendering "internal redirecti
 Consequently, when multiple states are pushed, only the last one runs its setup
 chain, and only the first one its close chain.
 
+7.5.0
+=====
+
+- opts.vary can be "build", "patch", "hash".
+- when patch chain is empty, stop assuming user meant the build chain
+  this can be a breaking change if the user assumed it as well, however it was not
+  documented.
