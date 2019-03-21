@@ -150,12 +150,9 @@ function run(state, opts) {
 		debug("prerendered", prerendered);
 		return state.runChain(READY);
 	}).then(function() {
-		if (!prerendered || !samePathname) return (state.runChain(BUILD) || P()).then(function() {
-			return state.runChain(PATCH);
-		});
-		else if (!sameQuery) {
-			return state.runChain(PATCH) || state.runChain(BUILD);
-		}
+		if (!prerendered || !samePathname) return state.runChain(BUILD);
+	}).then(function() {
+		if (!prerendered || !sameQuery) return state.runChain(PATCH);
 	}).then(function() {
 		prerender(true);
 		// if multiple runs are made without ui,
