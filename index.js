@@ -171,7 +171,7 @@ PageClass.prototype.run = function(state) {
 			});
 		}
 	}
-	var refer = self.state || document.referrer;
+	var refer = self.state;
 	if (!self.state) {
 		self.state = this.parse(state);
 		delete self.state.hash;
@@ -182,10 +182,6 @@ PageClass.prototype.run = function(state) {
 		// not sure state.stage must be set here
 		state.initialStage = state.stage = self.stage();
 		debug("doc ready at stage", state.initialStage);
-
-		if (!self.sameDomain(refer, state)) {
-			throw new Error("Cannot route to a different domain:\n" + url);
-		}
 
 		if (refer.pathname != state.pathname) {
 			state.stage = INIT;
