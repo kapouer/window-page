@@ -6,9 +6,11 @@ var Anchor = document.createElement('a');
 exports.parse = function(str) {
 	var dloc = document.location;
 	var loc;
-	if (str == null || typeof str == "string") {
+	if (str == null || str == "") {
+		loc = dloc;
+	} else if (typeof str == "string") {
 		loc = Anchor;
-		loc.href = str || "";
+		loc.href = str;
 	} else {
 		loc = str;
 	}
