@@ -474,10 +474,10 @@ State.prototype.mergeBody = function(node) {
 
 State.prototype.updateAttributes = function(from, to) {
 	var map = {};
-	Array.prototype.forEach.call(to.attributes, function(att) {
+	Array.from(to.attributes).forEach(function(att) {
 		map[att.name] = att.value;
 	});
-	Array.prototype.forEach.call(from.attributes, function(att) {
+	Array.from(from.attributes).forEach(function(att) {
 		var val = map[att.name];
 		if (val === undefined) {
 			from.removeAttribute(att.name);
