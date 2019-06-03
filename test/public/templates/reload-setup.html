@@ -12,9 +12,9 @@ Page.patch(function(state) {
 		state.reload();
 	});
 });
-
+window.setups = window.setups || 0;
 Page.setup(function() {
-	document.documentElement.dataset.setups = (parseInt(document.documentElement.dataset.setups) || 0) + 1;
+	document.documentElement.dataset.setups = ++window.setups;
 });
 
 	</script>
