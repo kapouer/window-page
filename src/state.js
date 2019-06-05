@@ -55,10 +55,12 @@ State.prototype.init = function() {
 				methods.push([name, name.slice(7).toLowerCase(), true]);
 			}
 		});
-		W.setup(function(state) {
+		W.setup(function() {
 			methods.forEach(function(name) {
 				name[3] = function(e) {
-					node[name[0]].call(node, e, state);
+					W.setup(function(state) {
+						node[name[0]].call(node, e, state);
+					});
 				};
 				node.addEventListener(name[1], name[3], name[2]);
 			});

@@ -293,6 +293,7 @@ describe("Rendering", function suite() {
 		return Render(host + ':' + port + '/templates/custom-elements.html', {
 			delay: 1000
 		}).then(function(body) {
+			expect(body).to.contain('data-query-test="4"');
 			expect(body).to.contain('data-clicks="5"');
 			expect(body).to.contain('?test=6');
 		});

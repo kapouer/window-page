@@ -12,6 +12,7 @@ class HTMLXLinkElement extends HTMLElement {
 		Page.disconnect(this);
 	}
 	handleClick(e, state) {
+		document.documentElement.dataset.queryTest = state.query.test;
 		document.documentElement.dataset.clicks = (parseInt(document.documentElement.dataset.clicks) || 0) + 1;
 		state.push(e.target.href);
 	}
