@@ -253,6 +253,7 @@ describe("Two-phase rendering", function suite() {
 	});
 
 	it("should connect custom element and keep handler across patch nav", function() {
+		this.timeout(6000);
 		return Render(host + ':' + port + '/custom-elements.html', {
 			delay: 1000
 		}).then(function(body) {
