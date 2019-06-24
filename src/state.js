@@ -256,7 +256,9 @@ State.prototype.chain = function(stage, fn) {
 	}
 	if (this.chains[stage]) {
 		debug("chain already reached", stage);
-		return lfn.fn({detail: state});
+		return P().then(function() {
+			if (lfn.fn) return lfn.fn({detail: state});
+		});
 	} else {
 		debug("chain pending", stage);
 		return P();
@@ -285,6 +287,7 @@ State.prototype.unchain = function(stage, fn) {
 	if (!lfn) return;
 	delete ls[stage];
 	lfn.em.removeEventListener('page' + stage, lfn.fn);
+	delete lfn.fn; // so that already reached chains can be unchained before execution
 };
 
 function chainListener(stage, fn) {
