@@ -205,7 +205,7 @@ describe("Rendering", function suite() {
 				try {
 					var script = document.createElement('script');
 					script.textContent = `
-					Page.route(function(state) {
+					Page.setup(function(state) {
 						if (state.pathname == "/inexistent.html") setTimeout(function() {
 							window.simClick();
 							window.testcb();
@@ -312,6 +312,14 @@ describe("Rendering", function suite() {
 			delay: 1000
 		}).then(function(body) {
 			expect(body).to.contain('data-clicks="2"');
+		});
+	});
+
+	it("should connect custom element and not run chains if element is disconnected at once", function() {
+		return Render(host + ':' + port + '/templates/custom-elements-disconnect.html', {
+			delay: 1000
+		}).then(function(body) {
+			expect(body).to.contain('data-setups="0"');
 		});
 	});
 });

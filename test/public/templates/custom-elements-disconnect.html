@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+	<script src="../window-page.js"></script>
+	<script>
+class HTMLXSetupElement extends HTMLElement {
+	connectedCallback() {
+		Page.connect(this);
+	}
+	disconnectedCallback() {
+		Page.disconnect(this);
+	}
+	setup(state) {
+			document.body.dataset.setups++;
+	}
+}
+
+window.customElements.define("x-setup", HTMLXSetupElement);
+
+Page.setup(function(state) {
+	document.body.dataset.setups = 0;
+	document.body.insertAdjacentHTML('beforeEnd', '<x-setup></x-setup>');
+	document.body.firstElementChild.remove();
+});
+
+	</script>
+</head>
+<body>
+</body>
+</html>
