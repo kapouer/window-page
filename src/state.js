@@ -39,6 +39,12 @@ State.prototype.init = function() {
 		W['un' + stage] = function(fn) {
 			return state.unchain(stage, fn);
 		};
+		W.finish = function(fn) {
+			if (!state.queue) state.chain("init", function() {
+				state.queue.then(fn);
+			});
+			else state.queue.then(fn);
+		};
 	});
 
 	var NodeEvents = ['build', 'patch', 'setup', 'close'];
@@ -147,7 +153,7 @@ function run(state, opts) {
 		delete state.emitter; // in case state had an emitter - shouldn't happen
 	}
 
-	return Wait.dom().then(function() {
+	state.queue = Wait.dom().then(function() {
 		prerendered = prerender();
 		return state.runChain(INIT);
 	}).then(function() {
@@ -201,6 +207,7 @@ function run(state, opts) {
 	}).then(function() {
 		return state;
 	});
+	return state.queue;
 }
 
 State.prototype.emit = function(name) {
