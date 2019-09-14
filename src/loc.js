@@ -1,7 +1,4 @@
-var Q = require('query-string');
 var State = require('./state');
-
-var Anchor = document.createElement('a');
 
 exports.parse = function(str) {
 	var dloc = document.location;
@@ -9,15 +6,14 @@ exports.parse = function(str) {
 	if (str == null || str == "") {
 		loc = dloc;
 	} else if (typeof str == "string") {
-		loc = Anchor;
-		loc.href = str;
+		loc = new URL(str, dloc);
 	} else {
 		loc = str;
 	}
 	var obj = new State();
 	if (loc.referrer) obj.referrer = loc.referrer;
 	obj.pathname = loc.pathname;
-	obj.query = loc.query ? Object.assign({}, loc.query) : Q.parse(loc.search);
+	obj.query = loc.query ? Object.assign({}, loc.query) : searchToQuery(loc.search);
 	if (!obj.pathname) obj.pathname = "/";
 	else if (obj.pathname[0] != "/") obj.pathname = "/" + obj.pathname;
 
@@ -36,7 +32,9 @@ exports.parse = function(str) {
 			if (!obj.port) obj.port = loc.port;
 		}
 		if (!obj.protocol) obj.protocol = loc.protocol;
-		if (!obj.port || obj.port == "80") delete obj.port;
+		if (canonPort(obj)) {
+			delete obj.port;
+		}
 	}
 	return obj;
 };
@@ -53,7 +51,7 @@ exports.format = function(obj) {
 		delete obj.path;
 	}
 	var qstr;
-	if (obj.query) qstr = Q.stringify(obj.query);
+	if (obj.query) qstr = queryToString(obj.query);
 	else if (obj.search) qstr = obj.search[0] == "?" ? obj.search.substring(1) : obj.search;
 	obj.search = qstr;
 
@@ -72,8 +70,7 @@ exports.format = function(obj) {
 	if (qstr) str += '?' + qstr;
 	if (obj.hash) str += '#' + obj.hash;
 	if (!relative) {
-		var port = (obj.port && obj.port != 80) ? ":" + obj.port : "";
-		str = obj.protocol + '//' + obj.hostname + port + str;
+		str = obj.protocol + '//' + obj.hostname + canonPort(obj) + str;
 	}
 	return str;
 };
@@ -101,9 +98,9 @@ exports.samePathname = function(a, b) {
 exports.sameQuery = function(a, b) {
 	if (typeof a == "string") a = exports.parse(a);
 	if (typeof b == "string") b = exports.parse(b);
-	var aquery = a.query || Q.parse(a.search);
-	var bquery = b.query || Q.parse(b.search);
-	return Q.stringify(aquery) == Q.stringify(bquery);
+	var aquery = searchToQuery(a.query || a.search);
+	var bquery = searchToQuery(b.query || b.search);
+	return queryToString(aquery) == queryToString(bquery);
 };
 
 exports.samePath = function(a, b) {
@@ -116,3 +113,56 @@ exports.samePath = function(a, b) {
 	}
 };
 
+function canonPort(obj) {
+	var port = obj.port;
+	if (!port) return '';
+	var proto = obj.protocol;
+	if ((port == 80 && proto == "http:") || (port == 443 && proto == "https:")) {
+		return '';
+	} else {
+		return ':' + port;
+	}
+}
+
+function searchToQuery(obj) {
+	var query = {};
+	if (typeof obj == "string") {
+		obj = new URLSearchParams(obj);
+	}
+	if (obj != null && obj.forEach) {
+		obj.forEach(function(val, key) {
+			var cur = query[key];
+			if (cur) {
+				if (Array.isArray(cur)) cur.push(val);
+				else query[key] = [cur, val];
+			} else {
+				query[key] = val;
+			}
+		});
+	} else {
+		query = obj;
+	}
+	return query;
+}
+
+function queryToSearch(query, obj, prefix) {
+	if (!obj) obj = new URLSearchParams();
+	Object.keys(query).forEach(function(key) {
+		var val = query[key];
+		if (prefix) key = prefix + '.' + key;
+		if (!Array.isArray(val)) val = [val];
+		val.forEach(function(val) {
+			if (val === undefined) return;
+			if (val == null) val = '';
+			if (typeof val == "object") queryToSearch(val, obj, key);
+			else obj.append(key, val);
+		});
+	});
+	return obj;
+}
+
+function queryToString(query) {
+	var obj = queryToSearch(query);
+	obj.sort();
+	return obj.toString();
+}

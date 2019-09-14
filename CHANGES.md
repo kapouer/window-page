@@ -65,3 +65,17 @@ chain, and only the first one its close chain.
 - when patch chain is empty, stop assuming user meant the build chain
   this can be a breaking change if the user assumed it as well, however it was not
   documented.
+
+8.0.0
+=====
+
+Breaking change:
+now we're using URL and URLSearchParams instead of URLUtils through an anchor.
+it's not that bad because most browsers have it.
+Bundle polyfills or use https://polyfill.io otherwise.
+
+A side effect of this is that a query string of the form `?a&b`
+becomes `?a=&b=` after parsing/serializing, which means one cannot rely on
+the difference between `null` and `''` (empty string) in the query parameters.
+On the other hand relying on that difference was bad practice.
+

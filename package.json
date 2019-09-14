@@ -1,6 +1,6 @@
 {
   "name": "window-page",
-  "version": "7.6.0",
+  "version": "8.0.0",
   "description": "Route, setup, and build web pages",
   "main": "index.js",
   "scripts": {
@@ -37,7 +37,6 @@
     "levenlistdiff": "^1.0.1",
     "mocha": "^3.2.0",
     "postinstall-browserify": "^0.5.0",
-    "query-string": "^6.3.0",
     "request": "^2.79.0",
     "selenium-webdriver": "^3.0.1",
     "webcomponents.js": "^0.7.23",
