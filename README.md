@@ -268,7 +268,10 @@ Options:
   Example: reload after a form login.
 
 * state.reload()  
-  a shortcut for `state.replace(state, {vary: true})`.
+  a shortcut for `state.replace(state, {vary: <BUILD|PATCH|HASH>})`,  
+  with the correct value for `vary` set depending on state chains being
+  used or not.  
+  Example: does not call `setup` then `close` unless BUILD chain is not empty.
 
 
 The chains are run depending on how the url changes:

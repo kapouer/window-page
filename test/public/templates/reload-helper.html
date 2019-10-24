@@ -7,6 +7,9 @@ if (!window.nums) window.nums = {
 	setup: 0,
 	close: 0
 };
+Page.build(function() {
+	// without a BUILD chain, state.reload does not run close/setup
+});
 Page.setup(saveNums);
 Page.close(saveNums);
 function saveNums(state) {

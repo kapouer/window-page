@@ -304,6 +304,7 @@ describe("Rendering", function suite() {
 			delay: 1000
 		}).then(function(body) {
 			expect(body).to.contain('data-setups="2"');
+			expect(body).to.contain('data-closes="1"');
 		});
 	});
 
