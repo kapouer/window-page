@@ -47,11 +47,14 @@ State.prototype.init = function() {
 		};
 	});
 
-	var NodeEvents = ['build', 'patch', 'setup', 'close'];
+	var NodeEvents = [BUILD, PATCH, SETUP, CLOSE];
 
-	W.connect = function(node) {
+	W.connect = function(listener, node) {
 		var methods = [];
-		Object.getOwnPropertyNames(node.constructor.prototype).filter(function(name) {
+		if (!node) node = listener;
+		var proto = listener.constructor;
+		proto = proto === Object ? listener : proto.prototype;
+		Object.getOwnPropertyNames(proto).filter(function(name) {
 			if (name.startsWith('handle') && name != 'handleEvent') {
 				methods.push([name, name.slice(6).toLowerCase(), false]);
 			} else if (name.startsWith('capture') && name != 'captureEvent') {
@@ -62,29 +65,29 @@ State.prototype.init = function() {
 			methods.forEach(function(name) {
 				name[3] = function(e) {
 					W.setup(function(state) {
-						node[name[0]].call(node, e, state);
+						listener[name[0]].call(listener, e, state);
 					});
 				};
 				node.addEventListener(name[1], name[3], name[2]);
 			});
 		});
-		var _close = node.close;
-		node.close = function() {
+		var _close = listener.close;
+		listener.close = function() {
 			methods.forEach(function(name) {
 				node.removeEventListener(name[1], name[3], name[2]);
 			});
-			if (_close) return _close.call(node, Array.from(arguments));
+			if (_close) return _close.call(listener, Array.from(arguments));
 		};
 		NodeEvents.forEach(function(k) {
-			if (node[k]) W[k](node);
+			if (node[k]) W[k](listener);
 		});
 	};
 
-	W.disconnect = function(node) {
+	W.disconnect = function(listener) {
 		NodeEvents.forEach(function(k) {
-			if (node[k]) {
-				W['un' + k](node);
-				if (k == 'close') node.close();
+			if (listener[k]) {
+				W['un' + k](listener);
+				if (k == CLOSE) listener.close();
 			}
 		});
 	};
@@ -134,11 +137,11 @@ function run(state, opts) {
 
 	var prerendered, samePathname, sameQuery, sameHash;
 	var vary = opts.vary;
-	if (vary === true || vary == "build") {
+	if (vary === true || vary == BUILD) {
 		sameHash = sameQuery = samePathname = false;
-	} else if (vary == "patch") {
+	} else if (vary == PATCH) {
 		sameHash = sameQuery = false;
-	} else if (vary == "hash") {
+	} else if (vary == HASH) {
 		sameHash = false;
 	}
 	if (samePathname == null) samePathname = Loc.samePathname(refer, state);
@@ -511,8 +514,16 @@ State.prototype.push = function(loc, opts) {
 
 State.prototype.reload = function() {
 	debug("reload");
+	var vary;
+	if (this.chains.build.count) {
+		vary = BUILD;
+	} else if (this.chains.patch.count) {
+		vary = PATCH;
+	} else if (this.chains.hash.count) {
+		vary = HASH;
+	}
 	return this.replace(this, {
-		vary: true
+		vary: vary
 	});
 };
 

@@ -185,9 +185,12 @@ plugged into Page using:
 * Page.disconnect(node)
 
 Furthermore, if the object owns methods named `handle${Type}`, they will be
-used as `type` event listeners receiving arguments `(e, state)`.
+used as `type` event listeners on that object, receiving arguments `(e, state)`.
 
 To use "capture" listeners, just name the methods `capture<Type>` (new in 7.1.0).
+
+To use the same mecanism to manage event listener on another event emitter,
+pass that event emitter as second argument to `Page.connect(listener, emitter)`.
 
 These event listeners are automatically added during setup, and removed during
 close (or disconnect).
@@ -221,6 +224,23 @@ close() {
 }
 handleClick(e, state) {
   if (e.target.href) state.push(e.target.href);
+}
+```
+
+### Using the event listener on other objects
+
+* Page.connect(listener, emitter)
+
+This method accepts a second argument to configure event listeners, and
+benefit from automatic removal of event listeners on `close`.
+
+Example:
+
+```
+setup(state) {
+  Page.connect({
+    handleClick: (e, state) => this.handleClick(e.state)
+  }, window);
 }
 ```
 
