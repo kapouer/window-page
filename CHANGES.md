@@ -79,3 +79,10 @@ becomes `?a=&b=` after parsing/serializing, which means one cannot rely on
 the difference between `null` and `''` (empty string) in the query parameters.
 On the other hand relying on that difference was bad practice.
 
+9.0.0
+=====
+
+Breaking change:
+window, document event listeners are no longer tracker.
+Please use `Page.connect(listener, window)` instead.
+

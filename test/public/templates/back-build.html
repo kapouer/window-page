@@ -20,9 +20,11 @@ Page.close(checkNums);
 
 var numClicks = 0;
 Page.setup(function(state) {
-	document.addEventListener('click', function(e) {
-		e.target.innerText = ++numClicks;
-	});
+	Page.connect({
+		handleClick: function(e, state) {
+			e.target.innerText = ++numClicks;
+		}
+	}, document);
 	if (state.pathname == "/templates/back-build.html")	{
 		setTimeout(function() {
 			state.push({

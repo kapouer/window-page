@@ -170,12 +170,6 @@ The default `mergeBody` method just replaces `document.body` with the new body.
 These methods can be overriden from `Page.init` or `Page.route`.
 
 
-### Event listeners on window, document are tracked and removed
-
-So if there is a special need to avoid that behavior, register listeners on
-documentElement or body.
-
-
 ### Integration with Custom Elements
 
 An object having `build`, `patch`, `setup`, `close` methods can be
@@ -227,7 +221,7 @@ handleClick(e, state) {
 }
 ```
 
-### Using the event listener on other objects
+### Using the event listener on other objects (window, document...)
 
 * Page.connect(listener, emitter)
 

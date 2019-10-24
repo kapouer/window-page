@@ -1,5 +1,4 @@
 var Utils = require('./utils');
-var Tracker = require('./tracker');
 var Loc = require('./loc');
 var Wait = require('./wait');
 var Diff = require('levenlistdiff');
@@ -24,7 +23,6 @@ var uiQueue;
 function State() {
 	this.data = {};
 	this.chains = {};
-	this.tracker = new Tracker();
 	this.query = {};
 }
 
@@ -149,7 +147,7 @@ function run(state, opts) {
 	if (sameHash == null) sameHash = state.hash == refer.hash;
 
 	if (samePathname && refer.emitter) {
-		['chains', 'emitter', 'tracker'].forEach(function(key) {
+		['chains', 'emitter'].forEach(function(key) {
 			state[key] = refer[key];
 		});
 	} else {
@@ -181,13 +179,9 @@ function run(state, opts) {
 		uiQueue.fn = function(refer) {
 			uiQueue = null;
 			return Promise.resolve().then(function() {
-				if (!refer.stage || !samePathname) {
-					refer.tracker.stop();
-				}
 				window.removeEventListener('popstate', refer);
 				window.addEventListener('popstate', state);
 				if (!refer.stage || !samePathname) {
-					state.tracker.start(document, window);
 					return state.runChain(SETUP);
 				}
 			}).then(function() {
