@@ -50,9 +50,6 @@ State.prototype.init = function() {
 	var NodeEvents = ['build', 'patch', 'setup', 'close'];
 
 	W.connect = function(node) {
-		NodeEvents.forEach(function(k) {
-			if (node[k]) W[k](node);
-		});
 		var methods = [];
 		Object.getOwnPropertyNames(node.constructor.prototype).filter(function(name) {
 			if (name.startsWith('handle') && name != 'handleEvent') {
@@ -78,6 +75,9 @@ State.prototype.init = function() {
 			});
 			if (_close) return _close.call(node, Array.from(arguments));
 		};
+		NodeEvents.forEach(function(k) {
+			if (node[k]) W[k](node);
+		});
 	};
 
 	W.disconnect = function(node) {
