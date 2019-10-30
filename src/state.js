@@ -239,6 +239,7 @@ State.prototype.runChain = function(name) {
 
 
 State.prototype.chain = function(stage, fn) {
+	if (!fn) throw new Error("Missing function or listener");
 	var state = this;
 	var ls = fn._pageListeners;
 	if (!ls) ls = fn._pageListeners = {};
