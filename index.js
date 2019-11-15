@@ -3,7 +3,9 @@ var Loc = require('./src/loc');
 var State = require('./src/state');
 
 if (!window.Page) {
-	var W = State.Page = window.Page = {};
+	var W = State.Page = window.Page = {
+		State: State
+	};
 
 	Object.assign(W, Loc);
 	W.createDoc = Utils.createDoc;

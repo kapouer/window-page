@@ -156,6 +156,8 @@ The state history methods accept partial objects.
 * state.referrer  
   the previous parsable state.
 
+Page.State: the state's constructor.
+
 
 ### Document import
 
