@@ -36,7 +36,7 @@
     "gport": "^1.1.0",
     "levenlistdiff": "^1.0.1",
     "mocha": "^3.2.0",
-    "postinstall-browserify": "^0.5.0",
+    "postinstall-browserify": "^0.6.0",
     "request": "^2.79.0",
     "selenium-webdriver": "^3.0.1",
     "webcomponents.js": "^0.7.23",
