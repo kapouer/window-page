@@ -24,6 +24,13 @@ function State() {
 	this.data = {};
 	this.chains = {};
 	this.query = {};
+	var ok, fail;
+	this.queue = new Promise(function(resolve, reject) {
+		ok = resolve;
+		fail = reject;
+	});
+	this.queue.ok = ok;
+	this.queue.fail = fail;
 }
 
 State.prototype.init = function() {
@@ -38,11 +45,8 @@ State.prototype.init = function() {
 			return state.unchain(stage, fn);
 		};
 		W.finish = function(fn) {
-			if (!state.queue) state.chain("init", function() {
-				state.queue.then(fn);
-			});
-			else state.queue.then(fn);
-			return state.queue;
+			if (fn) return state.queue.then(fn);
+			else return state.queue;
 		};
 	});
 
@@ -155,7 +159,7 @@ function run(state, opts) {
 		delete state.emitter; // in case state had an emitter - shouldn't happen
 	}
 
-	state.queue = Wait.dom().then(function() {
+	Wait.dom().then(function() {
 		prerendered = prerender();
 		return state.runChain(INIT);
 	}).then(function() {
@@ -196,10 +200,10 @@ function run(state, opts) {
 	}).catch(function(err) {
 		state.error = err;
 		return (state.runChain(ERROR) || P()).then(function() {
-			if (state.error) throw state.error;
+			if (state.error) state.queue.fail(state.error);
 		});
 	}).then(function() {
-		return state;
+		state.queue.ok(state);
 	});
 	return state.queue;
 }
