@@ -42,6 +42,7 @@ State.prototype.init = function() {
 				state.queue.then(fn);
 			});
 			else state.queue.then(fn);
+			return state.queue;
 		};
 	});
 
