@@ -195,11 +195,7 @@ function run(state, opts) {
 	}).catch(function(err) {
 		state.error = err;
 		return (state.runChain(ERROR) || P()).then(function() {
-			if (state.error) {
-				var err = state.error;
-				delete state.error;
-				throw err;
-			}
+			if (state.error) throw state.error;
 		});
 	}).then(function() {
 		return state;
