@@ -331,6 +331,9 @@ function runFn(stage, fn, state) {
 
 function load(state, doc) {
 	debug("Import new document");
+	if (!doc.documentElement || !doc.querySelector) {
+		throw new Error("Router should return a document with a documentElement");
+	}
 	var states = {};
 	var selector = 'script:not([type]),script[type="text/javascript"],link[rel="import"]';
 	Utils.all(document, selector).forEach(function(node) {
