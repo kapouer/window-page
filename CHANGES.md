@@ -86,3 +86,10 @@ Breaking change:
 window, document event listeners are no longer tracker.
 Please use `Page.connect(listener, window)` instead.
 
+10.0.0
+======
+
+Breaking change:
+state.referrer is not related to document.referrer.
+
+

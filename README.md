@@ -155,7 +155,9 @@ The state history methods accept partial objects.
   the data must be JSON-serializable.
 
 * state.referrer  
-  the previous parsable state.
+  the previous parsable state.  
+  If Page is at first run, refers to the same location - without hash.  
+  Is not related to `document.referrer`.
 
 Page.State: the state's constructor.
 
