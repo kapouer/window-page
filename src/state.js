@@ -126,13 +126,8 @@ function run(state, opts) {
 
 	if (!refer) {
 		debug("new referrer");
-		if (document.referrer) {
-			refer = Loc.parse(document.referrer);
-		} else {
-			refer = state.copy();
-			delete refer.hash;
-		}
-		state.referrer = refer;
+		state.referrer = refer = state.copy();
+		delete refer.hash;
 	}
 	if (refer == state) {
 		throw new Error("state and referrer should be distinct");
