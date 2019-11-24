@@ -113,9 +113,9 @@ API
 For each chain, one can add or remove a listener function that receives the
 current state as argument.
 
-* Page[chain](fn)  
+* `Page[chainLabel](fn)`  
   runs fn right now if the chain is reached, or wait the chain to be run
-* Page[`un${chain}`](fn)  
+* `Page['un'+chainLabel](fn)`  
   removes fn from a chain, mostly needed for custom elements.
 * Page.finish(fn?)  
   If fn is given, calls `state.queue.then(fn)`.  
