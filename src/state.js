@@ -515,11 +515,11 @@ State.prototype.push = function(loc, opts) {
 State.prototype.reload = function() {
 	debug("reload");
 	var vary;
-	if (this.chains.build.count) {
+	if (this.chains.build && this.chains.build.count) {
 		vary = BUILD;
-	} else if (this.chains.patch.count) {
+	} else if (this.chains.patch && this.chains.patch.count) {
 		vary = PATCH;
-	} else if (this.chains.hash.count) {
+	} else if (this.chains.hash && this.chains.hash.count) {
 		vary = HASH;
 	}
 	return this.replace(this, {
