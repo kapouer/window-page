@@ -40,7 +40,7 @@
     "request": "^2.79.0",
     "selenium-webdriver": "^3.0.1",
     "webcomponents.js": "^0.7.23",
-    "webkitgtk": "^4.10.0",
+    "webkitgtk": "^4.11.0",
     "window-agent": "^1.0.1"
   }
 }
