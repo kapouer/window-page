@@ -240,10 +240,10 @@ describe("Rendering", function suite() {
 		});
 	});
 
-	it("should allow early setup on state.emitter but not twice for same function", function() {
+	it("should support setup twice for same function", function() {
 		return Render(host + ':' + port + '/templates/early-setup.html').then(function(body) {
 			expect(body).to.contain('data-prerender="true"');
-			expect(body).to.contain('<div class="testA">1</div>');
+			expect(body).to.contain('<div class="testA">2</div>');
 			expect(body).to.contain('<div class="testB">1</div>');
 		});
 	});
