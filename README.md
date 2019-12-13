@@ -266,10 +266,11 @@ Options:
   `true` is like `"build"`; and varying on a chain runs the next chains too.  
   Example: reload after a form login.
 
-* state.reload()  
+* state.reload(reroute)  
   a shortcut for `state.replace(state, {vary: <BUILD|PATCH|HASH>})`,  
   with the correct value for `vary` set depending on state chains being
   used or not.  
+  If reroute is true, re-route the page.  
   Example: does not call `setup` then `close` unless BUILD chain is not empty.
 
 
