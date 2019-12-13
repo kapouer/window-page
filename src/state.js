@@ -512,10 +512,13 @@ State.prototype.push = function(loc, opts) {
 	return historyMethod('push', loc, this, opts);
 };
 
-State.prototype.reload = function() {
+State.prototype.reload = function(reroute) {
 	debug("reload");
 	var vary;
-	if (this.chains.build && this.chains.build.count) {
+	if (reroute) {
+		prerender(false);
+		vary = BUILD;
+	} else if (this.chains.build && this.chains.build.count) {
 		vary = BUILD;
 	} else if (this.chains.patch && this.chains.patch.count) {
 		vary = PATCH;
