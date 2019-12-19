@@ -101,30 +101,21 @@ exports.imports = function(doc) {
 };
 
 exports.sheet = function(link) {
-	var done = false;
-	return new Promise(function(resolve) {
-		exports.node(link).then(function() {
-			if (!done) {
-				done = true;
-				resolve();
-			}
-		});
-		(function check() {
-			if (done) return;
-			var ok = false;
-			try {
-				ok = link.sheet && link.sheet.cssRules;
-			} catch(ex) {
-				// bail out
-				ok = true;
-			}
-			if (ok) {
-				done = true;
-				resolve();
-			}	else {
-				setTimeout(check, 5);
-			}
-		})();
+	var ok = false;
+	try {
+		ok = link.sheet && link.sheet.cssRules;
+	} catch(ex) {
+		// bail out
+		ok = true;
+	}
+	if (ok) return Promise.resolve();
+	var nlink = link.cloneNode();
+	nlink.media = "print";
+	var p = exports.node(nlink);
+	var parent = link.parentNode;
+	parent.insertBefore(nlink, link.nextSibling);
+	return p.then(function() {
+		parent.removeChild(nlink);
 	});
 };
 
