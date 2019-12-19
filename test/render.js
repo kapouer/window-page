@@ -65,15 +65,23 @@ var host = "http://localhost";
 describe("Rendering", function suite() {
 	this.timeout(3000);
 	var server, port;
+	var server2, port2;
 
 	before(function(done) {
 		var app = express();
 		app.set('views', __dirname + '/public');
+		app.use(function(req, res, next) {
+			if (req.query.delay) setTimeout(next, parseInt(req.query.delay) * 1000);
+			else next();
+		});
 		app.get(/\.(json|js|css|png|templates)$/, express.static(app.get('views')));
 		app.get(/\/templates\/.+\.html$/, express.static(app.get('views')));
 		app.get(/\.html$/, dom().load({plugins: loadPlugins}));
 
-
+		server2 = app.listen(function(err) {
+			if (err) console.error(err);
+			port2 = server2.address().port;
+		});
 		server = app.listen(function(err) {
 			if (err) console.error(err);
 			port = server.address().port;
@@ -83,6 +91,7 @@ describe("Rendering", function suite() {
 
 	after(function(done) {
 		server.close();
+		server2.close();
 		done();
 	});
 
@@ -321,6 +330,18 @@ describe("Rendering", function suite() {
 			delay: 1000
 		}).then(function(body) {
 			expect(body).to.contain('data-setups="0"');
+		});
+	});
+
+	it("should wait for external stylesheet to be loaded", function(done) {
+		this.timeout(4000);
+		request({
+			method: 'GET',
+			url: host + ':' + port + '/external-stylesheet.html?port=' + port2
+		}, function(err, res, body) {
+			expect(res.statusCode).to.be(200);
+			expect(body).to.contain('<div class="status">squared</div>');
+			done();
 		});
 	});
 });

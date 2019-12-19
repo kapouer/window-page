@@ -1,0 +1,9 @@
+body {
+	margin:0;
+	padding:0;
+	display:block;
+	border:0;
+	position:absolute;
+	width:500px;
+	height:400px;
+}
