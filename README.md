@@ -279,7 +279,7 @@ The chains are run depending on how the url changes:
 - query: runs patch chain on new state
 - hash: runs hash chain on new state
 
-The close chain is run on current state, after the new state has finished
+The `close` chain is run on current state, after the new state has finished
 (to allow proper management of page transitions).
 
 Chains `init` and `ready` are always run.
