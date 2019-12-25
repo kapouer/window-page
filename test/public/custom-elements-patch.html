@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+	<script src="window-page.js"></script>
+	<script src="assets/x-link.js"></script>
+	<script>
+Page.patch(function(state) {
+	document.body.dataset.patch = 1;
+});
+
+Page.setup(function(state) {
+	document.body.dataset.setup = 1;
+	setTimeout(function() {
+		state.query.test = 3;
+		Page.patch(document.body.querySelector('x-link'));
+	}, 50);
+});
+	</script>
+	<style>
+	x-link:after {
+		content: attr(href);
+	}
+	</style>
+</head>
+<body>
+	<x-link href="?test=bad" id="id1"></x-link>
+</body>
+</html>

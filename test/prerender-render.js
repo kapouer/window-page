@@ -260,5 +260,23 @@ describe("Two-phase rendering", function suite() {
 			expect(body).to.contain('?test=6');
 		});
 	});
+
+	it("should be able to run connected element patch when called out-of-navigation during setup", function(done) {
+		request({
+			method: 'GET',
+			url: host + ':' + port + '/custom-elements-patch.html'
+		}, function(err, res, body) {
+			expect(res.statusCode).to.be(200);
+			expect(body).to.contain('href="');
+			dom(body).load({
+				plugins: renderPlugins
+			})(res.request.uri.href).then(function(state) {
+				expect(state.body).to.contain('x-link href="/custom-elements-patch.html?test=4"');
+				done();
+			}).catch(function(err) {
+				done(err);
+			});
+		});
+	});
 });
 
