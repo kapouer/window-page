@@ -171,6 +171,7 @@ function run(state, opts) {
 		if (!prerendered || !samePathname) return state.runChain(BUILD);
 	}).then(function() {
 		if (!prerendered || !sameQuery) return state.runChain(PATCH);
+		else state.initChain(PATCH);
 	}).then(function() {
 		prerender(true);
 		// if multiple runs are made without ui,
@@ -216,13 +217,18 @@ State.prototype.emit = function(name) {
 	if (this.emitter) this.emitter.dispatchEvent(e);
 };
 
-State.prototype.runChain = function(name) {
-	this.stage = name;
+State.prototype.initChain = function(name) {
 	var chain = this.chains[name];
 	if (!chain) chain = this.chains[name] = {};
-	debug("run chain", name);
 	chain.count = 0;
 	chain.promise = P();
+	return chain;
+};
+
+State.prototype.runChain = function(name) {
+	this.stage = name;
+	var chain = this.initChain(name);
+	debug("run chain", name);
 	var ok, fail;
 	chain.final = new Promise(function(resolve, reject) {
 		ok = resolve;
