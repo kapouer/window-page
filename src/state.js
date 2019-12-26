@@ -89,8 +89,8 @@ State.prototype.init = function() {
 	W.disconnect = function(listener) {
 		NodeEvents.forEach(function(k) {
 			if (listener[k]) {
+				if (k == CLOSE) W.close(listener);
 				W['un' + k](listener);
-				if (k == CLOSE) listener.close();
 			}
 		});
 	};
