@@ -22,6 +22,7 @@ var uiQueue;
 
 function State() {
 	this.data = {};
+	this.ui = {};
 	this.chains = {};
 	this.query = {};
 	var ok, fail;
@@ -147,7 +148,7 @@ function run(state, opts) {
 	if (sameHash == null) sameHash = state.hash == refer.hash;
 
 	if (samePathname && refer.emitter) {
-		['chains', 'emitter'].forEach(function(key) {
+		['chains', 'emitter', 'ui'].forEach(function(key) {
 			state[key] = refer[key];
 		});
 	} else {

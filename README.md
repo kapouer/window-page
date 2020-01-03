@@ -154,6 +154,10 @@ The state history methods accept partial objects.
 * state.data  
   the data must be JSON-serializable.
 
+* state.ui  
+  object that changes when pathname changes.  
+  setup-patch-hash state changes share the same `state.ui`.
+
 * state.referrer  
   the previous parsable state.  
   If Page is at first run, refers to the same location - without hash.  
