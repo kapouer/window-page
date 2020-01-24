@@ -147,9 +147,9 @@ function run(state, opts) {
 	if (sameQuery == null) sameQuery = Loc.sameQuery(refer, state);
 	if (sameHash == null) sameHash = state.hash == refer.hash;
 
-	if (samePathname && refer.emitter) {
+	if (samePathname) {
 		['chains', 'emitter', 'ui', 'data'].forEach(function(key) {
-			state[key] = refer[key];
+			if (refer[key] != null) state[key] = refer[key];
 		});
 	} else {
 		delete state.emitter; // in case state had an emitter - shouldn't happen
