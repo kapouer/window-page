@@ -52,9 +52,10 @@ function Render(url, opts) {
 					else resolve(str);
 				});
 				else setTimeout(function() {
-					page.html().then(resolve);
+					page.html().then(resolve).finally(() => page.unload());
 				}, opts.delay);
-			}).catch(reject);
+			})
+			.catch(reject);
 			page.load(url, settings);
 		});
 	});
@@ -342,6 +343,15 @@ describe("Rendering", function suite() {
 			expect(res.statusCode).to.be(200);
 			expect(body).to.contain('<div class="status">squared</div>');
 			done();
+		});
+	});
+
+	it("should patch then setup then patch with same state.data, then build with new state.data", function() {
+		return Render(host + ':' + port + '/templates/data.html', {
+			delay: 250
+		}).then(function(body) {
+			expect(body).to.contain('data-builds="-1-1"');
+			expect(body).to.contain('data-patches="-1-2-1"');
 		});
 	});
 });

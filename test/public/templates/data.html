@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Sample data page</title>
+	<script src="../window-page.js"></script>
+	<script>
+
+Page.route(function(state) {
+		// do nothing;
+});
+
+Page.build(function(state) {
+	state.data.build = (state.data.build || 0) + 1;
+	document.body.dataset.builds = (document.body.dataset.builds || "") + "-" + state.data.build;
+});
+Page.patch(function(state) {
+	state.data.patch = (state.data.patch || 0) + 1;
+	document.body.dataset.patches = (document.body.dataset.patches || "") + "-" + state.data.patch;
+	if (state.query.toto == 1) setTimeout(function() {
+		state.push("/other");
+	}, 50);
+});
+Page.setup(function(state) {
+	if (state.pathname != "/other") setTimeout(function() {
+		state.push({query: {toto:1}});
+	}, 50);
+});
+
+
+	</script>
+</head>
+<body>
+</body>
+</html>
