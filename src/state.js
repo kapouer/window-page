@@ -148,7 +148,7 @@ function run(state, opts) {
 	if (sameHash == null) sameHash = state.hash == refer.hash;
 
 	if (samePathname && refer.emitter) {
-		['chains', 'emitter', 'ui'].forEach(function(key) {
+		['chains', 'emitter', 'ui', 'data'].forEach(function(key) {
 			state[key] = refer[key];
 		});
 	} else {
@@ -612,7 +612,6 @@ function historySave(method, state) {
 function historyMethod(method, loc, refer, opts) {
 	if (!refer) throw new Error("Missing referrer parameter");
 	var copy = Loc.parse(Loc.format(loc));
-	if (typeof loc != "string" && loc.data != null) copy.data = loc.data;
 	copy.referrer = refer;
 	if (!Loc.sameDomain(refer, copy)) {
 		// eslint-disable-next-line no-console
