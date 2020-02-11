@@ -80,7 +80,7 @@ State.prototype.init = function() {
 			methods.forEach(function(name) {
 				node.removeEventListener(name[1], name[3], name[2]);
 			});
-			if (_close) return _close.call(listener, Array.from(arguments));
+			if (_close) return _close.apply(listener, Array.from(arguments));
 		};
 		NodeEvents.forEach(function(k) {
 			if (node[k]) W[k](listener);
