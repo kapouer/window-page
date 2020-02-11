@@ -309,6 +309,15 @@ describe("Rendering", function suite() {
 		});
 	});
 
+	it("should connect custom element and close it after pathname nav and its setup", function() {
+		return Render(host + ':' + port + '/templates/custom-elements-close.html', {
+			delay: 1000
+		}).then(function(body) {
+			expect(body).to.contain('data-setup="2"');
+			expect(body).to.contain('data-close="1"');
+		});
+	});
+
 	it("should reload current document and not run inline scripts handlers during import", function() {
 		return Render(host + ':' + port + '/templates/reload-setup.html', {
 			delay: 1000

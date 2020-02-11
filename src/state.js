@@ -91,7 +91,7 @@ State.prototype.init = function() {
 		NodeEvents.forEach(function(k) {
 			if (listener[k]) {
 				if (k == CLOSE) W.close(listener);
-				W['un' + k](listener);
+				else W['un' + k](listener);
 			}
 		});
 	};
@@ -322,6 +322,7 @@ function chainListener(stage, fn) {
 
 function runFn(stage, fn, state) {
 	if (fn[stage] && typeof fn[stage] == "function") {
+		if (stage == CLOSE) state.unchain(stage, fn);
 		return fn[stage](state);
 	} else if (typeof fn == "function") {
 		return fn(state);
