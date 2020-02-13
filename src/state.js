@@ -34,9 +34,10 @@ function State() {
 	this.queue.fail = fail;
 }
 
-State.prototype.init = function() {
+State.prototype.init = function(opts) {
 	var W = State.Page;
 	var state = this;
+	if (opts.data) Object.assign(this.data, opts.data);
 
 	Stages.forEach(function(stage) {
 		W[stage] = function(fn) {
@@ -122,7 +123,7 @@ function prerender(ok) {
 
 function run(state, opts) {
 	if (!opts) opts = {};
-	state.init();
+	state.init(opts);
 	var refer = state.referrer;
 
 	if (!refer) {
@@ -520,7 +521,7 @@ State.prototype.push = function(loc, opts) {
 	return historyMethod('push', loc, this, opts);
 };
 
-State.prototype.reload = function(reroute) {
+State.prototype.reload = function(reroute, opts) {
 	debug("reload");
 	var vary;
 	if (reroute) {
@@ -533,9 +534,9 @@ State.prototype.reload = function(reroute) {
 	} else if (this.chains.hash && this.chains.hash.count) {
 		vary = HASH;
 	}
-	return this.replace(this, {
-		vary: vary
-	});
+	if (!opts) opts = {};
+	opts.vary = vary;
+	return this.replace(this, opts);
 };
 
 State.prototype.save = function() {
