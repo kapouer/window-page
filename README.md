@@ -266,15 +266,18 @@ These methods will run chains on new state and return a promise:
 Options:
 
 - vary (boolean, or "build", "patch", "hash", default false)  
-  Override how pathname, query, hash are compared to previous state.  
-  `true` is like `"build"`; and varying on a chain runs the next chains too.  
+  Overrides how pathname, query, hash are compared to previous state.  
+  `true` re-routes the page; and varying on a chain runs the next chains too.  
   Example: reload after a form login.
 
-* state.reload(reroute)  
-  a shortcut for `state.replace(state, {vary: <BUILD|PATCH|HASH>})`,  
+- data  
+  Assign this data to next state.data.
+
+* state.reload(opts)  
+  a shortcut for `state.replace(state, opts)`,  
   with the correct value for `vary` set depending on state chains being
   used or not.  
-  If reroute is true, re-route the page.  
+  `opts.vary` can be set, in which case it is passed as is to `replace`.    
   Example: does not call `setup` then `close` unless BUILD chain is not empty.
 
 

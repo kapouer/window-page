@@ -137,7 +137,11 @@ function run(state, opts) {
 
 	var prerendered, samePathname, sameQuery, sameHash;
 	var vary = opts.vary;
-	if (vary === true || vary == BUILD) {
+	if (vary === true) {
+		vary = BUILD;
+		prerender(false);
+	}
+	if (vary == BUILD) {
 		sameHash = sameQuery = samePathname = false;
 	} else if (vary == PATCH) {
 		sameHash = sameQuery = false;
@@ -521,21 +525,21 @@ State.prototype.push = function(loc, opts) {
 	return historyMethod('push', loc, this, opts);
 };
 
-State.prototype.reload = function(reroute, opts) {
+State.prototype.reload = function(opts) {
 	debug("reload");
-	var vary;
-	if (reroute) {
-		prerender(false);
-		vary = BUILD;
-	} else if (this.chains.build && this.chains.build.count) {
-		vary = BUILD;
-	} else if (this.chains.patch && this.chains.patch.count) {
-		vary = PATCH;
-	} else if (this.chains.hash && this.chains.hash.count) {
-		vary = HASH;
-	}
 	if (!opts) opts = {};
-	opts.vary = vary;
+	else if (opts === true) opts = {vary: true};
+	var vary = opts.vary;
+	if (vary == null) {
+		if (this.chains.build && this.chains.build.count) {
+			vary = BUILD;
+		} else if (this.chains.patch && this.chains.patch.count) {
+			vary = PATCH;
+		} else if (this.chains.hash && this.chains.hash.count) {
+			vary = HASH;
+		}
+		opts.vary = vary;
+	}
 	return this.replace(this, opts);
 };
 
