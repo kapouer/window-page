@@ -163,6 +163,10 @@ function queryToSearch(query, obj, prefix) {
 
 function queryToString(query) {
 	var obj = queryToSearch(query);
-	obj.sort();
-	return obj.toString();
+	var keys = Array.from(obj.keys()).sort();
+	var sorted = new URLSearchParams();
+	keys.forEach(function(key) {
+		sorted.append(key, obj.get(key));
+	});
+	return sorted.toString();
 }
