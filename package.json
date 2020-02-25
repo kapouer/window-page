@@ -1,6 +1,6 @@
 {
   "name": "window-page",
-  "version": "10.4.1",
+  "version": "10.4.2",
   "description": "Route, setup, and build web pages",
   "main": "index.js",
   "scripts": {
