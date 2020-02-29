@@ -1,10 +1,12 @@
 var Utils = require('./src/utils');
 var Loc = require('./src/loc');
 var State = require('./src/state');
+var Wait = require('./src/wait');
 
 if (!window.Page) {
 	var W = State.Page = window.Page = {
-		State: State
+		State: State,
+		Wait: Wait
 	};
 
 	Object.assign(W, Loc);
