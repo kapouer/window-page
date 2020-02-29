@@ -363,5 +363,13 @@ describe("Rendering", function suite() {
 			expect(body).to.contain('data-patches="-1-2-1"');
 		});
 	});
+
+	it("should wait for patch chain to finish, load remote script during patch, run a patch in that script before the chain finished", function() {
+		return Render(host + ':' + port + '/templates/patch-load-patch-finish.html', {
+			delay: 0
+		}).then(function(body) {
+			expect(body).to.contain('data-finished="yes"');
+		});
+	});
 });
 

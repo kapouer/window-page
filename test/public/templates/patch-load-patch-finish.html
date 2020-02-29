@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Sample data page</title>
+	<script src="../window-page.js"></script>
+	<script>
+
+Page.route(function(state) {
+		// do nothing;
+});
+var total = 0;
+Page.patch(function(state) {
+	state.finish(function() {
+		document.body.dataset.counts = `${document.body.dataset.repatched} over ${window.repatched} / ${total}`;
+		if (document.body.dataset.repatched == window.repatched) document.body.dataset.finished = "yes";
+		else document.body.dataset.finished = "too-soon";
+	});
+});
+
+Page.patch(function(state) {
+	var list = [
+		'../patch-before-finish.js',
+		'../patch-before-finish-2.js',
+		'../patch-before-finish-3.js'
+	];
+	total = list.length;
+	return Promise.all(list.map((url) => {
+		return load(url);
+	}));
+});
+
+function load(url) {
+	var script = document.createElement('script');
+	script.type = "text/javascript";
+	script.src = url;
+	script.async = false;
+	var p = Page.Wait.node(script);
+	document.head.appendChild(script);
+	return p;
+}
+
+	</script>
+</head>
+<body>
+</body>
+</html>
