@@ -235,18 +235,24 @@ State.prototype.runChain = function(name) {
 	this.stage = name;
 	var chain = this.initChain(name);
 	debug("run chain", name);
-	var ok, fail;
 	chain.final = new Promise(function(resolve, reject) {
-		ok = resolve;
-		fail = reject;
+		chain.done = function() {
+			delete chain.done;
+			resolve();
+		};
+		chain.fail = function(err) {
+			delete chain.done;
+			reject(err);
+		};
 	});
 	this.emit("page" + name);
 	debug("run chain count", name, chain.count);
-	if (chain.count) return chain.promise.then(function() {
-		ok();
-		return chain.final;
-	}).catch(function(err) {
-		fail(err);
+	if (!chain.count) return;
+	return chain.promise.then(function() {
+		if (chain.done) return chain.done();
+	})
+	.catch(chain.fail)
+	.then(function() {
 		return chain.final;
 	});
 };
@@ -273,15 +279,25 @@ State.prototype.chain = function(stage, fn) {
 	} else {
 		debug("already chained", stage, fn);
 	}
-	if (this.chains[stage]) {
-		debug("chain already reached", stage);
-		return P().then(function() {
+	var p = P();
+	var chain = this.chains[stage];
+	if (!chain) {
+		debug("chain pending", stage);
+	} else if (chain.done) {
+		debug("chain is running", stage);
+		// not finished
+		chain.done = function(done) {
+			return P().then(function() {
+				if (lfn.fn) return lfn.fn({detail: state});
+			}).then(done);
+		}.bind(null, chain.done);
+	} else {
+		debug("chain is done", stage);
+		p = p.then(function() {
 			if (lfn.fn) return lfn.fn({detail: state});
 		});
-	} else {
-		debug("chain pending", stage);
-		return P();
 	}
+	return p;
 };
 
 State.prototype.finish = function(fn) {
