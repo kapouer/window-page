@@ -371,5 +371,13 @@ describe("Rendering", function suite() {
 			expect(body).to.contain('data-finished="yes"');
 		});
 	});
+
+	it("should run listener after an empty chain has been run", function() {
+		return Render(host + ':' + port + '/templates/chain-empty.html', {
+			delay: 250
+		}).then(function(body) {
+			expect(body).to.contain('data-consent="run"');
+		});
+	});
 });
 

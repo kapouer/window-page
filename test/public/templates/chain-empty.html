@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Sample data page</title>
+	<script src="../window-page.js"></script>
+	<script>
+
+Page.route(function(state) {
+		// do nothing;
+});
+var total = 0;
+Page.setup(function(state) {
+	state.finish(function() {
+		state.runChain('consent');
+		setTimeout(function() {
+			state.chain('consent', (state) => {
+				document.body.dataset.consent = "run";
+			});
+		}, 50);
+	});
+});
+
+	</script>
+</head>
+<body>
+</body>
+</html>
