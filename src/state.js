@@ -283,7 +283,7 @@ State.prototype.chain = function(stage, fn) {
 	var chain = this.chains[stage];
 	if (!chain) {
 		debug("chain pending", stage);
-	} else if (chain.done) {
+	} else if (chain.count && chain.done) {
 		debug("chain is running", stage);
 		// not finished
 		chain.done = function(done) {
