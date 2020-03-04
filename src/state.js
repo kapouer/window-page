@@ -16,7 +16,7 @@ var CLOSE = "close";
 var ERROR = "error";
 var HASH = "hash";
 var Stages = [INIT, READY, BUILD, PATCH, SETUP, HASH, ERROR, CLOSE];
-var NodeEvents = [BUILD, PATCH, SETUP, CLOSE];
+var NodeEvents = [BUILD, PATCH, SETUP, HASH, CLOSE];
 
 var queue;
 var uiQueue;
