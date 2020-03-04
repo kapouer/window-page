@@ -62,6 +62,14 @@ State.prototype.init = function(opts) {
 	};
 };
 
+State.prototype.setup = function(fn) {
+	return this.chain(SETUP, fn);
+};
+
+State.prototype.hash = function(fn) {
+	return this.chain(HASH, fn);
+};
+
 State.prototype.connect = function(listener, node) {
 	var methods = [];
 	if (!node) node = listener;
@@ -74,7 +82,7 @@ State.prototype.connect = function(listener, node) {
 			methods.push([name, name.slice(7).toLowerCase(), true]);
 		}
 	});
-	if (methods.length) this.chain(SETUP, function(state) {
+	if (methods.length) this.setup(function(state) {
 		methods.forEach(function(name) {
 			name[3] = function(e) {
 				var last = state;
