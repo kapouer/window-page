@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+	<style>
+	html { height:100%; }
+	body { height:150%; }
+	</style>
+	<script src="../window-page.js"></script>
+	<script src="../assets/x-scroll.js"></script>
+	<script>
+		Page.setup(function(state) {
+			state.finish(function() {
+				document.documentElement.scrollTo(0, 50);
+			});
+		});
+	</script>
+</head>
+<body>
+	<x-scroll id="id1"></x-scroll>
+</body>
+</html>

@@ -379,5 +379,13 @@ describe("Rendering", function suite() {
 			expect(body).to.contain('data-consent="run"');
 		});
 	});
+
+	it("should setup -> connect -> setup -> connect scroll event", function() {
+		return Render(host + ':' + port + '/templates/custom-elements-connect-scroll.html', {
+			delay: 250
+		}).then(function(body) {
+			expect(body).to.contain('data-scrolled="yes"');
+		});
+	});
 });
 
