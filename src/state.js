@@ -77,7 +77,9 @@ State.prototype.connect = function(listener, node) {
 	if (methods.length) this.chain(SETUP, function(state) {
 		methods.forEach(function(name) {
 			name[3] = function(e) {
-				listener[name[0]].call(listener, e, state.last());
+				var last = state;
+				while (last.follower) last = last.follower;
+				listener[name[0]].call(listener, e, last);
 			};
 			node.addEventListener(name[1], name[3], name[2]);
 		});
@@ -101,12 +103,6 @@ State.prototype.disconnect = function(listener) {
 			else this.unchain(k, listener);
 		}
 	}, this);
-};
-
-State.prototype.last = function() {
-	var it = this;
-	while (it.follower) it = it.follower;
-	return it;
 };
 
 State.prototype.run = function(opts) {
