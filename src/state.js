@@ -16,6 +16,7 @@ var CLOSE = "close";
 var ERROR = "error";
 var HASH = "hash";
 var Stages = [INIT, READY, BUILD, PATCH, SETUP, HASH, ERROR, CLOSE];
+var NodeEvents = [BUILD, PATCH, SETUP, CLOSE];
 
 var queue;
 var uiQueue;
@@ -52,50 +53,60 @@ State.prototype.init = function(opts) {
 		};
 	});
 
-	var NodeEvents = [BUILD, PATCH, SETUP, CLOSE];
-
 	W.connect = function(listener, node) {
-		var methods = [];
-		if (!node) node = listener;
-		var proto = listener.constructor;
-		proto = proto === Object ? listener : proto.prototype;
-		Object.getOwnPropertyNames(proto).filter(function(name) {
-			if (name.startsWith('handle') && name != 'handleEvent') {
-				methods.push([name, name.slice(6).toLowerCase(), false]);
-			} else if (name.startsWith('capture') && name != 'captureEvent') {
-				methods.push([name, name.slice(7).toLowerCase(), true]);
-			}
-		});
-		W.setup(function() {
-			methods.forEach(function(name) {
-				name[3] = function(e) {
-					W.setup(function(state) {
-						listener[name[0]].call(listener, e, state);
-					});
-				};
-				node.addEventListener(name[1], name[3], name[2]);
-			});
-		});
-		var _close = listener.close;
-		listener.close = function() {
-			methods.forEach(function(name) {
-				node.removeEventListener(name[1], name[3], name[2]);
-			});
-			if (_close) return _close.apply(listener, Array.from(arguments));
-		};
-		NodeEvents.forEach(function(k) {
-			if (node[k]) W[k](listener);
-		});
+		state.connect(listener, node);
 	};
 
 	W.disconnect = function(listener) {
-		NodeEvents.forEach(function(k) {
-			if (listener[k]) {
-				if (k == CLOSE) W.close(listener);
-				else W['un' + k](listener);
-			}
-		});
+		state.disconnect(listener);
 	};
+};
+
+State.prototype.connect = function(listener, node) {
+	var methods = [];
+	if (!node) node = listener;
+	var proto = listener.constructor;
+	proto = proto === Object ? listener : proto.prototype;
+	Object.getOwnPropertyNames(proto).filter(function(name) {
+		if (name.startsWith('handle') && name != 'handleEvent') {
+			methods.push([name, name.slice(6).toLowerCase(), false]);
+		} else if (name.startsWith('capture') && name != 'captureEvent') {
+			methods.push([name, name.slice(7).toLowerCase(), true]);
+		}
+	});
+	if (methods.length) this.chain(SETUP, function(state) {
+		methods.forEach(function(name) {
+			name[3] = function(e) {
+				listener[name[0]].call(listener, e, state.last());
+			};
+			node.addEventListener(name[1], name[3], name[2]);
+		});
+	});
+	var _close = listener.close;
+	listener.close = function() {
+		methods.forEach(function(name) {
+			node.removeEventListener(name[1], name[3], name[2]);
+		});
+		if (_close) return _close.apply(listener, Array.from(arguments));
+	};
+	NodeEvents.forEach(function(k) {
+		if (node[k]) this.chain(k, listener);
+	}, this);
+};
+
+State.prototype.disconnect = function(listener) {
+	NodeEvents.forEach(function(k) {
+		if (listener[k]) {
+			if (k == CLOSE) this.chain(k, listener);
+			else this.unchain(k, listener);
+		}
+	}, this);
+};
+
+State.prototype.last = function() {
+	var it = this;
+	while (it.follower) it = it.follower;
+	return it;
 };
 
 State.prototype.run = function(opts) {
@@ -635,6 +646,7 @@ function historyMethod(method, loc, refer, opts) {
 	if (!refer) throw new Error("Missing referrer parameter");
 	var copy = Loc.parse(Loc.format(loc));
 	copy.referrer = refer;
+	refer.follower = copy;
 	if (!Loc.sameDomain(refer, copy)) {
 		// eslint-disable-next-line no-console
 		if (method == "replace") console.info("Cannot replace to a different origin");
