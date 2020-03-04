@@ -247,10 +247,7 @@ State.prototype.runChain = function(name) {
 	var chain = this.initChain(name);
 	debug("run chain", name);
 	chain.final = new Promise(function(resolve, reject) {
-		chain.done = function() {
-			delete chain.done;
-			resolve();
-		};
+		chain.done = resolve;
 		chain.fail = function(err) {
 			delete chain.done;
 			reject(err);
@@ -260,7 +257,9 @@ State.prototype.runChain = function(name) {
 	debug("run chain count", name, chain.count);
 	if (!chain.count) return;
 	return chain.promise.then(function() {
-		if (chain.done) return chain.done();
+		var done = chain.done;
+		delete chain.done;
+		if (done) return done();
 	})
 	.catch(chain.fail)
 	.then(function() {
