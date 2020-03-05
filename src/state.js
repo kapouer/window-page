@@ -12,11 +12,12 @@ var READY = "ready";
 var BUILD = "build";
 var PATCH = "patch";
 var SETUP = "setup";
+var PAINT = "paint";
 var CLOSE = "close";
 var ERROR = "error";
 var HASH = "hash";
-var Stages = [INIT, READY, BUILD, PATCH, SETUP, HASH, ERROR, CLOSE];
-var NodeEvents = [BUILD, PATCH, SETUP, HASH, CLOSE];
+var Stages = [INIT, READY, BUILD, PATCH, SETUP, PAINT, HASH, ERROR, CLOSE];
+var NodeEvents = [BUILD, PATCH, SETUP, PAINT, HASH, CLOSE];
 
 var queue;
 var uiQueue;
@@ -62,40 +63,38 @@ State.prototype.init = function(opts) {
 	};
 };
 
-State.prototype.setup = function(fn) {
-	return this.chain(SETUP, fn);
-};
-
-State.prototype.hash = function(fn) {
-	return this.chain(HASH, fn);
-};
-
 State.prototype.connect = function(listener, node) {
 	var methods = [];
 	if (!node) node = listener;
 	var proto = listener.constructor;
 	proto = proto === Object ? listener : proto.prototype;
 	Object.getOwnPropertyNames(proto).filter(function(name) {
-		if (name.startsWith('handle') && name != 'handleEvent') {
-			methods.push([name, name.slice(6).toLowerCase(), false]);
+		var all = false;
+		var key = name;
+		if (key.startsWith('handleAll') || key.startsWith('captureAll')) {
+			key = key.replace('All', '');
+			all = true;
+		}
+		if (key.startsWith('handle') && key != 'handleEvent') {
+			methods.push([all, name, key.slice(6).toLowerCase(), false]);
 		} else if (name.startsWith('capture') && name != 'captureEvent') {
-			methods.push([name, name.slice(7).toLowerCase(), true]);
+			methods.push([all, name, key.slice(7).toLowerCase(), true]);
 		}
 	});
-	if (methods.length) this.setup(function(state) {
+	if (methods.length) this.chain(SETUP, function(state) {
 		methods.forEach(function(name) {
-			name[3] = function(e) {
+			name[4] = function(e) {
 				var last = state;
 				while (last.follower) last = last.follower;
-				listener[name[0]].call(listener, e, last);
+				listener[name[1]].call(listener, e, last);
 			};
-			node.addEventListener(name[1], name[3], name[2]);
+			(name[0] ? window : node).addEventListener(name[2], name[4], name[3]);
 		});
 	});
 	var _close = listener.close;
 	listener.close = function() {
 		methods.forEach(function(name) {
-			node.removeEventListener(name[1], name[3], name[2]);
+			(name[0] ? window : node).removeEventListener(name[2], name[4], name[3]);
 		});
 		if (_close) return _close.apply(listener, Array.from(arguments));
 	};
@@ -206,6 +205,8 @@ function run(state, opts) {
 				if (!refer.stage || !samePathname) {
 					return state.runChain(SETUP);
 				}
+			}).then(function() {
+				return state.runChain(PAINT);
 			}).then(function() {
 				if (refer.stage && !samePathname) {
 					return refer.runChain(CLOSE);

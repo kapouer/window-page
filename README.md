@@ -17,7 +17,8 @@ Chains
 - ready, when imported document or original document is ready
 - build, fetch data and fill document if doc is not built or pathname has changed
 - patch, fetch additional data and update document if doc is not patched and query has changed
-- setup, when not prerendering, global listeners are not called when patch is called
+- setup, when not prerendering, called once per pathname change (or first view)
+- paint, when not prerendering, called after pathname or query changes (or first view)
 - hash, the location hash has changed, `state.hash` is set.
 - close, use it to clean what has been done in setup of referrer
 - error, a fatal error happened during page run, `state.error` is set.
@@ -201,6 +202,9 @@ To use "capture" listeners, just name the methods `capture<Type>` (new in 7.1.0)
 To use the same mecanism to manage event listener on another event emitter,
 pass that event emitter as second argument to `state.connect(listener, emitter)`.
 
+To simply handle or capture events on window,
+use `handleAll${Type}` or `captureAll${Type}`.
+
 These event listeners are automatically added during setup, and removed during
 close (or disconnect).
 
@@ -233,6 +237,9 @@ close() {
 }
 handleClick(e, state) {
   if (e.target.href) state.push(e.target.href);
+}
+handleAllClick(e, state) {
+  // deactivate something activated on click
 }
 ```
 
