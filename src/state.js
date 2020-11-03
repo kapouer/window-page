@@ -127,8 +127,8 @@ State.prototype.run = function(opts) {
 	return queue;
 };
 
-function prerender(ok) {
-	var root = document.documentElement;
+function prerender(ok, doc) {
+	var root = (doc || document).documentElement;
 	if (ok === undefined) ok = root.dataset.prerender == 'true';
 	else if (ok === true) root.setAttribute('data-prerender', 'true');
 	else if (ok === false) root.removeAttribute('data-prerender');
@@ -153,7 +153,7 @@ function run(state, opts) {
 	var vary = opts.vary;
 	if (vary === true) {
 		vary = BUILD;
-		prerender(false);
+		prerendered = false;
 	}
 	if (vary == BUILD) {
 		sameHash = sameQuery = samePathname = false;
@@ -174,8 +174,8 @@ function run(state, opts) {
 		delete state.emitter; // in case state had an emitter - shouldn't happen
 	}
 
-	Wait.dom().then(function() {
-		prerendered = prerender();
+	Wait.dom().then(function () {
+		if (prerendered == null) prerendered = prerender();
 		return state.runChain(INIT);
 	}).then(function() {
 		if (!samePathname || !prerendered) {
@@ -185,6 +185,7 @@ function run(state, opts) {
 		if (doc && doc != document) return load(state, doc);
 	}).then(function(doc) {
 		if (doc) prerendered = prerender();
+		prerender(true);
 		debug("prerendered", prerendered);
 		return state.runChain(READY);
 	}).then(function() {
@@ -193,7 +194,6 @@ function run(state, opts) {
 		if (!prerendered || !sameQuery) return state.runChain(PATCH);
 		else state.initChain(PATCH);
 	}).then(function() {
-		prerender(true);
 		// if multiple runs are made without ui,
 		// only the first refer is closed, and the last state is setup
 		if (!uiQueue) uiQueue = Wait.ui(refer);
