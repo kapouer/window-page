@@ -357,9 +357,11 @@ function chainListener(stage, fn) {
 }
 
 function runFn(stage, fn, state) {
-	if (fn[stage] && typeof fn[stage] == "function") {
+	var n = 'handle' + stage[0].toUpperCase() + stage.slice(1);
+	var meth = fn[n] || fn[stage];
+	if (meth && typeof meth == "function") {
 		if (stage == CLOSE) state.unchain(stage, fn);
-		return fn[stage](state);
+		return meth.call(fn, state);
 	} else if (typeof fn == "function") {
 		return fn(state);
 	} else {
