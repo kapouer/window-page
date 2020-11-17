@@ -357,7 +357,7 @@ function chainListener(stage, fn) {
 }
 
 function runFn(stage, fn, state) {
-	var n = 'handle' + stage[0].toUpperCase() + stage.slice(1);
+	var n = 'chain' + stage[0].toUpperCase() + stage.slice(1);
 	var meth = fn[n] || fn[stage];
 	if (meth && typeof meth == "function") {
 		if (stage == CLOSE) state.unchain(stage, fn);

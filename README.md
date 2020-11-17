@@ -123,7 +123,7 @@ current state as argument.
   Returns `state.queue` anyway.
 
 The fn parameter can be a function or an object with a `<chain>`, or
-a `handle<Chain>` method - which is a handy way to keep the value of `this`.
+a `chain<Chain>` method - which is a handy way to keep the value of `this`.
 
 Functions listening for a given stage are run serially.
 
