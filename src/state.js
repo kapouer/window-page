@@ -99,7 +99,7 @@ State.prototype.connect = function(listener, node) {
 		if (_close) return _close.apply(listener, Array.from(arguments));
 	};
 	NodeEvents.forEach(function(k) {
-		if (node[k]) this.chain(k, listener);
+		if (listener[k]) this.chain(k, listener);
 	}, this);
 };
 
