@@ -91,13 +91,14 @@ State.prototype.connect = function(listener, node) {
 			(name[0] ? window : node).addEventListener(name[2], name[4], name[3]);
 		});
 	});
-	var _close = listener.close;
-	listener.close = function() {
-		methods.forEach(function(name) {
-			(name[0] ? window : node).removeEventListener(name[2], name[4], name[3]);
-		});
-		if (_close) return _close.apply(listener, Array.from(arguments));
-	};
+	listener[CLOSE] = (function (close) {
+		return function () {
+			methods.forEach(function (name) {
+				(name[0] ? window : node).removeEventListener(name[2], name[4], name[3]);
+			});
+			if (close) return close.apply(listener, Array.from(arguments));
+		};
+	})(listener[CLOSE]);
 	NodeEvents.forEach(function(k) {
 		if (listener[k]) this.chain(k, listener);
 	}, this);
