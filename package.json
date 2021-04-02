@@ -31,16 +31,17 @@
   },
   "devDependencies": {
     "expect.js": "^0.3.1",
-    "express": "^4.14.0",
-    "express-dom": "^5.12.4",
-    "gport": "^1.1.0",
+    "express": "^4.17.1",
+    "express-dom": "^5.13.4",
+    "gport": "^1.1.1",
     "levenlistdiff": "^1.0.1",
-    "mocha": "^3.2.0",
-    "postinstall-browserify": "^0.6.0",
-    "request": "^2.79.0",
+    "mocha": "^8.3.2",
+    "postinstall": "^0.7.0",
+    "postinstall-browserify": "^0.7.0",
+    "request": "^2.88.2",
     "selenium-webdriver": "^3.0.1",
-    "webcomponents.js": "^0.7.23",
-    "webkitgtk": "^4.11.0",
-    "window-agent": "^1.0.1"
+    "webcomponents.js": "^0.7.24",
+    "webkitgtk": "^4.12.1",
+    "window-agent": "^1.2.0"
   }
 }
