@@ -331,6 +331,18 @@ State.prototype.finish = function(fn) {
 	return this;
 };
 
+State.prototype.stop = function() {
+	var stage = this.stage;
+	var chain = this.chains[stage];
+	if (!chain) {
+		// eslint-disable-next-line no-console
+		console.warn("state.stop must be called from chain listener");
+	} else {
+		chain.stop = true;
+	}
+	return this;
+};
+
 State.prototype.unchain = function(stage, fn) {
 	var ls = fn._pageListeners;
 	if (!ls) return;
@@ -345,10 +357,11 @@ function chainListener(stage, fn) {
 	return function(e) {
 		var state = e.detail;
 		var chain = state.chains[stage];
+		var stop = chain.stop;
 		if (chain.count == null) chain.count = 0;
 		chain.count++;
 		chain.promise = chain.promise.then(function() {
-			return runFn(stage, fn, state);
+			return !stop && runFn(stage, fn, state);
 		}).catch(function(err) {
 			// eslint-disable-next-line no-console
 			console.error("Page." + stage, err);

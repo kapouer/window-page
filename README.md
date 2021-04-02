@@ -136,6 +136,12 @@ To append a function at the end of the current chain, use:
   fn can return a promise.  
   To avoid deadlocks, fn must not return calls to state history methods.
 
+To stop further chain processing, use:
+
+- state.stop()
+
+Once stopped a chain cannot be restarted.
+
 Listeners are bound to `document.currentScript`:
 - if it is set, listeners are bound to it and are removed as the node itself is.  
   Script node removal can happen when loading a new document.
