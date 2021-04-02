@@ -17,7 +17,7 @@ var CLOSE = "close";
 var ERROR = "error";
 var HASH = "hash";
 var Stages = [INIT, READY, BUILD, PATCH, SETUP, PAINT, HASH, ERROR, CLOSE];
-var NodeEvents = [BUILD, PATCH, SETUP, PAINT, HASH, CLOSE];
+var NodeEvents = [BUILD, PATCH, SETUP, PAINT, HASH];
 
 var queue;
 var uiQueue;
@@ -106,11 +106,9 @@ State.prototype.connect = function(listener, node) {
 
 State.prototype.disconnect = function(listener) {
 	NodeEvents.forEach(function(k) {
-		if (listener[k]) {
-			if (k == CLOSE) this.chain(k, listener);
-			else this.unchain(k, listener);
-		}
+		if (listener[k]) this.unchain(k, listener);
 	}, this);
+	if (listener[CLOSE]) this.chain(CLOSE, listener);
 };
 
 State.prototype.run = function(opts) {
@@ -200,18 +198,18 @@ function run(state, opts) {
 		if (!uiQueue) uiQueue = Wait.ui(refer);
 		uiQueue.fn = function(refer) {
 			uiQueue = null;
-			return Promise.resolve().then(function() {
+			return Promise.resolve().then(function () {
 				window.removeEventListener('popstate', refer);
+				if (refer.stage && !samePathname) {
+					return refer.runChain(CLOSE);
+				}
+			}).then(function() {
 				window.addEventListener('popstate', state);
 				if (!refer.stage || !samePathname) {
 					return state.runChain(SETUP);
 				}
 			}).then(function() {
 				return state.runChain(PAINT);
-			}).then(function() {
-				if (refer.stage && !samePathname) {
-					return refer.runChain(CLOSE);
-				}
 			}).then(function() {
 				if (!sameHash) return state.runChain(HASH);
 			});
@@ -665,6 +663,7 @@ function historySave(method, state) {
 function historyMethod(method, loc, refer, opts) {
 	if (!refer) throw new Error("Missing referrer parameter");
 	var copy = Loc.parse(Loc.format(loc));
+	refer.save();
 	copy.referrer = refer;
 	refer.follower = copy;
 	if (!Loc.sameDomain(refer, copy)) {
