@@ -94,4 +94,8 @@ Please use `Page.connect(listener, window)` instead.
 Breaking change:
 state.referrer is not related to document.referrer.
 
+11.0.0
+------
 
+Breaking change:
+Referrer's CLOSE chain is called before current SETUP chain.
