@@ -147,7 +147,9 @@ function searchToQuery(obj) {
 
 function queryToSearch(query, obj, prefix) {
 	if (!obj) obj = new URLSearchParams();
-	Object.keys(query).forEach(function(key) {
+	Object.keys(query).sort(function (a, b) {
+		return a[0].localeCompare(b[0]);
+	}).forEach(function(key) {
 		var val = query[key];
 		if (prefix) key = prefix + '.' + key;
 		if (!Array.isArray(val)) val = [val];
@@ -162,13 +164,5 @@ function queryToSearch(query, obj, prefix) {
 }
 
 function queryToString(query) {
-	var obj = queryToSearch(query);
-	var list = Array.from(obj.entries()).sort(function(a, b) {
-		return a[0].localeCompare(b[0]);
-	});
-	var sorted = new URLSearchParams();
-	list.forEach(function(pair) {
-		sorted.append(pair[0], pair[1]);
-	});
-	return sorted.toString();
+	return queryToSearch(query).toString();
 }
