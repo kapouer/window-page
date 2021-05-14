@@ -262,7 +262,7 @@ State.prototype.runChain = function(name) {
 	this.emit("page" + name);
 	debug("run chain count", name, chain.count);
 	if (!chain.count) return;
-	return chain.promise.then(function() {
+	return chain.promise.then(function () {
 		var done = chain.done;
 		delete chain.done;
 		if (done) return done();
