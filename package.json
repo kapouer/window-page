@@ -43,5 +43,9 @@
     "webcomponents.js": "^0.7.24",
     "webkitgtk": "^4.12.1",
     "window-agent": "^1.2.0"
+  },
+  "mocha": {
+    "spec": "test/*.js",
+    "exit": true
   }
 }
