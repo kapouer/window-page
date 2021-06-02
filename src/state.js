@@ -41,6 +41,8 @@ State.prototype.init = function(opts) {
 	var state = this;
 	if (opts.data) Object.assign(this.data, opts.data);
 
+	this.emitter = document.createElement('div');
+
 	Stages.forEach(function(stage) {
 		W[stage] = function(fn) {
 			return state.chain(stage, fn);
@@ -171,8 +173,6 @@ function run(state, opts) {
 		['chains', 'emitter', 'ui', 'data'].forEach(function(key) {
 			if (refer[key] != null) state[key] = refer[key];
 		});
-	} else {
-		delete state.emitter; // in case state had an emitter - shouldn't happen
 	}
 
 	Wait.dom().then(function () {
@@ -280,11 +280,7 @@ State.prototype.chain = function(stage, fn) {
 	var ls = fn._pageListeners;
 	if (!ls) ls = fn._pageListeners = {};
 	var lfn = ls[stage];
-	var emitter = document.currentScript;
-	if (!emitter) {
-		emitter = state.emitter;
-		if (!emitter) emitter = state.emitter = document.createElement('div');
-	}
+	var emitter = typeof fn == "function" && document.currentScript || state.emitter;
 
 	if (!lfn) {
 		lfn = ls[stage] = {

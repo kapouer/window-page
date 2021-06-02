@@ -136,12 +136,13 @@ To stop further chain processing, use:
 
 Once stopped a chain cannot be restarted.
 
-Listeners are bound to `document.currentScript`:
+Chains are implemented through native DOM emitters and listeners, and the
+emitter is either:
 
-- if it is set, listeners are bound to it and are removed as the node itself is.
-  Script node removal can happen when loading a new document.
-- if it is not set, the listener is bound to current state: next state will just
-  drop it.
+- `document.currentScript` when it exists and when the registered listener is a function. It has the advantage of recycling listeners when the corresponding node changes, for examples when loading a new document.
+- `state.emitter`, in all other cases, which is bound to a specific state.
+Note that `state.emitter` is kept when the referrer has same pathname, and
+discarded otherwise.
 
 ### state
 
