@@ -30,6 +30,7 @@
     "url": "https://github.com/kapouer/window-page/issues"
   },
   "devDependencies": {
+    "@kapouer/eslint-config": "^1.2.1",
     "expect.js": "^0.3.1",
     "express": "^4.17.1",
     "express-dom": "^5.13.4",
@@ -47,5 +48,12 @@
   "mocha": {
     "spec": "test/*.js",
     "exit": true
+  },
+  "eslintConfig": {
+    "extends": "@kapouer/eslint-config",
+    "env": {
+      "browser": true,
+      "mocha": true
+    }
   }
 }
