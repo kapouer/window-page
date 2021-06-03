@@ -1,4 +1,5 @@
 var State = require('./state');
+var Query = require('./query');
 
 exports.parse = function(str) {
 	var dloc = document.location;
@@ -13,7 +14,7 @@ exports.parse = function(str) {
 	var obj = new State();
 	if (loc.referrer) obj.referrer = loc.referrer;
 	obj.pathname = loc.pathname;
-	obj.query = loc.query ? Object.assign({}, loc.query) : searchToQuery(loc.search);
+	obj.query = loc.query ? Object.assign({}, loc.query) : Query.parse(loc.search);
 	if (!obj.pathname) obj.pathname = "/";
 	else if (obj.pathname[0] != "/") obj.pathname = "/" + obj.pathname;
 
@@ -51,7 +52,7 @@ exports.format = function(obj) {
 		delete obj.path;
 	}
 	var qstr;
-	if (obj.query) qstr = queryToString(obj.query);
+	if (obj.query) qstr = Query.format(obj.query);
 	else if (obj.search) qstr = obj.search[0] == "?" ? obj.search.substring(1) : obj.search;
 	obj.search = qstr;
 
@@ -98,9 +99,9 @@ exports.samePathname = function(a, b) {
 exports.sameQuery = function(a, b) {
 	if (typeof a == "string") a = exports.parse(a);
 	if (typeof b == "string") b = exports.parse(b);
-	var aquery = searchToQuery(a.query || a.search);
-	var bquery = searchToQuery(b.query || b.search);
-	return queryToString(aquery) == queryToString(bquery);
+	var aquery = Query.parse(a.query || a.search);
+	var bquery = Query.parse(b.query || b.search);
+	return Query.format(aquery) == Query.format(bquery);
 };
 
 exports.samePath = function(a, b) {
@@ -122,47 +123,4 @@ function canonPort(obj) {
 	} else {
 		return ':' + port;
 	}
-}
-
-function searchToQuery(obj) {
-	var query = {};
-	if (typeof obj == "string") {
-		obj = new URLSearchParams(obj);
-	}
-	if (obj != null && obj.forEach) {
-		obj.forEach(function(val, key) {
-			var cur = query[key];
-			if (cur) {
-				if (Array.isArray(cur)) cur.push(val);
-				else query[key] = [cur, val];
-			} else {
-				query[key] = val;
-			}
-		});
-	} else {
-		query = obj;
-	}
-	return query;
-}
-
-function queryToSearch(query, obj, prefix) {
-	if (!obj) obj = new URLSearchParams();
-	Object.keys(query).sort(function (a, b) {
-		return a[0].localeCompare(b[0]);
-	}).forEach(function(key) {
-		var val = query[key];
-		if (prefix) key = prefix + '.' + key;
-		if (!Array.isArray(val)) val = [val];
-		val.forEach(function(val) {
-			if (val === undefined) return;
-			if (val == null) val = '';
-			if (typeof val == "object") queryToSearch(val, obj, key);
-			else obj.append(key, val);
-		});
-	});
-	return obj;
-}
-
-function queryToString(query) {
-	return queryToSearch(query).toString();
 }
