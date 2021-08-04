@@ -213,6 +213,7 @@ connectedCallback() {
   Page.connect(this);
 }
 disconnectedCallback() {
+  // will call close asap, unlike close chain
   Page.disconnect(this);
 }
 patch(state) {
