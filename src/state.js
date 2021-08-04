@@ -109,10 +109,10 @@ State.prototype.connect = function(listener, node) {
 State.prototype.disconnect = function(listener) {
 	NodeEvents.forEach(function(k) {
 		if (listener[k]) {
-			if (k == CLOSE) this.chain(k, listener);
-			else this.unchain(k, listener);
+			this.unchain(k, listener);
 		}
 	}, this);
+	if (listener.close) listener.close(this);
 };
 
 State.prototype.run = function(opts) {
