@@ -1,4 +1,4 @@
-Page.route(function(state) {
+Page.route(function (state) {
 	window.doc1 = `<!DOCTYPE html>
 	<html lang="en">
 	<head>

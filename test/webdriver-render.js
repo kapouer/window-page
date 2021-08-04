@@ -3,17 +3,17 @@ if (!process.env.WEBDRIVER) {
 	return;
 }
 
-var expect = require('expect.js');
-var express = require('express');
-var webdriver = require("selenium-webdriver");
-var project = require('../package.json').name;
-var getPort = require('gport');
-var request = require('request');
+const expect = require('expect.js');
+const express = require('express');
+const webdriver = require("selenium-webdriver");
+const project = require('../package.json').name;
+const getPort = require('gport');
+const request = require('request');
 
-var host = "http://localhost";
+const host = "http://localhost";
 
 function getEnvCaps() {
-	var envCaps = process.env.WEBDRIVER;
+	let envCaps = process.env.WEBDRIVER;
 	if (!envCaps) return {};
 	try {
 		envCaps = eval('(function() { return {' + envCaps + '};})();');
@@ -25,28 +25,27 @@ function getEnvCaps() {
 }
 
 function getBrowser() {
-	var browser;
-	var prefs = new webdriver.logging.Preferences();
+	const prefs = new webdriver.logging.Preferences();
 	prefs.setLevel(webdriver.logging.Type.BROWSER, webdriver.logging.Level.DEBUG);
 
 	return new webdriver.Builder()
-	.usingServer(process.env.WEBDRIVER_SERVER || 'http://hub-cloud.browserstack.com/wd/hub')
-	.withCapabilities(Object.assign({
-		'browserstack.user': process.env.BROWSERSTACK_USER,
-		'browserstack.key': process.env.BROWSERSTACK_ACCESS_KEY,
-		'tunnel-identifier': process.env.TRAVIS_JOB_NUMBER,
-		build: process.env.TRAVIS_BUILD_NUMBER,
-		acceptSslCerts: true,
-		browserConnectionEnabled: true,
-		newtworkConnectionEnabled: true,
-		project: project,
-		"browserstack.debug": true,
-		"browserstack.local": process.env.BROWSERSTACK_LOCAL,
-		"browserstack.video": false,
-		"browserstack.localIdentifier": process.env.BROWSERSTACK_LOCAL_IDENTIFIER
-	}, getEnvCaps()))
-	.setLoggingPrefs(prefs)
-	.build();
+		.usingServer(process.env.WEBDRIVER_SERVER || 'http://hub-cloud.browserstack.com/wd/hub')
+		.withCapabilities(Object.assign({
+			'browserstack.user': process.env.BROWSERSTACK_USER,
+			'browserstack.key': process.env.BROWSERSTACK_ACCESS_KEY,
+			'tunnel-identifier': process.env.TRAVIS_JOB_NUMBER,
+			build: process.env.TRAVIS_BUILD_NUMBER,
+			acceptSslCerts: true,
+			browserConnectionEnabled: true,
+			newtworkConnectionEnabled: true,
+			project: project,
+			"browserstack.debug": true,
+			"browserstack.local": process.env.BROWSERSTACK_LOCAL,
+			"browserstack.video": false,
+			"browserstack.localIdentifier": process.env.BROWSERSTACK_LOCAL_IDENTIFIER
+		}, getEnvCaps()))
+		.setLoggingPrefs(prefs)
+		.build();
 }
 
 function testPageForStrings(browser, url, strings) {
@@ -63,11 +62,11 @@ function testPageForStrings(browser, url, strings) {
 
 describe("Rendering", function suite() {
 	this.timeout(360000); // some browser VM can be slow
-	var server, base, browser;
+	let server, base, browser;
 
 	before(function(done) {
 		browser = getBrowser();
-		var app = express();
+		const app = express();
 		app.set('views', __dirname + '/public');
 		app.get('*', express.static(app.get('views')));
 		getPort(9901, function(port) {
@@ -82,13 +81,13 @@ describe("Rendering", function suite() {
 	});
 
 	after(function() {
-		var status = this.test.parent.tests.every(function(test) {
+		const status = this.test.parent.tests.every(function(test) {
 			return test.state == "passed";
 		}) ? "completed" : "error";
 		server.close();
 		return browser.getSession().then(function(session) {
-			var bsUrl = `https://www.browserstack.com/automate/sessions/${session.getId()}.json`;
-			return new Promise(function(resolve, reject) {
+			const bsUrl = `https://www.browserstack.com/automate/sessions/${session.getId()}.json`;
+			return new Promise(function (resolve) {
 				console.info("Notifying browserstack", status, bsUrl);
 				request.put({
 					url: bsUrl,
@@ -101,12 +100,12 @@ describe("Rendering", function suite() {
 						user: process.env.BROWSERSTACK_USER,
 						pass: process.env.BROWSERSTACK_ACCESS_KEY
 					}
-				}, function(err, res, body) {
+				}, function (err, res, body) {
 					console.info("Response", res.statusCode, body);
 					if (err) console.error(err);
 					resolve();
 				});
-			})
+			});
 		}).then(function() {
 			return browser.quit();
 		});

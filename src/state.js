@@ -1,33 +1,33 @@
-var Utils = require('./utils');
-var Loc = require('./loc');
-var Wait = require('./wait');
-var Diff = require('levenlistdiff');
-var P = Utils.P;
-var debug = Utils.debug;
+const Utils = require('./utils');
+const Loc = require('./loc');
+const Wait = require('./wait');
+const Diff = require('levenlistdiff');
+const P = Utils.P;
+const debug = Utils.debug;
 
 module.exports = State;
 
-var INIT = "init";
-var READY = "ready";
-var BUILD = "build";
-var PATCH = "patch";
-var SETUP = "setup";
-var PAINT = "paint";
-var CLOSE = "close";
-var ERROR = "error";
-var HASH = "hash";
-var Stages = [INIT, READY, BUILD, PATCH, SETUP, PAINT, HASH, ERROR, CLOSE];
-var NodeEvents = [BUILD, PATCH, SETUP, PAINT, HASH, CLOSE];
+const INIT = "init";
+const READY = "ready";
+const BUILD = "build";
+const PATCH = "patch";
+const SETUP = "setup";
+const PAINT = "paint";
+const CLOSE = "close";
+const ERROR = "error";
+const HASH = "hash";
+const Stages = [INIT, READY, BUILD, PATCH, SETUP, PAINT, HASH, ERROR, CLOSE];
+const NodeEvents = [BUILD, PATCH, SETUP, PAINT, HASH, CLOSE];
 
-var queue;
-var uiQueue;
+let queue;
+let uiQueue;
 
 function State() {
 	this.data = {};
 	this.ui = {};
 	this.chains = {};
 	this.query = {};
-	var ok, fail;
+	let ok, fail;
 	this.queue = new Promise(function(resolve, reject) {
 		ok = resolve;
 		fail = reject;
@@ -37,8 +37,8 @@ function State() {
 }
 
 State.prototype.init = function(opts) {
-	var W = State.Page;
-	var state = this;
+	const W = State.Page;
+	const state = this;
 	if (opts.data) Object.assign(this.data, opts.data);
 
 	this.emitter = document.createElement('div');
@@ -60,19 +60,19 @@ State.prototype.init = function(opts) {
 		state.connect(listener, node);
 	};
 
-	W.disconnect = function(listener) {
+	W.disconnect = function (listener) {
 		state.disconnect(listener);
 	};
 };
 
 State.prototype.connect = function(listener, node) {
-	var methods = [];
+	const methods = [];
 	if (!node) node = listener;
-	var proto = listener.constructor;
+	let proto = listener.constructor;
 	proto = proto === Object ? listener : proto.prototype;
 	Object.getOwnPropertyNames(proto).filter(function(name) {
-		var all = false;
-		var key = name;
+		let all = false;
+		let key = name;
 		if (key.startsWith('handleAll') || key.startsWith('captureAll')) {
 			key = key.replace('All', '');
 			all = true;
@@ -86,7 +86,7 @@ State.prototype.connect = function(listener, node) {
 	if (methods.length) this.chain(SETUP, function(state) {
 		methods.forEach(function(name) {
 			name[4] = function(e) {
-				var last = state;
+				let last = state;
 				while (last.follower) last = last.follower;
 				listener[name[1]].call(listener, e, last);
 			};
@@ -106,7 +106,7 @@ State.prototype.connect = function(listener, node) {
 	}, this);
 };
 
-State.prototype.disconnect = function(listener) {
+State.prototype.disconnect = function (listener) {
 	NodeEvents.forEach(function(k) {
 		if (listener[k]) {
 			this.unchain(k, listener);
@@ -116,7 +116,7 @@ State.prototype.disconnect = function(listener) {
 };
 
 State.prototype.run = function(opts) {
-	var state = this;
+	const state = this;
 	if (queue) {
 		queue = queue.then(function() {
 			return state.run(opts);
@@ -131,7 +131,7 @@ State.prototype.run = function(opts) {
 };
 
 function prerender(ok, doc) {
-	var root = (doc || document).documentElement;
+	const root = (doc || document).documentElement;
 	if (ok === undefined) ok = root.dataset.prerender == 'true';
 	else if (ok === true) root.setAttribute('data-prerender', 'true');
 	else if (ok === false) root.removeAttribute('data-prerender');
@@ -141,7 +141,7 @@ function prerender(ok, doc) {
 function run(state, opts) {
 	if (!opts) opts = {};
 	state.init(opts);
-	var refer = state.referrer;
+	let refer = state.referrer;
 
 	if (!refer) {
 		debug("new referrer");
@@ -152,8 +152,8 @@ function run(state, opts) {
 		throw new Error("state and referrer should be distinct");
 	}
 
-	var prerendered, samePathname, sameQuery, sameHash;
-	var vary = opts.vary;
+	let prerendered, samePathname, sameQuery, sameHash;
+	let vary = opts.vary;
 	if (vary === true) {
 		vary = BUILD;
 		prerendered = false;
@@ -228,7 +228,7 @@ function run(state, opts) {
 }
 
 State.prototype.emit = function(name) {
-	var e = new CustomEvent(name, {
+	const e = new CustomEvent(name, {
 		view: window,
 		bubbles: true,
 		cancelable: true,
@@ -241,7 +241,7 @@ State.prototype.emit = function(name) {
 };
 
 State.prototype.initChain = function(name) {
-	var chain = this.chains[name];
+	let chain = this.chains[name];
 	if (!chain) chain = this.chains[name] = {};
 	chain.count = 0;
 	chain.promise = P();
@@ -250,7 +250,7 @@ State.prototype.initChain = function(name) {
 
 State.prototype.runChain = function(name) {
 	this.stage = name;
-	var chain = this.initChain(name);
+	const chain = this.initChain(name);
 	debug("run chain", name);
 	chain.final = new Promise(function(resolve, reject) {
 		chain.done = resolve;
@@ -263,24 +263,24 @@ State.prototype.runChain = function(name) {
 	debug("run chain count", name, chain.count);
 	if (!chain.count) return;
 	return chain.promise.then(function () {
-		var done = chain.done;
+		const done = chain.done;
 		delete chain.done;
 		if (done) return done();
 	})
-	.catch(chain.fail)
-	.then(function() {
-		return chain.final;
-	});
+		.catch(chain.fail)
+		.then(function() {
+			return chain.final;
+		});
 };
 
 
 State.prototype.chain = function(stage, fn) {
 	if (!fn) throw new Error("Missing function or listener");
-	var state = this;
-	var ls = fn._pageListeners;
+	const state = this;
+	let ls = fn._pageListeners;
 	if (!ls) ls = fn._pageListeners = {};
-	var lfn = ls[stage];
-	var emitter = typeof fn == "function" && document.currentScript || state.emitter;
+	let lfn = ls[stage];
+	const emitter = typeof fn == "function" && document.currentScript || state.emitter;
 
 	if (!lfn) {
 		lfn = ls[stage] = {
@@ -291,8 +291,8 @@ State.prototype.chain = function(stage, fn) {
 	} else {
 		debug("already chained", stage, fn);
 	}
-	var p = P();
-	var chain = this.chains[stage];
+	let p = P();
+	const chain = this.chains[stage];
 	if (!chain) {
 		debug("chain pending", stage);
 	} else if (chain.count && chain.done) {
@@ -313,9 +313,9 @@ State.prototype.chain = function(stage, fn) {
 };
 
 State.prototype.finish = function(fn) {
-	var state = this;
-	var stage = this.stage;
-	var chain = this.chains[stage];
+	const state = this;
+	const stage = this.stage;
+	const chain = this.chains[stage];
 	if (!chain) {
 		// eslint-disable-next-line no-console
 		console.warn("state.finish must be called from chain listener");
@@ -328,8 +328,8 @@ State.prototype.finish = function(fn) {
 };
 
 State.prototype.stop = function() {
-	var stage = this.stage;
-	var chain = this.chains[stage];
+	const stage = this.stage;
+	const chain = this.chains[stage];
 	if (!chain) {
 		// eslint-disable-next-line no-console
 		console.warn("state.stop must be called from chain listener");
@@ -340,9 +340,9 @@ State.prototype.stop = function() {
 };
 
 State.prototype.unchain = function(stage, fn) {
-	var ls = fn._pageListeners;
+	const ls = fn._pageListeners;
 	if (!ls) return;
-	var lfn = ls[stage];
+	const lfn = ls[stage];
 	if (!lfn) return;
 	delete ls[stage];
 	lfn.em.removeEventListener('page' + stage, lfn.fn);
@@ -351,9 +351,9 @@ State.prototype.unchain = function(stage, fn) {
 
 function chainListener(stage, fn) {
 	return function(e) {
-		var state = e.detail;
-		var chain = state.chains[stage];
-		var stop = chain.stop;
+		const state = e.detail;
+		const chain = state.chains[stage];
+		const stop = chain.stop;
 		if (chain.count == null) chain.count = 0;
 		chain.count++;
 		chain.promise = chain.promise.then(function() {
@@ -367,8 +367,8 @@ function chainListener(stage, fn) {
 }
 
 function runFn(stage, fn, state) {
-	var n = 'chain' + stage[0].toUpperCase() + stage.slice(1);
-	var meth = fn[n] || fn[stage];
+	const n = 'chain' + stage[0].toUpperCase() + stage.slice(1);
+	const meth = fn[n] || fn[stage];
 	if (meth && typeof meth == "function") {
 		if (stage == CLOSE) state.unchain(stage, fn);
 		return meth.call(fn, state);
@@ -385,10 +385,10 @@ function load(state, doc) {
 	if (!doc.documentElement || !doc.querySelector) {
 		throw new Error("Router should return a document with a documentElement");
 	}
-	var states = {};
-	var selector = 'script:not([type]),script[type="text/javascript"],link[rel="import"]';
+	const states = {};
+	const selector = 'script:not([type]),script[type="text/javascript"],link[rel="import"]';
 	Utils.all(document, selector).forEach(function(node) {
-		var src = node.src || node.href;
+		const src = node.src || node.href;
 		if (src) states[src] = true;
 	});
 
@@ -399,7 +399,7 @@ function load(state, doc) {
 	// imports nor does it let them run on insert
 	// if there is native support then it's like other resources.
 
-	var nodes = Utils.all(doc, selector);
+	const nodes = Utils.all(doc, selector);
 
 	nodes.forEach(function(node) {
 		// just preload everything
@@ -409,10 +409,10 @@ function load(state, doc) {
 			node.setAttribute('rel', 'none');
 			if (!node.import) return; // polyfill already do preloading
 		}
-		var src = node.src || node.href;
+		const src = node.src || node.href;
 		if (!src) return;
 		if (states[src] === true) return;
-		var loc = Loc.parse(src);
+		const loc = Loc.parse(src);
 		if (loc.protocol == "data:") return;
 		if (Loc.sameDomain(loc, state)) states[src] = Utils.get(src, 400).then(function() {
 			debug("preloaded", src);
@@ -422,17 +422,17 @@ function load(state, doc) {
 	});
 
 	function loadNode(node) {
-		var p = P();
-		var src = node.src || node.href;
-		var state = states[src];
-		var old = state === true;
-		var loader = !old && state;
+		let p = P();
+		const src = node.src || node.href;
+		const state = states[src];
+		const old = state === true;
+		const loader = !old && state;
 		if (loader) {
 			p = p.then(loader);
 		}
 		return p.then(function() {
-			var parent = node.parentNode;
-			var cursor;
+			const parent = node.parentNode;
+			let cursor;
 			if (!old) {
 				cursor = document.createTextNode("");
 				parent.insertBefore(cursor, node);
@@ -444,12 +444,12 @@ function load(state, doc) {
 				node.removeAttribute('type');
 			}
 			if (old) return;
-			var copy = document.createElement(node.nodeName);
-			for (var i=0; i < node.attributes.length; i++) {
+			const copy = document.createElement(node.nodeName);
+			for (let i = 0; i < node.attributes.length; i++) {
 				copy.setAttribute(node.attributes[i].name, node.attributes[i].value);
 			}
 			if (node.textContent) copy.textContent = node.textContent;
-			var rp;
+			let rp;
 			if (src) {
 				debug("async node loading", src);
 				if (node.nodeName == "LINK" && !node.import) {
@@ -469,16 +469,16 @@ function load(state, doc) {
 		});
 	}
 
-	var root = document.documentElement;
-	var nroot = document.adoptNode(doc.documentElement);
-	var head = nroot.querySelector('head');
-	var body = nroot.querySelector('body');
+	const root = document.documentElement;
+	const nroot = document.adoptNode(doc.documentElement);
+	const head = nroot.querySelector('head');
+	const body = nroot.querySelector('body');
 
 	state.updateAttributes(root, nroot);
 
-	var parallels = Wait.styles(head, document.head);
-	var serials = Utils.all(nroot, 'script[type="none"],link[rel="none"]');
-	var oldstyles = [];
+	const parallels = Wait.styles(head, document.head);
+	const serials = Utils.all(nroot, 'script[type="none"],link[rel="none"]');
+	let oldstyles = [];
 
 	return P().then(function() {
 		oldstyles = state.mergeHead(head, document.head);
@@ -492,7 +492,7 @@ function load(state, doc) {
 			node.remove();
 		});
 		// scripts must be run in order
-		var p = P();
+		let p = P();
 		serials.forEach(function(node) {
 			p = p.then(function() {
 				return loadNode(node);
@@ -506,34 +506,34 @@ function load(state, doc) {
 
 State.prototype.mergeHead = function(node) {
 	this.updateAttributes(document.head, node);
-	var from = document.head;
-	var to = node;
-	var collect = [];
+	const from = document.head;
+	const to = node;
+	const collect = [];
 	Diff(from.children, to.children, function(node) {
-		var key = node.src || node.href;
+		const key = node.src || node.href;
 		if (key) return node.nodeName + '_' + key;
 		else return node.outerHTML;
 	}).forEach(function(patch) {
-		var node = from.children[patch.index];
+		const node = from.children[patch.index];
 		switch (patch.type) {
-		case Diff.INSERTION:
-			from.insertBefore(patch.item, node);
-			break;
-		case Diff.SUBSTITUTION:
-			if (node.nodeName == "LINK" && node.rel == "stylesheet") {
+			case Diff.INSERTION:
 				from.insertBefore(patch.item, node);
-				collect.push(node);
-			} else {
-				from.replaceChild(patch.item, node);
-			}
-			break;
-		case Diff.DELETION:
-			if (node.nodeName == "LINK" && node.rel == "stylesheet") {
-				collect.push(node);
-			} else {
-				node.remove();
-			}
-			break;
+				break;
+			case Diff.SUBSTITUTION:
+				if (node.nodeName == "LINK" && node.rel == "stylesheet") {
+					from.insertBefore(patch.item, node);
+					collect.push(node);
+				} else {
+					from.replaceChild(patch.item, node);
+				}
+				break;
+			case Diff.DELETION:
+				if (node.nodeName == "LINK" && node.rel == "stylesheet") {
+					collect.push(node);
+				} else {
+					node.remove();
+				}
+				break;
 		}
 	});
 	return collect;
@@ -544,12 +544,12 @@ State.prototype.mergeBody = function(node) {
 };
 
 State.prototype.updateAttributes = function(from, to) {
-	var map = {};
+	const map = {};
 	Array.from(to.attributes).forEach(function(att) {
 		map[att.name] = att.value;
 	});
 	Array.from(from.attributes).forEach(function(att) {
-		var val = map[att.name];
+		const val = map[att.name];
 		if (val === undefined) {
 			from.removeAttribute(att.name);
 		} else if (val != att.value) {
@@ -557,7 +557,7 @@ State.prototype.updateAttributes = function(from, to) {
 		}
 		delete map[att.name];
 	});
-	for (var name in map) from.setAttribute(name, map[name]);
+	for (const name in map) from.setAttribute(name, map[name]);
 };
 
 State.prototype.replace = function(loc, opts) {
@@ -572,7 +572,7 @@ State.prototype.reload = function(opts) {
 	debug("reload");
 	if (!opts) opts = {};
 	else if (opts === true) opts = {vary: true};
-	var vary = opts.vary;
+	let vary = opts.vary;
 	if (vary == null) {
 		if (this.chains.build && this.chains.build.count) {
 			vary = BUILD;
@@ -595,14 +595,14 @@ State.prototype.copy = function() {
 };
 
 State.prototype.router = function() {
-	var refer = this.referrer;
+	const refer = this.referrer;
 	if (!refer.stage) {
 		debug("Default router starts after navigation");
 		return;
 	}
-	var url = Loc.format(this);
+	const url = Loc.format(this);
 	return Utils.get(url, 500, 'text/html').then(function(client) {
-		var doc;
+		let doc;
 		if (client.status >= 200) {
 			doc = Utils.createDoc(client.responseText);
 			if (client.status >= 400 && (!doc.body || doc.body.children.length == 0)) {
@@ -617,12 +617,12 @@ State.prototype.router = function() {
 State.prototype.handleEvent = function(e) {
 	if (e.type == "popstate") {
 		debug("history event from", this.pathname, this.query, "to", e.state && e.state.href || null);
-		var state = stateFrom(e.state) || Loc.parse();
+		const state = stateFrom(e.state) || Loc.parse();
 		state.referrer = this;
 		state.run().catch(function(err) {
 			// eslint-disable-next-line no-console
 			console.error(err);
-			var url = Loc.format(state);
+			const url = Loc.format(state);
 			setTimeout(function() {
 				document.location.replace(url);
 			}, 50);
@@ -644,7 +644,7 @@ function stateTo(state) {
 
 function stateFrom(from) {
 	if (!from || !from.href) return;
-	var state = Loc.parse(from.href);
+	const state = Loc.parse(from.href);
 	delete from.href;
 	Object.assign(state, from);
 	return state;
@@ -652,7 +652,7 @@ function stateFrom(from) {
 
 function historySave(method, state) {
 	if (!window.history) return false;
-	var to = stateTo(state);
+	const to = stateTo(state);
 	debug("history", method, to);
 	window.history[method + 'State'](to, document.title, to.href);
 	return true;
@@ -660,7 +660,7 @@ function historySave(method, state) {
 
 function historyMethod(method, loc, refer, opts) {
 	if (!refer) throw new Error("Missing referrer parameter");
-	var copy = Loc.parse(Loc.format(loc));
+	const copy = Loc.parse(Loc.format(loc));
 	copy.referrer = refer;
 	refer.follower = copy;
 	if (!Loc.sameDomain(refer, copy)) {
@@ -675,7 +675,7 @@ function historyMethod(method, loc, refer, opts) {
 	}).catch(function(err) {
 		// eslint-disable-next-line no-console
 		console.error(err);
-		var url = Loc.format(copy);
+		const url = Loc.format(copy);
 		setTimeout(function() {
 			if (method == "replace") document.location.replace(url);
 			else document.location.assign(url);

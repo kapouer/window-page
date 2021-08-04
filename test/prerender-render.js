@@ -3,18 +3,18 @@ if (process.env.WEBDRIVER) {
 	return;
 }
 
-var expect = require('expect.js');
-var request = require('request');
-var express = require('express');
-var dom = require('express-dom');
-var Web = require('webkitgtk');
+const expect = require('expect.js');
+const request = require('request');
+const express = require('express');
+const dom = require('express-dom');
+const Web = require('webkitgtk');
 
 dom.settings.stall = 5000;
 dom.settings.allow = 'all';
 dom.settings.timeout = 10000;
 dom.settings.console = true;
 
-var renderPlugins = [
+const renderPlugins = [
 	debugPlugin,
 	dom.plugins.redirect,
 	dom.plugins.referrer,
@@ -25,16 +25,16 @@ function debugPlugin(page, settings, req) {
 	if (!settings.scripts) settings.scripts = [];
 	if (process.env.DEBUG) {
 		if (req) {
-			settings.scripts.push(function(n) {
+			settings.scripts.push(function() {
 				window.debug = console.error.bind(console, '*');
 			});
 		} else {
-			settings.scripts.push(function(n) {
+			settings.scripts.push(function() {
 				window.debug = console.error.bind(console);
 			});
 		}
 	} else {
-		settings.scripts.push(function(n) {
+		settings.scripts.push(function() {
 			window.debug = function() {};
 		});
 	}
@@ -44,7 +44,7 @@ function Render(url, opts) {
 	if (!opts) opts = {};
 	return new Promise(function(resolve, reject) {
 		Web(function(err, page) {
-			var settings = {
+			const settings = {
 				stallTimeout: 1000,
 				console: true,
 				navigation: true
@@ -64,15 +64,15 @@ function Render(url, opts) {
 	});
 }
 
-var host = "http://localhost";
+const host = "http://localhost";
 
 
 describe("Two-phase rendering", function suite() {
 	this.timeout(3000);
-	var server, port;
+	let server, port;
 
 	before(function(done) {
-		var app = express();
+		const app = express();
 		app.set('views', __dirname + '/public');
 		app.get(/\.(json|js|css|png|templates)$/, express.static(app.get('views')));
 		app.get(/\/templates\/.+\.html$/, express.static(app.get('views')));

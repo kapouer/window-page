@@ -1,14 +1,14 @@
 exports.get = function(url, statusRejects, type) {
 	if (!statusRejects) statusRejects = 400;
 	return new Promise(function(resolve, reject) {
-		var xhr = new XMLHttpRequest();
+		const xhr = new XMLHttpRequest();
 		xhr.open("GET", url, true);
-		var aborted = false;
+		let aborted = false;
 		xhr.onreadystatechange = function() {
 			if (aborted) return;
-			var rs = this.readyState;
+			const rs = this.readyState;
 			if (rs < 2) return;
-			var code = this.status;
+			const code = this.status;
 			if (code < 200 || code >= statusRejects) {
 				aborted = true;
 				this.abort();
@@ -16,7 +16,7 @@ exports.get = function(url, statusRejects, type) {
 				return;
 			}
 			if (type) {
-				var ctype = this.getResponseHeader("Content-Type") || "";
+				const ctype = this.getResponseHeader("Content-Type") || "";
 				if (!ctype.startsWith(type)) {
 					aborted = true;
 					this.abort();
@@ -31,7 +31,7 @@ exports.get = function(url, statusRejects, type) {
 };
 
 exports.createDoc = function(str) {
-	var doc;
+	let doc;
 	try {
 		doc = (new window.DOMParser()).parseFromString(str, "text/html");
 	} catch(ex) {
@@ -54,8 +54,8 @@ exports.createDoc = function(str) {
 	return doc;
 };
 
-var debugFn;
-var debugOn = null;
+let debugFn;
+let debugOn = null;
 exports.debug = (function() {
 	if (debugFn) return debugFn;
 	if (window.debug) {
@@ -64,7 +64,7 @@ exports.debug = (function() {
 		if (debugOn === null) {
 			debugOn = false;
 			if (window.localStorage) {
-				var str = window.localStorage.getItem('debug');
+				const str = window.localStorage.getItem('debug');
 				if (str !== null) debugOn = (str || '').toLowerCase().split(' ').indexOf('window-page') >= 0;
 			}
 		}
@@ -84,7 +84,7 @@ exports.P = function() {
 
 exports.all = function(node, selector) {
 	if (node.queryAll) return node.queryAll(selector);
-	var list = node.querySelectorAll(selector);
+	const list = node.querySelectorAll(selector);
 	if (Array.from) return Array.from(list);
 	return Array.prototype.slice.call(list);
 };

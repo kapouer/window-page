@@ -1,23 +1,23 @@
-var nums = {
+const nums = {
 	setup: 0,
 	close: 0
 };
-var reads = {};
+const reads = {};
 Page.close(checkNums);
 Page.setup(checkNums);
 
 function checkNums(state) {
-	var stage = state.stage;
-	var node = document.querySelector('.' + stage);
+	const stage = state.stage;
+	const node = document.querySelector('.' + stage);
 	if (!reads[stage]) {
 		reads[stage] = true;
-		var int = parseInt(node.innerHTML);
-		if (!isNaN(int)) nums[stage] = int;
+		const int = parseInt(node.innerHTML);
+		if (!Number.isNaN(int)) nums[stage] = int;
 	}
 	node.innerHTML = ++nums[stage];
 }
 
-var orders = [];
+const orders = [];
 
 function delay(str, ms) {
 	return new Promise(function(resolve) {

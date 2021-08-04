@@ -6,12 +6,13 @@ exports.format = format;
 function fromParams(params, query, head) {
 	if (params == null || !params.forEach) return params;
 
-	var prefixes = {};
-	var lastKey, lastIndex = null, local = {};
+	const prefixes = {};
+	const local = {};
+	let lastKey, lastIndex = null;
 	params.forEach(function (val, key) {
-		var list = key.split('.');
+		const list = key.split('.');
 		if (list.length == 1) {
-			var fkey = head ? head + "." + key : key;
+			const fkey = head ? head + "." + key : key;
 			if (lastIndex !== null) {
 				if (query[head][lastIndex][key] !== undefined) {
 					query[head].push({[key]: val});
@@ -27,12 +28,12 @@ function fromParams(params, query, head) {
 				local[key] = query[fkey] = [query[fkey], val];
 			} else if (!query[head]) {
 				query[head] = [local, { [key]: val }];
-				for (var lkey in local) delete query[head ? head + "." + lkey : lkey];
+				for (const lkey in local) delete query[head ? head + "." + lkey : lkey];
 				lastIndex = 1;
 			}
 			lastKey = fkey;
 		} else {
-			var prefix = list.shift();
+			const prefix = list.shift();
 			if (!prefixes[prefix]) prefixes[prefix] = new URLSearchParams();
 			prefixes[prefix].append(list.join('.'), val);
 		}
@@ -47,7 +48,7 @@ function fromParams(params, query, head) {
 
 
 function parse(str) {
-	var params = typeof str == "string" ? new URLSearchParams(str) : str;
+	const params = typeof str == "string" ? new URLSearchParams(str) : str;
 	return fromParams(params, {});
 }
 
@@ -55,7 +56,7 @@ function toParams(query, params, prefix) {
 	Object.keys(query).sort(function (a, b) {
 		return a[0].localeCompare(b[0]);
 	}).forEach(function(key) {
-		var val = query[key];
+		let val = query[key];
 		if (prefix) key = prefix + '.' + key;
 		if (!Array.isArray(val)) val = [val];
 		val.forEach(function(val) {

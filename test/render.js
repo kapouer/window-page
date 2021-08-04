@@ -3,12 +3,12 @@ if (process.env.WEBDRIVER) {
 	return;
 }
 
-var expect = require('expect.js');
-var request = require('request');
-var express = require('express');
+const expect = require('expect.js');
+const request = require('request');
+const express = require('express');
 
-var dom = require('express-dom');
-var Web = require('webkitgtk');
+const dom = require('express-dom');
+const Web = require('webkitgtk');
 
 dom.settings.stall = 5000;
 dom.settings.allow = 'all';
@@ -16,7 +16,7 @@ dom.settings.timeout = 10000;
 dom.settings.stallTimeout = 1000;
 dom.settings.console = true;
 
-var loadPlugins = [
+const loadPlugins = [
 	debugPlugin,
 	dom.plugins.redirect,
 	dom.plugins.referrer,
@@ -26,7 +26,7 @@ var loadPlugins = [
 function debugPlugin(page, settings) {
 	if (process.env.DEBUG) {
 		if (!settings.scripts) settings.scripts = [];
-		settings.scripts.push(function(n) {
+		settings.scripts.push(function() {
 			window.debug = console.error.bind(console);
 		});
 	}
@@ -36,7 +36,7 @@ function Render(url, opts) {
 	if (!opts) opts = {};
 	return new Promise(function(resolve, reject) {
 		Web(function(err, page) {
-			var settings = {
+			const settings = {
 				stallTimeout: 1000,
 				console: true,
 				navigation: true
@@ -54,22 +54,21 @@ function Render(url, opts) {
 				else setTimeout(function() {
 					page.html().then(resolve).finally(() => page.unload());
 				}, opts.delay);
-			})
-			.catch(reject);
+			}).catch(reject);
 			page.load(url, settings);
 		});
 	});
 }
 
-var host = "http://localhost";
+const host = "http://localhost";
 
 describe("Rendering", function suite() {
 	this.timeout(3000);
-	var server, port;
-	var server2, port2;
+	let server, port;
+	let server2, port2;
 
 	before(function(done) {
-		var app = express();
+		const app = express();
 		app.set('views', __dirname + '/public');
 		app.use(function(req, res, next) {
 			if (req.query.delay) setTimeout(next, parseInt(req.query.delay) * 1000);
@@ -213,7 +212,7 @@ describe("Rendering", function suite() {
 			ready: function(cb) {
 				window.testcb = cb;
 				try {
-					var script = document.createElement('script');
+					const script = document.createElement('script');
 					script.textContent = `
 					Page.setup(function(state) {
 						if (state.pathname == "/inexistent.html") setTimeout(function() {

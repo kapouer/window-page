@@ -3,24 +3,24 @@ if (process.env.WEBDRIVER) {
 	return;
 }
 
-var expect = require('expect.js');
-var request = require('request');
-var express = require('express');
-var dom = require('express-dom');
+const expect = require('expect.js');
+const request = require('request');
+const express = require('express');
+const dom = require('express-dom');
 
 dom.settings.stall = 5000;
 dom.settings.allow = 'all';
 dom.settings.timeout = 10000;
 dom.settings.console = true;
 
-var host = "http://localhost";
+const host = "http://localhost";
 
 describe("Prerendering", function suite() {
 	this.timeout(3000);
-	var server, port;
+	let server, port;
 
 	before(function(done) {
-		var app = express();
+		const app = express();
 		app.set('views', __dirname + '/public');
 		app.get(/\.(json|js|css|png)$/, express.static(app.get('views')));
 		app.get(/\/templates\/.+\.html$/, express.static(app.get('views')));

@@ -1,10 +1,10 @@
-var Utils = require('./src/utils');
-var Loc = require('./src/loc');
-var State = require('./src/state');
-var Wait = require('./src/wait');
+const Utils = require('./src/utils');
+const Loc = require('./src/loc');
+const State = require('./src/state');
+const Wait = require('./src/wait');
 
 if (!window.Page) {
-	var W = State.Page = window.Page = {
+	const W = State.Page = window.Page = {
 		State: State,
 		Wait: Wait
 	};

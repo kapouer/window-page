@@ -1,11 +1,11 @@
-var Utils = require('./utils');
-var P = Utils.P;
+const Utils = require('./utils');
+const P = Utils.P;
 
-var domReady = false;
+let domReady = false;
 exports.dom = function() {
 	if (domReady) return P();
-	var solve;
-	var p = new Promise(function(resolve) {
+	let solve;
+	const p = new Promise(function(resolve) {
 		solve = resolve;
 	});
 	if (document.readyState == "complete") {
@@ -30,16 +30,16 @@ exports.dom = function() {
 };
 
 exports.ui = function(val) {
-	var solve;
+	let solve, p;
 	if (document.hidden) {
-		var p = new Promise(function(resolve) {
+		p = new Promise(function(resolve) {
 			solve = resolve;
 		});
 		document.addEventListener('visibilitychange', listener, false);
 	} else {
 		p = P();
 	}
-	var sp = p.then(function() {
+	const sp = p.then(function() {
 		return exports.styles(document.head);
 	}).then(function() {
 		return sp.fn(val);
@@ -53,9 +53,9 @@ exports.ui = function(val) {
 };
 
 exports.styles = function(head, old) {
-	var knowns = {};
-	var thenFn;
-	var sel = 'link[rel="stylesheet"]';
+	const knowns = {};
+	let thenFn;
+	const sel = 'link[rel="stylesheet"]';
 	if (old && head != old) {
 		Utils.all(old, sel).forEach(function(node) {
 			knowns[node.href] = true;
@@ -72,10 +72,10 @@ exports.styles = function(head, old) {
 };
 
 exports.imports = function(doc) {
-	var imports = Utils.all(doc, 'link[rel="import"]');
-	var polyfill = window.HTMLImports;
-	var whenReady = (function() {
-		var promise;
+	const imports = Utils.all(doc, 'link[rel="import"]');
+	const polyfill = window.HTMLImports;
+	const whenReady = (function() {
+		let promise;
 		return function() {
 			if (!promise) promise = new Promise(function(resolve) {
 				polyfill.whenReady(function() {
@@ -101,7 +101,7 @@ exports.imports = function(doc) {
 };
 
 exports.sheet = function(link) {
-	var ok = false;
+	let ok = false;
 	try {
 		ok = link.sheet && link.sheet.cssRules;
 	} catch(ex) {
@@ -109,10 +109,10 @@ exports.sheet = function(link) {
 		ok = true;
 	}
 	if (ok) return Promise.resolve();
-	var nlink = link.cloneNode();
+	const nlink = link.cloneNode();
 	nlink.media = "print";
-	var p = exports.node(nlink);
-	var parent = link.parentNode;
+	const p = exports.node(nlink);
+	const parent = link.parentNode;
 	parent.insertBefore(nlink, link.nextSibling);
 	return p.then(function() {
 		parent.removeChild(nlink);
