@@ -38,7 +38,7 @@
     "levenlistdiff": "^1.0.1",
     "mocha": "^8.3.2",
     "postinstall": "^0.7.0",
-    "postinstall-browserify": "^0.7.0",
+    "postinstall-browserify": "^0.7.1",
     "request": "^2.88.2",
     "selenium-webdriver": "^3.0.1",
     "webcomponents.js": "^0.7.24",
