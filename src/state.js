@@ -509,29 +509,29 @@ State.prototype.mergeHead = function(node) {
 	const from = document.head;
 	const to = node;
 	const collect = [];
-	Diff(from.children, to.children, function(node) {
-		const key = node.src || node.href;
-		if (key) return node.nodeName + '_' + key;
-		else return node.outerHTML;
+	Diff(from.children, to.children, function(child) {
+		const key = child.src || child.href;
+		if (key) return child.nodeName + '_' + key;
+		else return child.outerHTML;
 	}).forEach(function(patch) {
-		const node = from.children[patch.index];
+		const ref = from.children[patch.index];
 		switch (patch.type) {
 			case Diff.INSERTION:
-				from.insertBefore(patch.item, node);
+				from.insertBefore(patch.item, ref);
 				break;
 			case Diff.SUBSTITUTION:
-				if (node.nodeName == "LINK" && node.rel == "stylesheet") {
-					from.insertBefore(patch.item, node);
-					collect.push(node);
+				if (ref.nodeName == "LINK" && ref.rel == "stylesheet") {
+					from.insertBefore(patch.item, ref);
+					collect.push(ref);
 				} else {
-					from.replaceChild(patch.item, node);
+					from.replaceChild(patch.item, ref);
 				}
 				break;
 			case Diff.DELETION:
-				if (node.nodeName == "LINK" && node.rel == "stylesheet") {
-					collect.push(node);
+				if (ref.nodeName == "LINK" && ref.rel == "stylesheet") {
+					collect.push(ref);
 				} else {
-					node.remove();
+					ref.remove();
 				}
 				break;
 		}
