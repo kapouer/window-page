@@ -1,4 +1,3 @@
-const State = require('./state');
 const Query = require('./query');
 
 exports.parse = function(str) {
@@ -11,7 +10,7 @@ exports.parse = function(str) {
 	} else {
 		loc = str;
 	}
-	const obj = new State();
+	const obj = {};
 	if (loc.referrer) obj.referrer = loc.referrer;
 	obj.pathname = loc.pathname;
 	obj.query = loc.query ? Object.assign({}, loc.query) : Query.parse(loc.search);

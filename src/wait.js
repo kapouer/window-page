@@ -4,14 +4,11 @@ const P = Utils.P;
 let domReady = false;
 exports.dom = function() {
 	if (domReady) return P();
-	let solve;
-	const p = new Promise(function(resolve) {
-		solve = resolve;
-	});
+	const d = new Utils.Deferred();
 	if (document.readyState == "complete") {
 		domReady = true;
-		setTimeout(solve);
-		return p;
+		setTimeout(d.ok);
+		return d.promise;
 	}
 
 	function readyLsn() {
@@ -19,12 +16,12 @@ exports.dom = function() {
 		window.removeEventListener('load', readyLsn);
 		if (domReady) return;
 		domReady = true;
-		solve();
+		d.ok();
 	}
 	document.addEventListener('DOMContentLoaded', readyLsn);
 	window.addEventListener('load', readyLsn);
 
-	return p.then(function() {
+	return d.promise.then(function() {
 		return exports.imports(document);
 	});
 };
@@ -57,9 +54,9 @@ exports.styles = function(head, old) {
 	let thenFn;
 	const sel = 'link[rel="stylesheet"]';
 	if (old && head != old) {
-		Utils.all(old, sel).forEach(function(node) {
+		for (const node of Utils.all(old, sel)) {
 			knowns[node.href] = true;
-		}, this);
+		}
 		thenFn = exports.node;
 	} else {
 		thenFn = exports.sheet;
@@ -75,14 +72,14 @@ exports.imports = function(doc) {
 	const imports = Utils.all(doc, 'link[rel="import"]');
 	const polyfill = window.HTMLImports;
 	const whenReady = (function() {
-		let promise;
+		let p;
 		return function() {
-			if (!promise) promise = new Promise(function(resolve) {
+			if (!p) p = new Promise(function(resolve) {
 				polyfill.whenReady(function() {
 					setTimeout(resolve);
 				});
 			});
-			return promise;
+			return p;
 		};
 	})();
 
@@ -130,3 +127,4 @@ exports.node = function(node) {
 		node.addEventListener('error', done);
 	});
 };
+

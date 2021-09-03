@@ -1,33 +1,33 @@
-exports.get = function(url, statusRejects, type) {
+exports.get = function (url, statusRejects, type) {
 	if (!statusRejects) statusRejects = 400;
-	return new Promise(function(resolve, reject) {
-		const xhr = new XMLHttpRequest();
-		xhr.open("GET", url, true);
-		let aborted = false;
-		xhr.onreadystatechange = function() {
-			if (aborted) return;
-			const rs = this.readyState;
-			if (rs < 2) return;
-			const code = this.status;
-			if (code < 200 || code >= statusRejects) {
+	const d = new exports.Deferred();
+	const xhr = new XMLHttpRequest();
+	xhr.open("GET", url, true);
+	let aborted = false;
+	xhr.onreadystatechange = function() {
+		if (aborted) return;
+		const rs = this.readyState;
+		if (rs < 2) return;
+		const code = this.status;
+		if (code < 200 || code >= statusRejects) {
+			aborted = true;
+			this.abort();
+			d.fail(code);
+			return;
+		}
+		if (type) {
+			const ctype = this.getResponseHeader("Content-Type") || "";
+			if (!ctype.startsWith(type)) {
 				aborted = true;
 				this.abort();
-				reject(code);
+				d.ok(this);
 				return;
 			}
-			if (type) {
-				const ctype = this.getResponseHeader("Content-Type") || "";
-				if (!ctype.startsWith(type)) {
-					aborted = true;
-					this.abort();
-					resolve(this);
-					return;
-				}
-			}
-			if (rs == 4) resolve(this);
-		};
-		xhr.send();
-	});
+		}
+		if (rs == 4) d.ok(this);
+	};
+	xhr.send();
+	return d.promise;
 };
 
 exports.createDoc = function(str) {
@@ -89,3 +89,37 @@ exports.all = function(node, selector) {
 	return Array.prototype.slice.call(list);
 };
 
+exports.Deferred = class {
+	constructor() {
+		this.promise = new Promise((ok, fail) => {
+			this.ok = ok;
+			this.fail = fail;
+		});
+	}
+};
+
+exports.Queue = class {
+	#list = [];
+	#on = false;
+
+	queue(job) {
+		const d = new exports.Deferred();
+		d.promise.then(() => {
+			return job();
+		}).finally(() => {
+			this.#on = false;
+			this.#dequeue();
+		});
+		this.#list.push(d);
+		this.#dequeue();
+		return d.promise;
+	}
+	#dequeue() {
+		if (this.#on) return;
+		const d = this.#list.shift();
+		if (d) {
+			this.#on = true;
+			d.ok();
+		}
+	}
+};

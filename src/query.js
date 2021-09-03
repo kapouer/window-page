@@ -1,8 +1,6 @@
 exports.parse = parse;
 exports.format = format;
 
-
-
 function fromParams(params, query, head) {
 	if (params == null || !params.forEach) return params;
 
@@ -39,9 +37,9 @@ function fromParams(params, query, head) {
 		}
 	});
 
-	Object.keys(prefixes).forEach(function (prefix) {
+	for (const prefix of Object.keys(prefixes)) {
 		fromParams(prefixes[prefix], query, head ? head + "." + prefix : prefix);
-	});
+	}
 
 	return query;
 }
@@ -53,19 +51,20 @@ function parse(str) {
 }
 
 function toParams(query, params, prefix) {
-	Object.keys(query).sort(function (a, b) {
+	const keys = Object.keys(query).sort(function (a, b) {
 		return a[0].localeCompare(b[0]);
-	}).forEach(function(key) {
-		let val = query[key];
+	});
+	for (let key of keys) {
+		let vals = query[key];
 		if (prefix) key = prefix + '.' + key;
-		if (!Array.isArray(val)) val = [val];
-		val.forEach(function(val) {
+		if (!Array.isArray(vals)) vals = [vals];
+		for (let val of vals) {
 			if (val === undefined) return;
 			if (val == null) val = '';
 			if (typeof val == "object") toParams(val, params, key);
 			else params.append(key, val);
-		});
-	});
+		}
+	}
 	return params;
 }
 
