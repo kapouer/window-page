@@ -56,7 +56,7 @@ module.exports = class State {
 		if (!node) node = listener;
 		let proto = listener.constructor;
 		proto = proto === Object ? listener : proto.prototype;
-		Object.getOwnPropertyNames(proto).filter(function (name) {
+		for (const name of Object.getOwnPropertyNames(proto)) {
 			let all = false;
 			let key = name;
 			if (key.startsWith('handleAll') || key.startsWith('captureAll')) {
@@ -68,7 +68,7 @@ module.exports = class State {
 			} else if (name.startsWith('capture') && name != 'captureEvent') {
 				methods.push([all, name, key.slice(7).toLowerCase(), true]);
 			}
-		});
+		}
 		if (methods.length) this.chain(SETUP, function (state) {
 			for (const name of methods) {
 				name[4] = function (e) {
@@ -110,7 +110,7 @@ module.exports = class State {
 	}
 
 	run(opts) {
-		return runQueue.push(() => this.#run(opts));
+		return runQueue.queue(() => this.#run(opts));
 	}
 
 	#run(opts) {
@@ -196,7 +196,7 @@ module.exports = class State {
 			return (this.runChain(ERROR) || P()).then(() => {
 				if (this.error) this.#queue.fail(this.error);
 			});
-		}).then(function () {
+		}).then(() => {
 			this.#queue.ok(this);
 		});
 		return this.#queue.promise;
@@ -231,10 +231,11 @@ module.exports = class State {
 		if (!chain.count) return;
 		return chain.promise
 			.then(function () {
-				if (chain.done) chain.final.ok();
+				const ok = chain.final.ok;
+				if (ok) ok();
+				delete chain.final.ok;
 			})
 			.catch(chain.final.fail)
-			.finally(() => chain.done = false)
 			.then(function () {
 				return chain.final.promise;
 			});
@@ -262,14 +263,14 @@ module.exports = class State {
 		const chain = this.chains[stage];
 		if (!chain) {
 			debug("chain pending", stage);
-		} else if (chain.count && chain.done) {
+		} else if (chain.count && chain.final.ok) {
 			debug("chain is running", stage);
 			// not finished
-			chain.done = function (done) {
+			chain.final.ok = function (done) {
 				return P().then(function () {
 					if (lfn.fn) return lfn.fn({ detail: state });
 				}).then(done);
-			}.bind(null, chain.done);
+			}.bind(null, chain.final.ok);
 		} else {
 			debug("chain is done", stage);
 			p = p.then(function () {
@@ -286,7 +287,7 @@ module.exports = class State {
 			// eslint-disable-next-line no-console
 			console.warn("state.finish must be called from chain listener");
 		} else {
-			chain.final = chain.final.then(() => {
+			chain.final.promise = chain.final.promise.then(() => {
 				return this.#runFn(stage, fn);
 			});
 		}
@@ -323,7 +324,7 @@ module.exports = class State {
 			if (chain.count == null) chain.count = 0;
 			chain.count++;
 			chain.promise = chain.promise.then(() => {
-				return !stop && this.#runFn(stage, fn);
+				return !stop && state.#runFn(stage, fn);
 			}).catch((err) => {
 				// eslint-disable-next-line no-console
 				console.error("Page." + stage, err);

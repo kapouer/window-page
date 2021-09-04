@@ -13,11 +13,13 @@ Object.assign(W, Loc);
 W.createDoc = Utils.createDoc;
 W.get = Utils.get;
 W.route = function(fn) {
-	State.prototype.router = () => fn(this);
+	State.prototype.router = function () {
+		return fn(this);
+	};
 };
 
 if (!window.Page) {
-	Loc.parse().run().then(function (state) {
+	new State(Loc.parse()).run().then(function (state) {
 		if (!window.history.state) state.save();
 	});
 }

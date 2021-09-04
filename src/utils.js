@@ -104,7 +104,7 @@ exports.Queue = class {
 
 	queue(job) {
 		const d = new exports.Deferred();
-		d.promise.then(() => {
+		d.promise = d.promise.then(() => {
 			return job();
 		}).finally(() => {
 			this.#on = false;
