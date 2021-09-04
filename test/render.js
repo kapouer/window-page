@@ -128,6 +128,7 @@ describe("Rendering", function suite() {
 			expect(body).to.contain('data-prerender="true"');
 			expect(body).to.contain('<div class="build">1</div>');
 			expect(body).to.contain('<div class="patch">2</div>');
+			expect(body).to.contain('<div class="paint"></div>');
 			expect(body).to.contain('<div class="setup">1</div>');
 			expect(body).to.contain('<div class="url">/templates/replace.html?toto=1</div>');
 		});
