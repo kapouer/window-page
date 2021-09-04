@@ -99,3 +99,17 @@ state.referrer is not related to document.referrer.
 
 Breaking change:
 Referrer's CLOSE chain is called before current SETUP chain.
+
+12.0.0
+------
+
+Breaking change:
+Written in ECMAScript 6.
+
+Several properties/methods are now private.
+
+12.1.0
+------
+
+When using push/replace, latest state is used instead of
+the actual state push was called from.

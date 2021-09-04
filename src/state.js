@@ -615,7 +615,12 @@ module.exports = class State {
 	}
 
 	#historyMethod(method, loc, opts) {
-		const refer = this;
+		let refer = this;
+		while (refer.follower) {
+			// a common mistake is to call state.push on an old state
+			// and there is no way this can be legit
+			refer = refer.follower;
+		}
 		const copy = new State(Loc.parse(Loc.format(loc)));
 		copy.referrer = refer;
 		refer.follower = copy;

@@ -95,6 +95,7 @@ Page.setup(function(state) {
  // them altogether.
  $('.dropdown').dropdown();
  $('#open').on('click', function() {
+  // this might not be latest state, but it's fine since 12.1.0
   state.push(this.href);
  });
 });
@@ -225,6 +226,7 @@ patch(state) {
 setup(state) {
   this.slider = new Slider(this, {
     change: function(index) {
+      // since 12.1.0 if this is an old state it's still okay
       state.push({query: {index: index}});
     }
   });
