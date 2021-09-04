@@ -123,6 +123,18 @@ describe("Rendering", function suite() {
 		});
 	});
 
+
+	it("should state.push using latest state and not old one", function(done) {
+		request({
+			method: 'GET',
+			url: host + ':' + port + '/oldstate.html'
+		}, function(err, res, body) {
+			expect(res.statusCode).to.be(200);
+			expect(body).to.contain('data-patch="2"');
+			done();
+		});
+	});
+
 	it("should run build and patch and setup, call replace and run patch again", function() {
 		return Render(host + ':' + port + '/templates/replace.html', {delay: 150}).then(function(body) {
 			expect(body).to.contain('data-prerender="true"');

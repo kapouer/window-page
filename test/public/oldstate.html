@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Sample setup with old state</title>
+	<script src="window-page.js"></script>
+	<script>
+
+
+Page.setup((state) => {
+	document.addEventListener('click', function(e) {
+		e.preventDefault();
+		state.push(e.target.href);
+	});
+});
+
+Page.patch((state) => {
+	document.body.dataset.patch = state.query.param;
+});
+
+setTimeout(() => {
+	document.getElementById('a1').click();
+	setTimeout(() => {
+		document.getElementById('a2').click();
+	}, 10);
+}, 10);
+
+	</script>
+</head>
+<body>
+	<a id="a1" href="?param=1">test1</a>
+	<a id="a2" href="?param=2">test2</a>
+</body>
+</html>
