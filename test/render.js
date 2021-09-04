@@ -127,10 +127,10 @@ describe("Rendering", function suite() {
 	it("should state.push using latest state and not old one", function(done) {
 		request({
 			method: 'GET',
-			url: host + ':' + port + '/oldstate.html'
+			url: host + ':' + port + '/oldstate.html?param=1'
 		}, function(err, res, body) {
 			expect(res.statusCode).to.be(200);
-			expect(body).to.contain('data-patch="2"');
+			expect(body).to.contain('data-patch="1"');
 			done();
 		});
 	});

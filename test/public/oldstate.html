@@ -9,7 +9,7 @@
 Page.setup((state) => {
 	document.addEventListener('click', function(e) {
 		e.preventDefault();
-		state.push(e.target.href);
+		state.push(e.target.getAttribute('href'));
 	});
 });
 
@@ -18,9 +18,9 @@ Page.patch((state) => {
 });
 
 setTimeout(() => {
-	document.getElementById('a1').click();
+	document.getElementById('a2').click();
 	setTimeout(() => {
-		document.getElementById('a2').click();
+		document.getElementById('a1').click();
 	}, 10);
 }, 10);
 
