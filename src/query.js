@@ -59,7 +59,7 @@ function toParams(query, params, prefix) {
 		if (prefix) key = prefix + '.' + key;
 		if (!Array.isArray(vals)) vals = [vals];
 		for (let val of vals) {
-			if (val === undefined) return;
+			if (val === undefined) break;
 			if (val == null) val = '';
 			if (typeof val == "object") toParams(val, params, key);
 			else params.append(key, val);
