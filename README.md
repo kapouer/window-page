@@ -349,6 +349,14 @@ A convenient method only that only replaces current window.history entry:
 - Page.samePath(a, b)
   compare domain, pathname, querystring (without hash) of two url or objects.
 
+### Classes
+
+By default window.Page also exports those classes:
+
+- State
+- Wait
+- Loc
+
 ### BrowserStack and Browser support
 
 This project runs its tests on multiple desktop and mobile browsers using [travis BrowserStack addon](https://docs.travis-ci.com/user/browserstack/), sponsored by [BrowserStack](browserstack.com).

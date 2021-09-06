@@ -3,10 +3,7 @@ const Loc = require('./src/loc');
 const State = require('./src/state');
 const Wait = require('./src/wait');
 
-const W = module.exports = State.Page = {
-	State: State,
-	Wait: Wait
-};
+const W = module.exports = State.Page = { Loc, State, Wait };
 
 Object.assign(W, Loc);
 
