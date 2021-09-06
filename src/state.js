@@ -263,7 +263,7 @@ module.exports = class State {
 		const chain = this.chains[stage];
 		if (!chain) {
 			debug("chain pending", stage);
-		} else if (chain.count && chain.final.ok) {
+		} else if (chain.count && chain.final && chain.final.ok) {
 			debug("chain is running", stage);
 			// not finished
 			chain.final.ok = function (done) {
