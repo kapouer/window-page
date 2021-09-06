@@ -43,7 +43,7 @@ module.exports = class State {
 			W['un' + stage] = (fn) => this.unchain(stage, fn);
 			W.finish = (fn) => {
 				if (fn) return this.#queue.then(fn);
-				else return this.#queue;
+				else return this.#queue.promise;
 			};
 		}
 
