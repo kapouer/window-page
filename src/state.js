@@ -503,8 +503,7 @@ module.exports = class State {
 	#updateAttributes(from, to) {
 		const map = {};
 		for (const att of to.attributes) map[att.name] = att.value;
-
-		for (const att of from.attributes) {
+		for (const att of Array.from(from.attributes)) { // mind the live collection
 			const val = map[att.name];
 			if (val === undefined) {
 				from.removeAttribute(att.name);
