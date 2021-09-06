@@ -113,3 +113,14 @@ Several properties/methods are now private.
 
 When using push/replace, latest state is used instead of
 the actual state push was called from.
+
+13.0.0
+------
+
+State inherits from Loc.
+
+`Page.same...(a, b)` functions are replaced by `a.same...(b)`.
+
+`state.toString()` gives back current url.
+
+Default router can be restored using `Page.route()`.
