@@ -147,10 +147,11 @@ discarded otherwise.
 
 ### state
 
-The state object describes components of the url parsed with Page.parse()
+The state extends a Loc instance, in particular it has
 
-- state.pathname, state.query, state.hash
-  see also Page.format(state)
+- pathname, query, hash (and hostname, port, protocol if different from document)
+- sameDomain, samePathname, sameQuery, sameHash, samePath methods
+- toString() to get a url
 
 **Important**: do not mutate those properties.
 The state history methods accept partial objects.
@@ -329,24 +330,24 @@ A convenient method only that only replaces current window.history entry:
 - Page.createDoc(str)
   returns an HTML document from a string.
 
-- Page.parse(url)
+- Page.parse or new Loc
   parses a url into pathname, query object, hash; and protocol, hostname, port
   if not the same domain as the document.
 
-- Page.format(obj)
-  format a parsed url to a string with only what was defined,
+- Page.format or Loc#toString
+  format a location to a string with only what was defined,
   converts obj.path to pathname, query then stringify query obj if any.
 
-- Page.sameDomain(a, b)
+- Loc#sameDomain(b)
   compare domains (protocol + hostname + port) of two url or objects.
 
-- Page.samePathname(a, b)
+- Loc#samePathname(b)
   compare domains and pathname of two url or objects.
 
-- Page.sameQuery(a, b)
+- Loc#sameQuery(b)
   compare query strings of two url or objects.
 
-- Page.samePath(a, b)
+- Loc#samePath(b)
   compare domain, pathname, querystring (without hash) of two url or objects.
 
 ### Classes

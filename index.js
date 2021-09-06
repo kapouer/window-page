@@ -3,20 +3,16 @@ const Loc = require('./src/loc');
 const State = require('./src/state');
 const Wait = require('./src/wait');
 
-const W = module.exports = State.Page = { Loc, State, Wait };
+const W = module.exports = { Loc, State, Wait };
 
-Object.assign(W, Loc);
+W.parse = (s) => new Loc(s);
+W.format = (o) => o instanceof Loc ? o.toString() : new Loc(o).toString();
 
 W.createDoc = Utils.createDoc;
 W.get = Utils.get;
-W.route = function(fn) {
-	State.prototype.router = function () {
-		return fn(this);
-	};
-};
 
 if (!window.Page) {
-	new State(Loc.parse()).run().then(function (state) {
+	new State().run().then(function (state) {
 		if (!window.history.state) state.save();
 	});
 }

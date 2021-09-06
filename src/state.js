@@ -20,20 +20,20 @@ const NodeEvents = [BUILD, PATCH, SETUP, PAINT, HASH, CLOSE];
 const runQueue = new Utils.Queue();
 let uiQueue;
 
-module.exports = class State {
+module.exports = class State extends Loc {
 	data = {};
 	ui = {};
 	chains = {};
-	query = {};
 	#queue
+	static #route
 
 	constructor(obj) {
-		Object.assign(this, obj);
+		super(obj);
 		this.#queue = new Utils.Deferred();
 	}
 
 	init(opts) {
-		const W = State.Page;
+		const W = window.Page;
 		if (opts.data) Object.assign(this.data, opts.data);
 
 		this.emitter = document.createElement('div');
@@ -46,7 +46,7 @@ module.exports = class State {
 				else return this.#queue.promise;
 			};
 		}
-
+		W.route = (fn) => State.#route = fn;
 		W.connect = (listener, node) => this.connect(listener, node);
 		W.disconnect = (listener) => this.disconnect(listener);
 	}
@@ -140,9 +140,9 @@ module.exports = class State {
 		} else if (vary == HASH) {
 			sameHash = false;
 		}
-		if (samePathname == null) samePathname = Loc.samePathname(refer, this);
-		if (sameQuery == null) sameQuery = Loc.sameQuery(refer, this);
-		if (sameHash == null) sameHash = this.hash == refer.hash;
+		if (samePathname == null) samePathname = this.samePathname(refer);
+		if (sameQuery == null) sameQuery = this.sameQuery(refer);
+		if (sameHash == null) sameHash = this.sameHash(refer);
 
 		if (samePathname) {
 			for (const key of ['chains', 'emitter', 'ui', 'data']) {
@@ -155,7 +155,9 @@ module.exports = class State {
 			return this.runChain(INIT);
 		}).then(() => {
 			if (!samePathname || !prerendered) {
-				return this.router();
+				const fn = State.#route;
+				if (fn) return fn(this);
+				else return this.#defaultRoute();
 			}
 		}).then((doc) => {
 			if (doc && doc != document) return this.#load(doc);
@@ -376,9 +378,9 @@ module.exports = class State {
 			}
 			const src = node.src || node.href;
 			if (!src || states[src] === true) continue;
-			const loc = Loc.parse(src);
+			const loc = new Loc(src);
 			if (loc.protocol == "data:") continue;
-			if (Loc.sameDomain(loc, this)) states[src] = Utils.get(src, 400).then(() => {
+			if (loc.sameDomain(this)) states[src] = Utils.get(src, 400).then(() => {
 				debug("preloaded", src);
 			}).catch((err) => {
 				debug("not preloaded", src, err);
@@ -546,16 +548,16 @@ module.exports = class State {
 	}
 
 	copy() {
-		return new State(Loc.parse(this));
+		return new State(new Loc(this));
 	}
 
-	router() {
+	#defaultRoute() {
 		const refer = this.referrer;
 		if (!refer.stage) {
 			debug("Default router starts after navigation");
 			return;
 		}
-		const url = Loc.format(this);
+		const url = this.toString();
 		return Utils.get(url, 500, 'text/html').then(function (client) {
 			let doc;
 			if (client.status >= 200) {
@@ -572,12 +574,12 @@ module.exports = class State {
 	handleEvent(e) {
 		if (e.type == "popstate") {
 			debug("history event from", this.pathname, this.query, "to", e.state && e.state.href || null);
-			const state = this.#stateFrom(e.state) || new State(Loc.parse());
+			const state = this.#stateFrom(e.state) || new State();
 			state.referrer = this;
 			state.run().catch(function (err) {
 				// eslint-disable-next-line no-console
 				console.error(err);
-				const url = Loc.format(state);
+				const url = state.toString();
 				setTimeout(function () {
 					document.location.replace(url);
 				}, 50);
@@ -585,13 +587,9 @@ module.exports = class State {
 		}
 	}
 
-	toString() {
-		return Loc.format(this);
-	}
-
 	#stateTo() {
 		return {
-			href: Loc.format(this),
+			href: this.toString(),
 			data: this.data,
 			stage: this.stage
 		};
@@ -599,7 +597,7 @@ module.exports = class State {
 
 	#stateFrom(from) {
 		if (!from || !from.href) return;
-		const state = new State(Loc.parse(from.href));
+		const state = new State(from.href);
 		delete from.href;
 		Object.assign(state, from);
 		return state;
@@ -620,13 +618,13 @@ module.exports = class State {
 			// and there is no way this can be legit
 			refer = refer.follower;
 		}
-		const copy = new State(Loc.parse(Loc.format(loc)));
+		const copy = new State(loc);
 		copy.referrer = refer;
 		refer.follower = copy;
-		if (!Loc.sameDomain(refer, copy)) {
+		if (!copy.sameDomain(refer)) {
 			// eslint-disable-next-line no-console
 			if (method == "replace") console.info("Cannot replace to a different origin");
-			document.location.assign(Loc.format(copy));
+			document.location.assign(copy.toString());
 			return P();
 		}
 		debug("run", method, copy, opts);
@@ -635,7 +633,7 @@ module.exports = class State {
 		}).catch(function (err) {
 			// eslint-disable-next-line no-console
 			console.error(err);
-			const url = Loc.format(copy);
+			const url = copy.toString();
 			setTimeout(() => {
 				if (method == "replace") document.location.replace(url);
 				else document.location.assign(url);
