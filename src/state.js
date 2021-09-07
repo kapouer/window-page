@@ -25,6 +25,7 @@ export default class State extends Loc {
 	ui = {};
 	chains = {};
 	#queue
+	#bound
 	static #route
 
 	constructor(obj) {
@@ -33,6 +34,8 @@ export default class State extends Loc {
 	}
 
 	rebind(W) {
+		if (this.#bound) return W;
+		this.#bound = true;
 		for (const stage of Stages) {
 			W[stage] = (fn) => this.chain(stage, fn);
 			W['un' + stage] = (fn) => this.unchain(stage, fn);
@@ -111,7 +114,6 @@ export default class State extends Loc {
 
 	#run(opts) {
 		if (!opts) opts = {};
-
 		this.rebind(window.Page);
 		if (opts.data) Object.assign(this.data, opts.data);
 		this.emitter = document.createElement('div');
