@@ -1,14 +1,14 @@
 {
   "name": "window-page",
-  "version": "13.0.0",
+  "version": "13.0.1",
   "description": "Route, setup, and build web pages",
   "main": "lib/window-page.js",
   "module": "index.js",
   "exports": {
-      ".": {
-          "import": "./index.js",
-          "require": "./lib/window-page.js"
-      }
+    ".": {
+      "import": "./index.js",
+      "require": "./lib/window-page.js"
+    }
   },
   "scripts": {
     "test": "npm run prepare && mocha",
