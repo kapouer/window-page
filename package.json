@@ -15,7 +15,7 @@
     "prepare": "postinstall"
   },
   "prepare": {
-    "./index.js": "bundle --name=Page lib/window-page.js",
+    "./index.js": "bundle lib/window-page.js",
     "./src/query.js": "bundle --format=cjs lib/query.js"
   },
   "files": [
