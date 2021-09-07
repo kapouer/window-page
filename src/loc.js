@@ -1,6 +1,6 @@
-const Query = require('./query');
+import { parse, format } from './query';
 
-module.exports = class Loc {
+export default class Loc {
 	constructor(str) {
 		const dloc = document.location;
 		const it = this;
@@ -15,7 +15,7 @@ module.exports = class Loc {
 		for (const key of ['referrer', 'port', 'hostname', 'protocol', 'pathname']) {
 			if (loc[key]) it[key] = loc[key];
 		}
-		it.query = loc.query ? Object.assign({}, loc.query) : Query.parse(loc.search) || {};
+		it.query = loc.query ? Object.assign({}, loc.query) : parse(loc.search) || {};
 
 		if (!it.pathname) {
 			it.pathname = dloc.pathname;
@@ -65,7 +65,7 @@ module.exports = class Loc {
 	sameQuery(b) {
 		const a = this;
 		if (typeof b == "string") b = new Loc(b);
-		return Query.format(a.query) == Query.format(b.query);
+		return format(a.query) == format(b.query);
 	}
 
 	samePath(b) {
@@ -105,7 +105,7 @@ module.exports = class Loc {
 			delete it.path;
 		}
 		let qstr;
-		if (it.query) qstr = Query.format(it.query);
+		if (it.query) qstr = format(it.query);
 		else if (it.search) qstr = it.search[0] == "?" ? it.search.substring(1) : it.search;
 		it.search = qstr;
 
@@ -128,4 +128,4 @@ module.exports = class Loc {
 		}
 		return str;
 	}
-};
+}

@@ -1,5 +1,5 @@
 const assert = require('assert');
-const Query = require('../src/query');
+const Query = require('../lib/query');
 
 describe("Query", function suite() {
 	it("should format object", function () {

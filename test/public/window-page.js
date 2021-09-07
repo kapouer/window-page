@@ -1,1 +1,1 @@
-../../window-page.js
+../../lib/window-page.js

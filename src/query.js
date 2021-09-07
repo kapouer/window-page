@@ -1,6 +1,3 @@
-exports.parse = parse;
-exports.format = format;
-
 function fromParams(params, query, head) {
 	if (params == null || !params.forEach) return params;
 
@@ -45,7 +42,7 @@ function fromParams(params, query, head) {
 }
 
 
-function parse(str) {
+export function parse(str) {
 	const params = typeof str == "string" ? new URLSearchParams(str) : str;
 	return fromParams(params, {});
 }
@@ -68,6 +65,6 @@ function toParams(query, params, prefix) {
 	return params;
 }
 
-function format(query) {
+export function format(query) {
 	return toParams(query, new URLSearchParams()).toString();
 }

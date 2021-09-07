@@ -1,8 +1,9 @@
-const Utils = require('./utils');
+import * as Utils from './utils';
+
 const P = Utils.P;
 
 let domReady = false;
-exports.dom = function() {
+export function dom() {
 	if (domReady) return P();
 	const d = new Utils.Deferred();
 	if (document.readyState == "complete") {
@@ -22,11 +23,11 @@ exports.dom = function() {
 	window.addEventListener('load', readyLsn);
 
 	return d.promise.then(function() {
-		return exports.imports(document);
+		return imports(document);
 	});
-};
+}
 
-exports.ui = function(val) {
+export function ui(val) {
 	let solve, p;
 	if (document.hidden) {
 		p = new Promise(function(resolve) {
@@ -37,7 +38,7 @@ exports.ui = function(val) {
 		p = P();
 	}
 	const sp = p.then(function() {
-		return exports.styles(document.head);
+		return styles(document.head);
 	}).then(function() {
 		return sp.fn(val);
 	});
@@ -47,28 +48,28 @@ exports.ui = function(val) {
 		document.removeEventListener('visibilitychange', listener, false);
 		solve();
 	}
-};
+}
 
-exports.styles = function(head, old) {
+export function styles(head, old) {
 	const knowns = {};
 	let thenFn;
 	const sel = 'link[rel="stylesheet"]';
 	if (old && head != old) {
-		for (const node of Utils.all(old, sel)) {
-			knowns[node.href] = true;
+		for (const item of Utils.all(old, sel)) {
+			knowns[item.href] = true;
 		}
-		thenFn = exports.node;
+		thenFn = node;
 	} else {
-		thenFn = exports.sheet;
+		thenFn = sheet;
 	}
 	return Promise.all(
-		Utils.all(head, sel).filter(function(node) {
-			return !knowns[node.href];
+		Utils.all(head, sel).filter(function(item) {
+			return !knowns[item.href];
 		}).map(thenFn)
 	);
-};
+}
 
-exports.imports = function(doc) {
+export function imports(doc) {
 	const imports = Utils.all(doc, 'link[rel="import"]');
 	const polyfill = window.HTMLImports;
 	const whenReady = (function() {
@@ -93,11 +94,11 @@ exports.imports = function(doc) {
 			return whenReady();
 		}
 
-		return exports.node(link);
+		return node(link);
 	}));
-};
+}
 
-exports.sheet = function(link) {
+export function sheet(link) {
 	let ok = false;
 	try {
 		ok = link.sheet && link.sheet.cssRules;
@@ -108,23 +109,23 @@ exports.sheet = function(link) {
 	if (ok) return Promise.resolve();
 	const nlink = link.cloneNode();
 	nlink.media = "print";
-	const p = exports.node(nlink);
+	const p = node(nlink);
 	const parent = link.parentNode;
 	parent.insertBefore(nlink, link.nextSibling);
 	return p.then(function() {
 		parent.removeChild(nlink);
 	});
-};
+}
 
-exports.node = function(node) {
+export function node(item) {
 	return new Promise(function(resolve) {
 		function done() {
-			node.removeEventListener('load', done);
-			node.removeEventListener('error', done);
+			item.removeEventListener('load', done);
+			item.removeEventListener('error', done);
 			resolve();
 		}
-		node.addEventListener('load', done);
-		node.addEventListener('error', done);
+		item.addEventListener('load', done);
+		item.addEventListener('error', done);
 	});
-};
+}
 

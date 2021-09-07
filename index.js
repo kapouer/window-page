@@ -1,15 +1,20 @@
-const Utils = require('./src/utils');
-const Loc = require('./src/loc');
-const State = require('./src/state');
-const Wait = require('./src/wait');
+import { createDoc, get } from './src/utils';
+import Loc from './src/loc';
+import State from './src/state';
+import * as Wait from './src/wait';
 
-const W = module.exports = { Loc, State, Wait };
-
-W.parse = (s) => new Loc(s);
-W.format = (o) => o instanceof Loc ? o.toString() : new Loc(o).toString();
-
-W.createDoc = Utils.createDoc;
-W.get = Utils.get;
+export {
+	Loc, State, Wait, createDoc, get
+};
+export function parse(s) {
+	return new Loc(s);
+}
+export function format(o) {
+	if (!(o instanceof Loc)) {
+		o = new Loc(o);
+	}
+	return o.toString();
+}
 
 if (!window.Page) {
 	new State().run().then(function (state) {

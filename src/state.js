@@ -1,7 +1,7 @@
-const Utils = require('./utils');
-const Loc = require('./loc');
-const Wait = require('./wait');
-const Diff = require('levenlistdiff');
+import * as Utils from './utils';
+import Loc from './loc';
+import * as Wait from './wait';
+import Diff from 'levenlistdiff';
 const P = Utils.P;
 const debug = Utils.debug;
 
@@ -20,7 +20,7 @@ const NodeEvents = [BUILD, PATCH, SETUP, PAINT, HASH, CLOSE];
 const runQueue = new Utils.Queue();
 let uiQueue;
 
-module.exports = class State extends Loc {
+export default class State extends Loc {
 	data = {};
 	ui = {};
 	chains = {};
@@ -32,12 +32,7 @@ module.exports = class State extends Loc {
 		this.#queue = new Utils.Deferred();
 	}
 
-	init(opts) {
-		const W = window.Page;
-		if (opts.data) Object.assign(this.data, opts.data);
-
-		this.emitter = document.createElement('div');
-
+	rebind(W) {
 		for (const stage of Stages) {
 			W[stage] = (fn) => this.chain(stage, fn);
 			W['un' + stage] = (fn) => this.unchain(stage, fn);
@@ -49,6 +44,7 @@ module.exports = class State extends Loc {
 		W.route = (fn) => State.#route = fn;
 		W.connect = (listener, node) => this.connect(listener, node);
 		W.disconnect = (listener) => this.disconnect(listener);
+		return W;
 	}
 
 	connect(listener, node) {
@@ -115,9 +111,12 @@ module.exports = class State extends Loc {
 
 	#run(opts) {
 		if (!opts) opts = {};
-		this.init(opts);
-		let refer = this.referrer;
 
+		this.rebind(window.Page);
+		if (opts.data) Object.assign(this.data, opts.data);
+		this.emitter = document.createElement('div');
+
+		let refer = this.referrer;
 		if (!refer) {
 			debug("new referrer");
 			this.referrer = refer = this.copy();
@@ -640,4 +639,4 @@ module.exports = class State extends Loc {
 			}, 50);
 		});
 	}
-};
+}

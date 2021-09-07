@@ -1,6 +1,41 @@
-exports.get = function (url, statusRejects, type) {
+export class Deferred {
+	constructor() {
+		this.promise = new Promise((ok, fail) => {
+			this.ok = ok;
+			this.fail = fail;
+		});
+	}
+}
+
+export class Queue {
+	#list = [];
+	#on = false;
+
+	queue(job) {
+		const d = new Deferred();
+		d.promise = d.promise.then(() => {
+			return job();
+		}).finally(() => {
+			this.#on = false;
+			this.#dequeue();
+		});
+		this.#list.push(d);
+		this.#dequeue();
+		return d.promise;
+	}
+	#dequeue() {
+		if (this.#on) return;
+		const d = this.#list.shift();
+		if (d) {
+			this.#on = true;
+			d.ok();
+		}
+	}
+}
+
+export function get(url, statusRejects, type) {
 	if (!statusRejects) statusRejects = 400;
-	const d = new exports.Deferred();
+	const d = new Deferred();
 	const xhr = new XMLHttpRequest();
 	xhr.open("GET", url, true);
 	let aborted = false;
@@ -28,9 +63,9 @@ exports.get = function (url, statusRejects, type) {
 	};
 	xhr.send();
 	return d.promise;
-};
+}
 
-exports.createDoc = function(str) {
+export function createDoc(str) {
 	let doc;
 	try {
 		doc = (new window.DOMParser()).parseFromString(str, "text/html");
@@ -52,11 +87,11 @@ exports.createDoc = function(str) {
 		}
 	}
 	return doc;
-};
+}
 
 let debugFn;
 let debugOn = null;
-exports.debug = (function() {
+export const debug = (function() {
 	if (debugFn) return debugFn;
 	if (window.debug) {
 		debugFn = window.debug;
@@ -78,48 +113,13 @@ exports.debug = (function() {
 	return debugFn;
 })();
 
-exports.P = function() {
+export const P = function() {
 	return Promise.resolve();
 };
 
-exports.all = function(node, selector) {
+export function all(node, selector) {
 	if (node.queryAll) return node.queryAll(selector);
 	const list = node.querySelectorAll(selector);
 	if (Array.from) return Array.from(list);
 	return Array.prototype.slice.call(list);
-};
-
-exports.Deferred = class {
-	constructor() {
-		this.promise = new Promise((ok, fail) => {
-			this.ok = ok;
-			this.fail = fail;
-		});
-	}
-};
-
-exports.Queue = class {
-	#list = [];
-	#on = false;
-
-	queue(job) {
-		const d = new exports.Deferred();
-		d.promise = d.promise.then(() => {
-			return job();
-		}).finally(() => {
-			this.#on = false;
-			this.#dequeue();
-		});
-		this.#list.push(d);
-		this.#dequeue();
-		return d.promise;
-	}
-	#dequeue() {
-		if (this.#on) return;
-		const d = this.#list.shift();
-		if (d) {
-			this.#on = true;
-			d.ok();
-		}
-	}
-};
+}
