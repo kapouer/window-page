@@ -19,7 +19,9 @@
     "./src/query.js": "bundle --format=cjs lib/query.js"
   },
   "files": [
-    "lib/window-page.js"
+    "lib/window-page.js",
+    "index.js",
+    "src/*.js"
   ],
   "repository": {
     "type": "git",
