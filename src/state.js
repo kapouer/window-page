@@ -109,6 +109,7 @@ export default class State extends Loc {
 	}
 
 	run(opts) {
+		this.emitter = document.createElement('div');
 		return runQueue.queue(() => this.#run(opts));
 	}
 
@@ -116,7 +117,6 @@ export default class State extends Loc {
 		if (!opts) opts = {};
 		this.rebind(window.Page);
 		if (opts.data) Object.assign(this.data, opts.data);
-		this.emitter = document.createElement('div');
 
 		let refer = this.referrer;
 		if (!refer) {
