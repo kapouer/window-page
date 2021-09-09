@@ -251,7 +251,11 @@ export default class State extends Loc {
 		let ls = fn._pageListeners;
 		if (!ls) ls = fn._pageListeners = {};
 		let lfn = ls[stage];
-		const emitter = typeof fn == "function" && document.currentScript || state.emitter;
+		let emitter = document.currentScript;
+		if (!emitter) {
+			if (fn.matches?.('script')) emitter = fn;
+			else emitter = state.emitter;
+		}
 
 		if (!lfn) {
 			lfn = ls[stage] = {
