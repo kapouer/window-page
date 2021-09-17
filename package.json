@@ -12,7 +12,8 @@
   },
   "scripts": {
     "test": "npm run prepare && mocha",
-    "prepare": "postinstall"
+    "prepare": "postinstall",
+    "playwright": "playwright test"
   },
   "prepare": {
     "./index.js": "bundle lib/window-page.js",
@@ -52,7 +53,8 @@
     "selenium-webdriver": "^3.0.1",
     "webcomponents.js": "^0.7.24",
     "webkitgtk": "^4.12.1",
-    "window-agent": "^1.2.0"
+    "window-agent": "^1.2.0",
+    "@playwright/test": "^1.14"
   },
   "mocha": {
     "spec": "test/*.js",
