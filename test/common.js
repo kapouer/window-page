@@ -18,11 +18,18 @@ function defineVisibility(state) {
 	}
 }
 
+function noStyle(route, request) {
+	if (request.resourceType() == "stylesheet") route.abort();
+	else route.continue();
+}
+
 exports.hide = async function (page) {
 	await page.addInitScript(defineVisibility, "hidden");
+	await page.route('**/*.css', noStyle);
 };
 
 exports.show = async function (page) {
+	await page.unroute('**/*.css', noStyle);
 	await page.evaluate(defineVisibility, "visible");
 };
 
@@ -45,19 +52,24 @@ exports.serve = () => {
 };
 
 exports.idle = async function (page, url) {
-	const p = page.locator('html');
-
-	Object.assign(Object.getPrototypeOf(p), {
-		isText: async function(str) {
-			expect(await this.innerText()).toBe(str);
-		},
-		isNotText: async function(str) {
-			expect(await this.innerText()).not.toBe(str);
-		},
-		isAttr: async function(attr, str) {
-			expect(await this.getAttribute(attr)).toBe(str);
-		}
-	});
+	page.isText = async (selector, str) => {
+		const txt = await page.evaluate(selector => {
+			return document.querySelector(selector).textContent;
+		}, selector);
+		expect(txt).toBe(str);
+	};
+	page.isNotText = async (selector, str) => {
+		const txt = await page.evaluate(selector => {
+			return document.querySelector(selector).textContent;
+		}, selector);
+		expect(txt).not.toBe(str);
+	};
+	page.isAttr = async (selector, attr, str) => {
+		const txt = await page.evaluate(({ selector, attr }) => {
+			return document.querySelector(selector)?.getAttribute(attr);
+		}, { selector, attr });
+		expect(txt).toBe(str);
+	};
 	const fnid = 'signal_' + randomUUID();
 	await page.addInitScript(tracker, {
 		id: fnid,
@@ -78,6 +90,7 @@ exports.render = async function (page) {
 	const html = await page.content();
 	const url = page.url();
 	await page.addInitScript(defineVisibility, "visible");
+	await page.unroute('**/*.css', noStyle);
 	await page.route(url, route => {
 		route.fulfill({
 			contentType: 'text/html',

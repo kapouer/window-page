@@ -1,4 +1,4 @@
-const { test, expect } = require('@playwright/test');
+const { test } = require('@playwright/test');
 const { idle, hide, serve, verbose } = require('./common');
 
 
@@ -27,41 +27,41 @@ test.describe("Prerendering", () => {
 
 	test("run build but not setup", async ({ page }) => {
 		await idle(page, "build.html");
-		await page.locator('div.build').isText('1');
-		await page.locator('div.setup').isText('');
+		await page.isText('div.build', '1');
+		await page.isText('div.setup', '');
 	});
 
 	test("run build and patch but not setup", async ({ page }) => {
 		await idle(page, "patch.html");
-		await page.locator('div.build').isText('1');
-		await page.locator('div.patch').isText('1');
-		await page.locator('div.setup').isText('');
+		await page.isText('div.build', '1');
+		await page.isText('div.patch', '1');
+		await page.isText('div.setup', '');
 	});
 
 	test("run route and build", async ({ page }) => {
 		await idle(page, "route.html?template=build");
-		await page.locator('div.build').isText('0');
-		await page.locator('div.setup').isText('');
+		await page.isText('div.build', '0');
+		await page.isText('div.setup', '');
 	});
 
 	test("run route and load scripts in correct order", async ({ page }) => {
 		await idle(page, "route.html?template=order-scripts");
-		await page.locator('div.abc').isText('ABBACCBAC');
+		await page.isText('div.abc', 'ABBACCBAC');
 	});
 
 	test("not load stylesheets", async ({ page }) => {
 		await idle(page, "route.html?template=stylesheets");
-		await page.locator('div.setup').isText('squared0');
+		await page.isText('div.status', 'hidden0');
 	});
 
 	test("run route and not load already loaded scripts", async ({ page }) => {
 		await idle(page, "route.html?template=already-loaded");
-		await page.locator('div.mymark').isText('1');
+		await page.isText('div.mymark', '1');
 	});
 
 	test("reload document during prerendering", async ({ page }) => {
 		await idle(page, "route.html?template=reload-patch");
-		await page.locator('html').isAttr('data-patchs', "2");
+		await page.isAttr('html', 'data-patchs', "2");
 	});
 
 });

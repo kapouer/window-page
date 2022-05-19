@@ -3,11 +3,12 @@
 <head>
 	<title>Template page</title>
 	<script src="../window-page.js"></script>
-	<link rel="stylesheet" href="../assets/square.css"></script>
+	<link rel="stylesheet" href="../assets/square.css">
 	<script>
 var builds = 0;
 var setups = 0;
 Page.build(function(state) {
+	console.log("build")
 	if (document.body.offsetWidth == 400) {
 		document.querySelector('.status').innerHTML = "squared" + (builds + setups);
 	} else {
@@ -16,6 +17,7 @@ Page.build(function(state) {
 	builds++;
 });
 Page.setup(function(state) {
+	console.log("setup")
 	if (document.body.offsetWidth == 400) {
 		document.querySelector('.status').innerHTML = "squared" + (builds + setups);
 	}
