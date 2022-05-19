@@ -360,28 +360,17 @@ export default class State extends Loc {
 			throw new Error("Router should return a document with a documentElement");
 		}
 		const states = {};
-		const selector = 'script:not([type]),script[type="text/javascript"],link[rel="import"]';
+		const selector = 'script:not([type]),script[type="text/javascript"]';
 		for (const node of Utils.all(document, selector)) {
-			const src = node.src || node.href;
+			const src = node.src;
 			if (src) states[src] = true;
 		}
 
-		// if there is no HTMLImports support, some loaded script might contain
-		// the HTMLImports polyfill itself, which will load imports however it likes
-		// so it's hard to decide which order is good, and it's also impossible to know
-		// if that polyfill will be available - so load(state) does not preload
-		// imports nor does it let them run on insert
-		// if there is native support then it's like other resources.
 
 		for (const node of Utils.all(doc, selector)) {
-			// just preload everything
-			if (node.nodeName == "SCRIPT") {
-				node.setAttribute('type', "none");
-			} else if (node.nodeName == "LINK") {
-				node.setAttribute('rel', 'none');
-				if (!node.import) continue; // polyfill already do preloading
-			}
-			const src = node.src || node.href;
+			// prevent loading
+			node.setAttribute('type', "none");
+			const src = node.src;
 			if (!src || states[src] === true) continue;
 			const loc = new Loc(src);
 			if (loc.protocol == "data:") continue;
@@ -394,7 +383,7 @@ export default class State extends Loc {
 
 		function loadNode(node) {
 			let p = P();
-			const src = node.src || node.href;
+			const src = node.src;
 			const state = states[src];
 			const old = state === true;
 			const loader = !old && state;
@@ -409,11 +398,7 @@ export default class State extends Loc {
 					parent.insertBefore(cursor, node);
 					parent.removeChild(node);
 				}
-				if (node.nodeName == "LINK") {
-					node.setAttribute('rel', 'import');
-				} else if (node.nodeName == "SCRIPT") {
-					node.removeAttribute('type');
-				}
+				node.removeAttribute('type');
 				if (old) return;
 				const copy = document.createElement(node.nodeName);
 				for (let i = 0; i < node.attributes.length; i++) {
@@ -423,11 +408,7 @@ export default class State extends Loc {
 				let rp;
 				if (src) {
 					debug("async node loading", src);
-					if (node.nodeName == "LINK" && !node.import) {
-						debug("not loading import", src);
-					} else {
-						rp = Wait.node(copy);
-					}
+					rp = Wait.node(copy);
 				} else {
 					debug("inline node loading");
 					rp = new Promise((resolve) => setTimeout(resolve));
@@ -446,7 +427,7 @@ export default class State extends Loc {
 		this.#updateAttributes(root, nroot);
 
 		const parallels = Wait.styles(head, document.head);
-		const serials = Utils.all(nroot, 'script[type="none"],link[rel="none"]');
+		const serials = Utils.all(nroot, 'script[type="none"]');
 		let oldstyles = [];
 
 		return P().then(() => {

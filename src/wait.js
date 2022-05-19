@@ -22,9 +22,7 @@ export function dom() {
 	document.addEventListener('DOMContentLoaded', readyLsn);
 	window.addEventListener('load', readyLsn);
 
-	return d.promise.then(function() {
-		return imports(document);
-	});
+	return d.promise;
 }
 
 export function ui(val) {
@@ -69,35 +67,6 @@ export function styles(head, old) {
 			return !knowns[item.href];
 		}).map(thenFn)
 	);
-}
-
-export function imports(doc) {
-	const imports = Utils.all(doc, 'link[rel="import"]');
-	const polyfill = window.HTMLImports;
-	const whenReady = (function() {
-		let p;
-		return function() {
-			if (!p) p = new Promise(function(resolve) {
-				polyfill.whenReady(function() {
-					setTimeout(resolve);
-				});
-			});
-			return p;
-		};
-	})();
-
-	return Promise.all(imports.map(function(link) {
-		if (link.import && link.import.readyState == "complete") {
-			// no need to wait, wether native or polyfill
-			return P();
-		}
-		if (polyfill) {
-			// link.onload cannot be trusted
-			return whenReady();
-		}
-
-		return node(link);
-	}));
 }
 
 export function sheet(link) {
