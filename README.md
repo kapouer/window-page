@@ -1,12 +1,12 @@
 # window.Page
 
-Runs promise-based lifecycle page chains.
+Async chains for web page lifecycle.
 
-and integrates with:
+Works well with:
 
+- async navigation
 - custom elements
-- link imports
-- visibility API, when prerendering is done on server
+- visibility API
 - history API
 
 ## Chains
@@ -308,7 +308,7 @@ The `close` chain is run on current state, after the new state has finished
 
 Chains `init` and `ready` are always run.
 
-Chain `setup` is only run if the document is visible (not prerendering, not hidden).
+Chain `setup` is only run if `document.visibilityState == "visible"`.
 
 Internal errors are caught and replaced by calls to document.location's
 assign or replace methods accordingly.
