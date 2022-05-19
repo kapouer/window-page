@@ -24,9 +24,9 @@ export default class State extends Loc {
 	data = {};
 	ui = {};
 	chains = {};
-	#queue
-	#bound
-	static #route
+	#queue;
+	#bound;
+	static #route;
 
 	constructor(obj) {
 		super(obj);
@@ -73,7 +73,7 @@ export default class State extends Loc {
 				name[4] = function (e) {
 					let last = state;
 					while (last.follower) last = last.follower;
-					listener[name[1]].call(listener, e, last);
+					listener[name[1]](e, last);
 				};
 				(name[0] ? window : node).addEventListener(name[2], name[4], name[3]);
 			}
