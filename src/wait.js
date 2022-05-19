@@ -79,7 +79,7 @@ export function sheet(link) {
 	}
 	if (ok) return Promise.resolve();
 	const nlink = link.cloneNode();
-	nlink.media = "print";
+	nlink.media = "unknown";
 	const p = node(nlink);
 	const parent = link.parentNode;
 	parent.insertBefore(nlink, link.nextSibling);
