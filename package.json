@@ -1,6 +1,6 @@
 {
   "name": "window-page",
-  "version": "13.2.0",
+  "version": "14.0.0",
   "description": "Route, setup, and build web pages",
   "main": "lib/window-page.js",
   "module": "index.js",
@@ -11,7 +11,7 @@
     }
   },
   "scripts": {
-    "test": "npm run prepare && mocha",
+    "test": "npm run prepare && npx playwright test",
     "prepare": "postinstall"
   },
   "prepare": {
@@ -40,23 +40,11 @@
     "url": "https://github.com/kapouer/window-page/issues"
   },
   "devDependencies": {
-    "@kapouer/eslint-config": "^1.5.1",
-    "expect.js": "^0.3.1",
-    "express": "^4.17.1",
-    "express-dom": "^5.13.4",
-    "gport": "^1.1.1",
-    "mocha": "^9.1.1",
-    "postinstall": "^0.7.0",
-    "postinstall-bundle": "^0.7.3",
-    "request": "^2.88.2",
-    "selenium-webdriver": "^3.0.1",
-    "webcomponents.js": "^0.7.24",
-    "webkitgtk": "^4.12.1",
-    "window-agent": "^1.2.0"
-  },
-  "mocha": {
-    "spec": "test/*.js",
-    "exit": true
+    "@kapouer/eslint-config": "^1.6.2",
+    "@playwright/test": "^1.22.1",
+    "express": "^4.18.1",
+    "postinstall": "^0.7.4",
+    "postinstall-bundle": "^0.7.4"
   },
   "eslintConfig": {
     "extends": "@kapouer/eslint-config",
@@ -70,14 +58,6 @@
         ],
         "env": {
           "es6": true
-        }
-      },
-      {
-        "files": [
-          "test/*.js"
-        ],
-        "env": {
-          "mocha": true
         }
       },
       {

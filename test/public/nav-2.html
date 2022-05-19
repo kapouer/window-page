@@ -8,10 +8,10 @@
 Page.setup(function(state) {
 	setTimeout(function() {
 		if (state.referrer.pathname == "/nav-3.html") {
-			debug("arrived from nav-3 to nav-2, going back");
+			// console.log("arrived from nav-3 to nav-2, going back");
 			window.history.back();
 		} else if (state.referrer.pathname == "/nav-1.html") {
-			debug("going to nav3")
+			// console.log("going to nav3")
 			state.push({pathname: '/nav-3.html'});
 		} else {
 			console.error("bad referrer", state.referrer.pathname, "at", state.pathname, "really nav-2");

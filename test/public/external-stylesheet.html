@@ -4,11 +4,11 @@
 	<title>Template page</title>
 	<link rel="stylesheet" href="../assets/square.css">
 	<script>
-		var port = document.location.search.split('=').pop();
+		var port = new URL(document.location).searchParams.get('port');
 		document.write('<' + 'link rel="stylesheet" href="http://localhost:' + port + '/assets/external.css">');
 	</script>
-	<script src="../window-page.js?delay=1"></script>
-	<script src="../assets/external.js?delay=1"></script>
+	<script src="../window-page.js?delay=1000"></script>
+	<script src="../assets/external.js?delay=1000"></script>
 </head>
 <body>
 <div class="status"></div>

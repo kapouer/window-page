@@ -17,7 +17,7 @@ function trigger() {
 }
 Page.patch(function(state) {
 	Page.setup(function(state) {
-		if (state.query.test >= 5) return;
+		if (state.query.test >= 2) return;
 		trigger();
 	});
 });

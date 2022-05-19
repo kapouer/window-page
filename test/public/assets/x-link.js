@@ -19,7 +19,8 @@ class HTMLXLinkElement extends HTMLElement {
 	patch(state) {
 		this.href = Page.format({query: {
 			test: (parseInt(state.query.test) || 0) + 1
-		}});
+		}
+		});
 	}
 }
 

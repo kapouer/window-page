@@ -8,7 +8,7 @@ Page.route(function() {
 
 });
 Page.build(function(state) {
-	document.body.firstChild.innerText += 'a';
+	document.body.firstElementChild.innerText += 'a';
 	if (!window.reloaded) state.finish(function() {
 		window.reloaded = true;
 		state.reload();

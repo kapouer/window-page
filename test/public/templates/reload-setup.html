@@ -15,10 +15,10 @@ Page.patch(function(state) {
 window.setups = window.setups || 0;
 window.closes = window.closes || 0;
 Page.setup(function() {
-	document.documentElement.dataset.setups = ++window.setups;
+	document.documentElement.dataset.setup = ++window.setups;
 });
 Page.close(function() {
-	document.documentElement.dataset.closes = ++window.closes;
+	document.documentElement.dataset.close = ++window.closes;
 });
 
 	</script>

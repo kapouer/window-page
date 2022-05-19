@@ -11,11 +11,11 @@ Page.route(function(state) {
 
 Page.build(function(state) {
 	state.data.build = (state.data.build || 0) + 1;
-	document.body.dataset.builds = (document.body.dataset.builds || "") + "-" + state.data.build;
+	document.body.dataset.build = (document.body.dataset.build || "") + "-" + state.data.build;
 });
 Page.patch(function(state) {
 	state.data.patch = (state.data.patch || 0) + 1;
-	document.body.dataset.patches = (document.body.dataset.patches || "") + "-" + state.data.patch;
+	document.body.dataset.patch = (document.body.dataset.patch || "") + "-" + state.data.patch;
 	if (state.query.toto == 1) setTimeout(function() {
 		state.push("/other");
 	}, 50);

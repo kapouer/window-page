@@ -24,8 +24,11 @@ function checkNums(state) {
 	}
 	node.innerHTML = ++nums[stage];
 }
-
+Page.setup(state => {
+	console.log("setup event")
+})
 Page.hash(function(state) {
+	console.log("hash event")
 	document.querySelector('#hash').innerHTML = state.hash;
 });
 	</script>

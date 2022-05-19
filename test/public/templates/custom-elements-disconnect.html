@@ -12,14 +12,14 @@ class HTMLXSetupElement extends HTMLElement {
 		Page.disconnect(this);
 	}
 	setup(state) {
-			document.body.dataset.setups++;
+			document.body.dataset.setup++;
 	}
 }
 
 window.customElements.define("x-setup", HTMLXSetupElement);
 
 Page.setup(function(state) {
-	document.body.dataset.setups = 0;
+	document.body.dataset.setup = 0;
 	document.body.insertAdjacentHTML('beforeEnd', '<x-setup></x-setup>');
 	document.body.firstElementChild.remove();
 });
