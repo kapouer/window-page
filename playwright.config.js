@@ -1,11 +1,10 @@
 module.exports = {
 	timeout: 10000,
-	projects: [{
-		name: 'Default',
-		channel: process.env.BROWSER ?? 'chrome',
-		retries: 0,
-	}],
 	use: {
-		baseURL: 'http://localhost:3030'
+		browserName: 'chromium',
+		channel: 'chrome'
+	},
+	expect: {
+		timeout: 1 // make expect pooling fail
 	}
 };

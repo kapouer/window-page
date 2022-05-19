@@ -1,5 +1,5 @@
 const { test, expect } = require('@playwright/test');
-const { initVisibility, serve, verbose } = require('./common');
+const { idle, hide, serve, verbose } = require('./common');
 
 
 
@@ -21,47 +21,47 @@ test.describe("Prerendering", () => {
 	test.beforeEach(async ({ page }) => {
 		// inject user script
 		await verbose(page);
-		await initVisibility(page);
+		await hide(page);
 	});
 
 
 	test("run build but not setup", async ({ page }) => {
-		await page.goto("build.html");
-		await expect(page.locator("div.build")).toHaveText("1");
-		await expect(page.locator("div.setup")).toBeEmpty();
+		await idle(page, "build.html");
+		await page.locator('div.build').isText('1');
+		await page.locator('div.setup').isText('');
 	});
 
 	test("run build and patch but not setup", async ({ page }) => {
-		await page.goto("patch.html");
-		await expect(page.locator("div.build")).toHaveText("1");
-		await expect(page.locator("div.patch")).toHaveText("1");
-		await expect(page.locator("div.setup")).toBeEmpty();
+		await idle(page, "patch.html");
+		await page.locator('div.build').isText('1');
+		await page.locator('div.patch').isText('1');
+		await page.locator('div.setup').isText('');
 	});
 
 	test("run route and build", async ({ page }) => {
-		await page.goto("route.html?template=build");
-		await expect(page.locator("div.build")).toHaveText("0");
-		await expect(page.locator("div.setup")).toBeEmpty();
+		await idle(page, "route.html?template=build");
+		await page.locator('div.build').isText('0');
+		await page.locator('div.setup').isText('');
 	});
 
 	test("run route and load scripts in correct order", async ({ page }) => {
-		await page.goto("route.html?template=order-scripts");
-		await expect(page.locator("div.abc")).toHaveText("ABBACCBAC");
+		await idle(page, "route.html?template=order-scripts");
+		await page.locator('div.abc').isText('ABBACCBAC');
 	});
 
 	test("not load stylesheets", async ({ page }) => {
-		await page.goto("route.html?template=stylesheets");
-		await expect(page.locator("div.status")).toHaveText("squared0");
+		await idle(page, "route.html?template=stylesheets");
+		await page.locator('div.setup').isText('squared0');
 	});
 
 	test("run route and not load already loaded scripts", async ({ page }) => {
-		await page.goto("route.html?template=already-loaded");
-		await expect(page.locator("div.mymark")).toHaveText("1");
+		await idle(page, "route.html?template=already-loaded");
+		await page.locator('div.mymark').isText('1');
 	});
 
 	test("reload document during prerendering", async ({ page }) => {
-		await page.goto("route.html?template=reload-patch");
-		await expect(page.locator("html")).toHaveAttribute("data-patchs", "2");
+		await idle(page, "route.html?template=reload-patch");
+		await page.locator('html').isAttr('data-patchs', "2");
 	});
 
 });

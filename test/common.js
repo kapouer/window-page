@@ -1,6 +1,7 @@
 const express = require('express');
 const tracker = require('./tracker');
 const { randomUUID } = require('node:crypto');
+const { expect } = require('@playwright/test');
 
 function defineVisibility(state) {
 	const prev = document.visibilityState;
@@ -17,11 +18,11 @@ function defineVisibility(state) {
 	}
 }
 
-exports.initVisibility = async function (page) {
+exports.hide = async function (page) {
 	await page.addInitScript(defineVisibility, "hidden");
 };
 
-exports.becomeVisible = async function (page) {
+exports.show = async function (page) {
 	await page.evaluate(defineVisibility, "visible");
 };
 
@@ -44,11 +45,45 @@ exports.serve = () => {
 };
 
 exports.idle = async function (page, url) {
+	const p = page.locator('html');
+
+	Object.assign(Object.getPrototypeOf(p), {
+		isText: async function(str) {
+			expect(await this.innerText()).toBe(str);
+		},
+		isNotText: async function(str) {
+			expect(await this.innerText()).not.toBe(str);
+		},
+		isAttr: async function(attr, str) {
+			expect(await this.getAttribute(attr)).toBe(str);
+		}
+	});
 	const fnid = 'signal_' + randomUUID();
 	await page.addInitScript(tracker, {
 		id: fnid,
 		timeout: 3000
 	});
+	await page.goto(url, {
+		waitUntil: "networkidle"
+	});
+	await page.evaluate(id => window[id], fnid);
+};
+
+exports.render = async function (page) {
+	const fnid = 'signal_' + randomUUID();
+	await page.addInitScript(tracker, {
+		id: fnid,
+		timeout: 3000
+	});
+	const html = await page.content();
+	const url = page.url();
+	await page.addInitScript(defineVisibility, "visible");
+	await page.route(url, route => {
+		route.fulfill({
+			contentType: 'text/html',
+			body: html
+		});
+	}, { times: 1 });
 	await page.goto(url, {
 		waitUntil: "networkidle"
 	});
