@@ -29,7 +29,7 @@ export function dom() {
 
 export function ui(val) {
 	let solve, p;
-	if (document.hidden) {
+	if (document.hidden || document.visibilityState == "hidden" || document.visibilityState == "prerender") {
 		p = new Promise(function(resolve) {
 			solve = resolve;
 		});
@@ -45,8 +45,10 @@ export function ui(val) {
 	return sp;
 
 	function listener() {
-		document.removeEventListener('visibilitychange', listener, false);
-		solve();
+		if (!document.hidden || document.visibilityState == "visible") {
+			document.removeEventListener('visibilitychange', listener, false);
+			solve();
+		}
 	}
 }
 
