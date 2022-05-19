@@ -30,8 +30,7 @@
   "keywords": [
     "dom",
     "router",
-    "history",
-    "webcomponent",
+    "async",
     "prerender"
   ],
   "author": "Jérémy Lal <kapouer@melix.org>",
