@@ -4,7 +4,7 @@ function fromParams(params, query, head) {
 	const prefixes = {};
 	const local = {};
 	let lastKey, lastIndex = null;
-	params.forEach(function (val, key) {
+	params.forEach((val, key) => {
 		const list = key.split('.');
 		if (list.length == 1) {
 			const fkey = head ? head + "." + key : key;
@@ -48,7 +48,7 @@ export function parse(str) {
 }
 
 function toParams(query, params, prefix) {
-	const keys = Object.keys(query).sort(function (a, b) {
+	const keys = Object.keys(query).sort((a, b) => {
 		return a[0].localeCompare(b[0]);
 	});
 	for (let key of keys) {

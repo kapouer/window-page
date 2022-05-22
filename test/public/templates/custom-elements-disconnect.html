@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title></title>
+	<title>Disconnect custom element</title>
 	<script src="../window-page.js"></script>
 	<script>
 class HTMLXSetupElement extends HTMLElement {
@@ -12,7 +12,7 @@ class HTMLXSetupElement extends HTMLElement {
 		Page.disconnect(this);
 	}
 	setup(state) {
-			document.body.dataset.setup++;
+		document.body.dataset.setup++;
 	}
 }
 

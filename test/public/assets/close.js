@@ -28,7 +28,7 @@ function delay(str, ms) {
 	});
 }
 
-Page.setup(function(state) {
+Page.setup(function (state) {
 	if (state.query.close !== undefined) state.finish(function() {
 		state.push('/close.html');
 	});

@@ -1,9 +1,7 @@
-import * as Utils from './utils';
+import { Queue, Deferred, debug, queryAll, get, createDoc } from './utils';
 import Loc from './loc';
 import * as Wait from './wait';
 import Diff from 'levenlistdiff';
-const P = Utils.P;
-const debug = Utils.debug;
 
 const INIT = "init";
 const READY = "ready";
@@ -17,8 +15,9 @@ const HASH = "hash";
 const Stages = [INIT, READY, BUILD, PATCH, SETUP, PAINT, HASH, ERROR, CLOSE];
 const NodeEvents = [BUILD, PATCH, SETUP, PAINT, HASH, CLOSE];
 
-const runQueue = new Utils.Queue();
-let uiQueue;
+const runQueue = new Queue();
+const uiQueue = new Wait.UiQueue();
+const chainsMap = {};
 
 export default class State extends Loc {
 	data = {};
@@ -30,23 +29,23 @@ export default class State extends Loc {
 
 	constructor(obj) {
 		super(obj);
-		this.#queue = new Utils.Deferred();
+		this.#queue = new Deferred();
 	}
 
 	rebind(W) {
 		if (this.#bound) return W;
 		this.#bound = true;
 		for (const stage of Stages) {
-			W[stage] = (fn) => this.chain(stage, fn);
-			W['un' + stage] = (fn) => this.unchain(stage, fn);
-			W.finish = (fn) => {
+			W[stage] = fn => this.chain(stage, fn);
+			W['un' + stage] = fn => this.unchain(stage, fn);
+			W.finish = fn => {
 				if (fn) return this.#queue.then(fn);
-				else return this.#queue.promise;
+				else return this.#queue;
 			};
 		}
-		W.route = (fn) => State.#route = fn;
+		W.route = fn => State.#route = fn;
 		W.connect = (listener, node) => this.connect(listener, node);
-		W.disconnect = (listener) => this.disconnect(listener);
+		W.disconnect = listener => this.disconnect(listener);
 		return W;
 	}
 
@@ -68,7 +67,7 @@ export default class State extends Loc {
 				methods.push([all, name, key.slice(7).toLowerCase(), true]);
 			}
 		}
-		if (methods.length) this.chain(SETUP, function (state) {
+		if (methods.length) this.chain(SETUP, state => {
 			for (const name of methods) {
 				name[4] = function (e) {
 					let last = state;
@@ -113,7 +112,7 @@ export default class State extends Loc {
 		return runQueue.queue(() => this.#run(opts));
 	}
 
-	#run(opts) {
+	async #run(opts) {
 		if (!opts) opts = {};
 		this.rebind(window.Page);
 		if (opts.data) Object.assign(this.data, opts.data);
@@ -151,58 +150,55 @@ export default class State extends Loc {
 			}
 		}
 
-		Wait.dom().then(() => {
-			if (prerendered == null) prerendered = this.#prerender();
-			return this.runChain(INIT);
-		}).then(() => {
+		await Wait.dom();
+		if (prerendered == null) prerendered = this.#prerender();
+		try {
+			await this.runChain(INIT);
 			if (!samePathname || !prerendered) {
-				const fn = State.#route;
-				if (fn) return fn(this);
-				else return this.#defaultRoute();
+				const doc = await (State.#route ? State.#route(this) : this.#defaultRoute());
+				if (doc) {
+					if (doc != document) await this.#load(doc);
+					prerendered = this.#prerender();
+				}
 			}
-		}).then((doc) => {
-			if (doc && doc != document) return this.#load(doc);
-		}).then((doc) => {
-			if (doc) prerendered = this.#prerender();
 			this.#prerender(true);
 			debug("prerendered", prerendered);
-			return this.runChain(READY);
-		}).then(() => {
-			if (!prerendered || !samePathname) return this.runChain(BUILD);
-		}).then(() => {
-			if (!prerendered || !sameQuery) return this.runChain(PATCH);
-			else this.initChain(PATCH);
-		}).then(() => {
-			// if multiple runs are made without ui,
+			await this.runChain(READY);
+			if (!prerendered || !samePathname) {
+				await this.runChain(BUILD);
+			}
+			if (!prerendered || !sameQuery) {
+				await this.runChain(PATCH);
+			} else {
+				await this.initChain(PATCH);
+			}
+			// ui queue forks, so if multiple runs are made
 			// only the first refer is closed, and the last state is setup
-			if (!uiQueue) uiQueue = Wait.ui(refer);
-			uiQueue.fn = (refer) => {
-				uiQueue = null;
-				return Promise.resolve().then(() => {
+			uiQueue.run(async () => {
+				try {
 					window.removeEventListener('popstate', refer);
 					window.addEventListener('popstate', this);
+					await Wait.styles(document.head);
 					if (!refer.stage || !samePathname) {
-						return this.runChain(SETUP);
+						await this.runChain(SETUP);
 					}
-				}).then(() => {
-					return this.runChain(PAINT);
-				}).then(() => {
+					await this.runChain(PAINT);
 					if (refer.stage && !samePathname) {
-						return refer.runChain(CLOSE);
+						// close old state after new state setup to allow transitions
+						await refer.runChain(CLOSE);
 					}
-				}).then(() => {
-					if (!sameHash) return this.runChain(HASH);
-				});
-			};
-		}).catch((err) => {
-			this.error = err;
-			return (this.runChain(ERROR) || P()).then(() => {
-				if (this.error) this.#queue.fail(this.error);
+					if (!sameHash) await this.runChain(HASH);
+				} catch (err) {
+					console.error(err);
+				}
 			});
-		}).then(() => {
-			this.#queue.ok(this);
-		});
-		return this.#queue.promise;
+		} catch(err) {
+			this.error = err;
+			await this.runChain(ERROR);
+			if (this.error) this.#queue.reject(this.error);
+		}
+		this.#queue.resolve(this);
+		return this.#queue;
 	}
 
 	emit(name) {
@@ -212,15 +208,21 @@ export default class State extends Loc {
 			cancelable: true,
 			detail: this
 		});
-		for (const node of Utils.all(document, 'script'))	node.dispatchEvent(e);
+		for (const node of queryAll(document, 'script')) {
+			node.dispatchEvent(e);
+		}
 		if (this.emitter) this.emitter.dispatchEvent(e);
 	}
 
 	initChain(name) {
-		let chain = this.chains[name];
-		if (!chain) chain = this.chains[name] = {};
-		chain.count = 0;
-		chain.promise = P();
+		const chain = this.chains[name] ?? (this.chains[name] = { name });
+		chain.hold = new Deferred();
+		chain.after = new Queue();
+		// block after
+		chain.after.queue(() => chain.hold);
+		chain.current = new Queue();
+		// unblock after when current.done is resolved
+		chain.current.done.then(chain.hold.resolve);
 		return chain;
 	}
 
@@ -228,75 +230,53 @@ export default class State extends Loc {
 		this.stage = name;
 		const chain = this.initChain(name);
 		debug("run chain", name);
-		chain.final = new Utils.Deferred();
 		this.emit("page" + name);
-		debug("run chain count", name, chain.count);
-		if (!chain.count) return;
-		return chain.promise
-			.then(function () {
-				const ok = chain.final.ok;
-				if (ok) ok();
-				delete chain.final.ok;
-			})
-			.catch(chain.final.fail)
-			.then(function () {
-				return chain.final.promise;
-			});
+		debug("run chain length", name, chain.current.length);
+		if (chain.current.length == 0) chain.hold.resolve();
+		return chain.after.done;
 	}
 
 
 	chain(stage, fn) {
 		if (!fn) throw new Error("Missing function or listener");
 		const state = this;
-		let ls = fn._pageListeners;
-		if (!ls) ls = fn._pageListeners = {};
-		let lfn = ls[stage];
-		let emitter = document.currentScript;
-		if (!emitter) {
-			if (fn.matches?.('script')) emitter = fn;
-			else emitter = state.emitter;
-		}
-
+		const stageMap = chainsMap[stage] ?? (chainsMap[stage] = new Map());
+		const emitter = document.currentScript
+			|| fn.matches?.('script') && fn
+			|| state.emitter;
+		let lfn = stageMap.get(fn);
 		if (!lfn) {
-			lfn = ls[stage] = {
+			lfn = {
 				fn: this.#chainListener(stage, fn),
-				em: emitter
+				emitters: new Set()
 			};
+			stageMap.set(fn, lfn);
+		}
+		if (!lfn.emitters.has(emitter)) {
+			lfn.emitters.add(emitter);
 			emitter.addEventListener('page' + stage, lfn.fn);
 		} else {
 			debug("already chained", stage, fn);
 		}
-		let p = P();
 		const chain = this.chains[stage];
-		if (!chain) {
+		if (!chain?.current) {
 			debug("chain pending", stage);
-		} else if (chain.count && chain.final && chain.final.ok) {
+		} else if (chain.current.stopped) {
+			return lfn.fn?.({ detail: state });
+		} else {
 			debug("chain is running", stage);
 			// not finished
-			chain.final.ok = function (done) {
-				return P().then(function () {
-					if (lfn.fn) return lfn.fn({ detail: state });
-				}).then(done);
-			}.bind(null, chain.final.ok);
-		} else {
-			debug("chain is done", stage);
-			p = p.then(function () {
-				if (lfn.fn) return lfn.fn({ detail: state });
-			});
+			chain.current.queue(() => lfn.fn?.({ detail: state }));
 		}
-		return p;
 	}
 
 	finish(fn) {
 		const stage = this.stage;
 		const chain = this.chains[stage];
 		if (!chain) {
-			// eslint-disable-next-line no-console
 			console.warn("state.finish must be called from chain listener");
 		} else {
-			chain.final.promise = chain.final.promise.then(() => {
-				return this.#runFn(stage, fn);
-			});
+			chain.after.queue(() => this.#runFn(stage, fn));
 		}
 		return this;
 	}
@@ -305,7 +285,6 @@ export default class State extends Loc {
 		const stage = this.stage;
 		const chain = this.chains[stage];
 		if (!chain) {
-			// eslint-disable-next-line no-console
 			console.warn("state.stop must be called from chain listener");
 		} else {
 			chain.stop = true;
@@ -314,109 +293,107 @@ export default class State extends Loc {
 	}
 
 	unchain(stage, fn) {
-		const ls = fn._pageListeners;
-		if (!ls) return;
-		const lfn = ls[stage];
+		const stageMap = chainsMap[stage];
+		const lfn = stageMap?.get(fn);
 		if (!lfn) return;
-		delete ls[stage];
-		lfn.em.removeEventListener('page' + stage, lfn.fn);
-		delete lfn.fn; // so that already reached chains can be unchained before execution
+		stageMap.delete(fn);
+		// the task in queue is not removed
+		// yet the function is no longer called from the task
+		for (const emitter of lfn.emitters) {
+			emitter.removeEventListener('page' + stage, lfn.fn);
+		}
+		// chain might have queued lfn.fn call
+		lfn.fn = null;
 	}
 
 	#chainListener(stage, fn) {
 		return (e) => {
 			const state = e.detail;
-			const chain = state.chains[stage];
-			const stop = chain.stop;
-			if (chain.count == null) chain.count = 0;
-			chain.count++;
-			chain.promise = chain.promise.then(() => {
-				return !stop && state.#runFn(stage, fn);
-			}).catch((err) => {
-				// eslint-disable-next-line no-console
-				console.error("Page." + stage, err);
+			const q = state.chains[stage]?.current;
+			q.queue(() => {
+				if (q.stopped) return;
+				return state.#runFn(stage, fn);
 			});
-			return chain.promise;
+			return q;
 		};
 	}
 
-	#runFn(stage, fn) {
+	async #runFn(stage, fn) {
 		const n = 'chain' + stage[0].toUpperCase() + stage.slice(1);
-		const meth = fn[n] || fn[stage];
-		if (meth && typeof meth == "function") {
-			if (stage == CLOSE) this.unchain(stage, fn);
-			return meth.call(fn, this);
-		} else if (typeof fn == "function") {
-			return fn(this);
-		} else {
-			// eslint-disable-next-line no-console
-			console.warn("Missing function");
+		const meth = fn?.[n] ?? fn?.[stage];
+		try {
+			if (meth && typeof meth == "function") {
+				if (stage == CLOSE) this.unchain(stage, fn);
+				return await meth.call(fn, this);
+			} else if (typeof fn == "function") {
+				return await fn(this);
+			} else {
+				console.warn("Missing function");
+			}
+		} catch (err) {
+			console.error("Page." + stage, err);
 		}
 	}
 
-	#load(doc) {
+	async #load(doc) {
 		debug("Import new document");
 		if (!doc.documentElement || !doc.querySelector) {
 			throw new Error("Router should return a document with a documentElement");
 		}
 		const states = {};
 		const selector = 'script:not([type]),script[type="text/javascript"]';
-		for (const node of Utils.all(document, selector)) {
+		for (const node of queryAll(document, selector)) {
 			const src = node.src;
 			if (src) states[src] = true;
 		}
 
+		const preloader = new Deferred();
 
-		for (const node of Utils.all(doc, selector)) {
+		for (const node of queryAll(doc, selector)) {
 			// prevent loading
 			node.setAttribute('type', "none");
 			const src = node.src;
 			if (!src || states[src] === true) continue;
 			const loc = new Loc(src);
 			if (loc.protocol == "data:") continue;
-			if (loc.sameDomain(this)) states[src] = Utils.get(src, 400).then(() => {
-				debug("preloaded", src);
-			}).catch((err) => {
-				debug("not preloaded", src, err);
-			});
+			// schedule preloading
+			if (loc.sameDomain(this)) states[src] = preloader
+				.then(() => get(src, 400))
+				.then(() => debug("preloaded", src))
+				.catch(err => debug("not preloaded", src, err));
 		}
 
-		function loadNode(node) {
-			let p = P();
+		async function loadNode(node) {
 			const src = node.src;
 			const state = states[src];
 			const old = state === true;
 			const loader = !old && state;
-			if (loader) {
-				p = p.then(loader);
+			if (loader) await loader;
+			const parent = node.parentNode;
+			let cursor;
+			if (!old) {
+				cursor = document.createTextNode("");
+				parent.insertBefore(cursor, node);
+				parent.removeChild(node);
 			}
-			return p.then(function () {
-				const parent = node.parentNode;
-				let cursor;
-				if (!old) {
-					cursor = document.createTextNode("");
-					parent.insertBefore(cursor, node);
-					parent.removeChild(node);
-				}
-				node.removeAttribute('type');
-				if (old) return;
-				const copy = document.createElement(node.nodeName);
-				for (let i = 0; i < node.attributes.length; i++) {
-					copy.setAttribute(node.attributes[i].name, node.attributes[i].value);
-				}
-				if (node.textContent) copy.textContent = node.textContent;
-				let rp;
-				if (src) {
-					debug("async node loading", src);
-					rp = Wait.node(copy);
-				} else {
-					debug("inline node loading");
-					rp = new Promise((resolve) => setTimeout(resolve));
-				}
-				parent.insertBefore(copy, cursor);
-				parent.removeChild(cursor);
-				if (rp) return rp;
-			});
+			node.removeAttribute('type');
+			if (old) return;
+			const copy = document.createElement(node.nodeName);
+			for (let i = 0; i < node.attributes.length; i++) {
+				copy.setAttribute(node.attributes[i].name, node.attributes[i].value);
+			}
+			if (node.textContent) copy.textContent = node.textContent;
+			let rp;
+			if (src) {
+				debug("async node loading", src);
+				rp = Wait.node(copy);
+			} else {
+				debug("inline node loading");
+				rp = new Promise(resolve => setTimeout(resolve));
+			}
+			parent.insertBefore(copy, cursor);
+			parent.removeChild(cursor);
+			return rp;
 		}
 
 		const root = document.documentElement;
@@ -427,25 +404,16 @@ export default class State extends Loc {
 		this.#updateAttributes(root, nroot);
 
 		const parallels = Wait.styles(head, document.head);
-		const serials = Utils.all(nroot, 'script[type="none"]');
-		let oldstyles = [];
-
-		return P().then(() => {
-			oldstyles = this.mergeHead(head, document.head);
-			return parallels;
-		}).then(() => {
-			return this.mergeBody(body, document.body);
-		}).then(() => {
-			for (const node of oldstyles) node.remove();
-			// scripts must be run in order
-			let p = P();
-			for (const node of serials) {
-				p = p.then(() => loadNode(node));
-			}
-			return p;
-		}).then(function () {
-			return doc;
-		});
+		const serials = queryAll(nroot, 'script[type="none"]');
+		const oldstyles = this.mergeHead(head, document.head);
+		preloader.resolve();
+		await parallels;
+		await this.mergeBody(body, document.body);
+		for (const node of oldstyles) node.remove();
+		// scripts must be run in order
+		for (const node of serials) {
+			await loadNode(node);
+		}
 	}
 
 	mergeHead(node) {
@@ -453,7 +421,7 @@ export default class State extends Loc {
 		const from = document.head;
 		const to = node;
 		const collect = [];
-		const list = Diff(from.children, to.children, function (child) {
+		const list = Diff(from.children, to.children, child => {
 			const key = child.src || child.href;
 			if (key) return child.nodeName + '_' + key;
 			else return child.outerHTML;
@@ -517,11 +485,11 @@ export default class State extends Loc {
 		else if (opts === true) opts = { vary: true };
 		let vary = opts.vary;
 		if (vary == null) {
-			if (this.chains.build && this.chains.build.count) {
+			if (this.chains.build?.current?.count) {
 				vary = BUILD;
-			} else if (this.chains.patch && this.chains.patch.count) {
+			} else if (this.chains.patch?.current?.count) {
 				vary = PATCH;
-			} else if (this.chains.hash && this.chains.hash.count) {
+			} else if (this.chains.hash?.current?.count) {
 				vary = HASH;
 			}
 			opts.vary = vary;
@@ -537,24 +505,23 @@ export default class State extends Loc {
 		return new State(new Loc(this));
 	}
 
-	#defaultRoute() {
+	async #defaultRoute() {
 		const refer = this.referrer;
 		if (!refer.stage) {
 			debug("Default router starts after navigation");
 			return;
 		}
 		const url = this.toString();
-		return Utils.get(url, 500, 'text/html').then(function (client) {
-			let doc;
-			if (client.status >= 200) {
-				doc = Utils.createDoc(client.responseText);
-				if (client.status >= 400 && (!doc.body || doc.body.children.length == 0)) {
-					throw new Error(client.statusText);
-				}
+		const client = await get(url, 500, 'text/html');
+		let doc;
+		if (client.status >= 200) {
+			doc = createDoc(client.responseText);
+			if (client.status >= 400 && (!doc.body || doc.body.children.length == 0)) {
+				throw new Error(client.statusText);
 			}
-			if (!doc) throw new Error("Cannot load remote document");
-			return doc;
-		});
+		}
+		if (!doc) throw new Error("Cannot load remote document");
+		return doc;
 	}
 
 	handleEvent(e) {
@@ -562,13 +529,10 @@ export default class State extends Loc {
 			debug("history event from", this.pathname, this.query, "to", e.state && e.state.href || null);
 			const state = this.#stateFrom(e.state) || new State();
 			state.referrer = this;
-			state.run().catch(function (err) {
-				// eslint-disable-next-line no-console
+			state.run().catch(err => {
 				console.error(err);
 				const url = state.toString();
-				setTimeout(function () {
-					document.location.replace(url);
-				}, 50);
+				setTimeout(() => document.location.replace(url), 50);
 			});
 		}
 	}
@@ -597,7 +561,7 @@ export default class State extends Loc {
 		return true;
 	}
 
-	#historyMethod(method, loc, opts) {
+	async #historyMethod(method, loc, opts) {
 		let refer = this;
 		while (refer.follower) {
 			// a common mistake is to call state.push on an old state
@@ -608,22 +572,21 @@ export default class State extends Loc {
 		copy.referrer = refer;
 		refer.follower = copy;
 		if (!copy.sameDomain(refer)) {
-			// eslint-disable-next-line no-console
 			if (method == "replace") console.info("Cannot replace to a different origin");
 			document.location.assign(copy.toString());
-			return P();
 		}
 		debug("run", method, copy, opts);
-		return copy.run(opts).then((state) => {
+		try {
+			const state = await copy.run(opts);
 			state.#historySave(method);
-		}).catch(function (err) {
-			// eslint-disable-next-line no-console
+			return state;
+		} catch(err) {
 			console.error(err);
 			const url = copy.toString();
 			setTimeout(() => {
 				if (method == "replace") document.location.replace(url);
 				else document.location.assign(url);
 			}, 50);
-		});
+		}
 	}
 }

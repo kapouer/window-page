@@ -1,51 +1,56 @@
-import * as Utils from './utils';
-
-const P = Utils.P;
+import { Deferred, queryAll, once } from './utils';
 
 let domReady = false;
-export function dom() {
-	if (domReady) return P();
-	const d = new Utils.Deferred();
-	if (document.readyState == "complete") {
+function readyLsn() {
+	if (!domReady) {
 		domReady = true;
-		setTimeout(d.ok);
-		return d.promise;
+		return true;
 	}
-
-	function readyLsn() {
-		document.removeEventListener('DOMContentLoaded', readyLsn);
-		window.removeEventListener('load', readyLsn);
-		if (domReady) return;
-		domReady = true;
-		d.ok();
-	}
-	document.addEventListener('DOMContentLoaded', readyLsn);
-	window.addEventListener('load', readyLsn);
-
-	return d.promise;
 }
 
-export function ui(val) {
-	let solve, p;
-	if (document.hidden || document.visibilityState == "hidden" || document.visibilityState == "prerender") {
-		p = new Promise(function(resolve) {
-			solve = resolve;
-		});
-		document.addEventListener('visibilitychange', listener, false);
-	} else {
-		p = P();
+export function dom() {
+	if (domReady) return;
+	const d = new Deferred();
+	if (document.readyState == "complete") {
+		domReady = true;
+		setTimeout(d.resolve);
+		return d;
 	}
-	const sp = p.then(function() {
-		return styles(document.head);
-	}).then(function() {
-		return sp.fn(val);
-	});
-	return sp;
+	return Promise.race([
+		once(document, 'DOMContentLoaded', readyLsn),
+		once(window, 'load', readyLsn)
+	]);
+}
 
-	function listener() {
-		if (!document.hidden || document.visibilityState == "visible") {
-			document.removeEventListener('visibilitychange', listener, false);
-			solve();
+function isDocVisible() {
+	return !document.hidden || document.visibilityState == "visible";
+}
+
+export class UiQueue {
+	// run last job when doc is visible, then run all jobs
+	#d = new Deferred();
+	#job;
+	constructor() {
+		this.#d.then(() => {
+			this.#d = null;
+			const job = this.#job;
+			if (job) {
+				this.#job = null;
+				return job();
+			}
+		});
+		if (!isDocVisible()) {
+			once(document, 'visibilitychange', isDocVisible).then(this.#d.resolve);
+		} else {
+			setTimeout(this.#d.resolve, 0);
+		}
+	}
+	run(job) {
+		if (this.#d) {
+			this.#job = job;
+		} else {
+			job();
+			this.#job = null;
 		}
 	}
 }
@@ -55,7 +60,7 @@ export function styles(head, old) {
 	let thenFn;
 	const sel = 'link[rel="stylesheet"]';
 	if (old && head != old) {
-		for (const item of Utils.all(old, sel)) {
+		for (const item of queryAll(old, sel)) {
 			knowns[item.href] = true;
 		}
 		thenFn = node;
@@ -63,9 +68,7 @@ export function styles(head, old) {
 		thenFn = sheet;
 	}
 	return Promise.all(
-		Utils.all(head, sel).filter(function(item) {
-			return !knowns[item.href];
-		}).map(thenFn)
+		queryAll(head, sel).filter(item => !knowns[item.href]).map(thenFn)
 	);
 }
 
@@ -77,26 +80,16 @@ export function sheet(link) {
 		// bail out
 		ok = true;
 	}
-	if (ok) return Promise.resolve();
+	if (ok) return;
 	const nlink = link.cloneNode();
 	nlink.media = "unknown";
 	const p = node(nlink);
 	const parent = link.parentNode;
 	parent.insertBefore(nlink, link.nextSibling);
-	return p.then(function() {
-		parent.removeChild(nlink);
-	});
+	return p.then(() => parent.removeChild(nlink));
 }
 
 export function node(item) {
-	return new Promise(function(resolve) {
-		function done() {
-			item.removeEventListener('load', done);
-			item.removeEventListener('error', done);
-			resolve();
-		}
-		item.addEventListener('load', done);
-		item.addEventListener('error', done);
-	});
+	return once(item, ['load', 'error']);
 }
 

@@ -1,34 +1,60 @@
-export class Deferred {
+export class Deferred extends Promise {
 	constructor() {
-		this.promise = new Promise((ok, fail) => {
-			this.ok = ok;
-			this.fail = fail;
+		let pass, fail;
+		super((resolve, reject) => {
+			pass = resolve;
+			fail = reject;
 		});
+		this.resolve = obj => pass(obj);
+		this.reject = err => fail(err);
+	}
+	static get [Symbol.species]() {
+		return Promise;
+	}
+	get [Symbol.toStringTag]() {
+		return 'Deferred';
 	}
 }
 
 export class Queue {
 	#list = [];
 	#on = false;
+	done = new Deferred();
+	started = false;
+	stopped = false;
+
+	constructor() {
+		this.count = 0;
+	}
+
+	get length() {
+		return this.#list.length;
+	}
 
 	queue(job) {
+		this.stopped = false;
 		const d = new Deferred();
-		d.promise = d.promise.then(() => {
-			return job();
-		}).finally(() => {
+		const p = d.then(() => job()).finally(() => {
 			this.#on = false;
-			this.#dequeue();
+			this.dequeue();
 		});
 		this.#list.push(d);
-		this.#dequeue();
-		return d.promise;
+		this.dequeue();
+		return p;
 	}
-	#dequeue() {
-		if (this.#on) return;
+	dequeue() {
+		this.started = true;
+		if (this.#on) {
+			return;
+		}
 		const d = this.#list.shift();
 		if (d) {
+			this.count++;
 			this.#on = true;
-			d.ok();
+			d.resolve();
+		} else {
+			this.stopped = true;
+			this.done.resolve();
 		}
 	}
 }
@@ -47,7 +73,7 @@ export function get(url, statusRejects, type) {
 		if (code < 200 || code >= statusRejects) {
 			aborted = true;
 			this.abort();
-			d.fail(code);
+			d.reject(code);
 			return;
 		}
 		if (type) {
@@ -55,14 +81,14 @@ export function get(url, statusRejects, type) {
 			if (!ctype.startsWith(type)) {
 				aborted = true;
 				this.abort();
-				d.ok(this);
+				d.resolve(this);
 				return;
 			}
 		}
-		if (rs == 4) d.ok(this);
+		if (rs == 4) d.resolve(this);
 	};
 	xhr.send();
-	return d.promise;
+	return d;
 }
 
 export function createDoc(str) {
@@ -82,7 +108,6 @@ export function createDoc(str) {
 		try {
 			doc.documentElement = doc.firstElementChild;
 		} catch(ex) {
-			// eslint-disable-next-line no-console
 			console.error(ex);
 		}
 	}
@@ -98,28 +123,36 @@ export const debug = (function() {
 	} else {
 		if (debugOn === null) {
 			debugOn = false;
-			if (window.localStorage) {
-				const str = window.localStorage.getItem('debug');
-				if (str !== null) debugOn = (str || '').toLowerCase().split(' ').indexOf('window-page') >= 0;
+			const str = window.localStorage?.getItem('debug');
+			if (str !== null) {
+				debugOn = (str || '').toLowerCase().split(' ').indexOf('window-page') >= 0;
 			}
 		}
 		if (!debugOn) {
 			debugFn = function() {};
 		} else {
-			// eslint-disable-next-line no-console
 			debugFn = console.info.bind(console);
 		}
 	}
 	return debugFn;
 })();
 
-export const P = function() {
-	return Promise.resolve();
-};
-
-export function all(node, selector) {
+export function queryAll(node, selector) {
 	if (node.queryAll) return node.queryAll(selector);
 	const list = node.querySelectorAll(selector);
 	if (Array.from) return Array.from(list);
 	return Array.prototype.slice.call(list);
+}
+
+export function once(emitter, events, filter) {
+	if (!Array.isArray(events)) events = [events];
+	const d = new Deferred();
+	const listener = (e) => {
+		if (!filter || filter(e)) {
+			for (const event of events) emitter.removeEventListener(event, listener);
+			d.resolve();
+		}
+	};
+	for (const event of events) emitter.addEventListener(event, listener);
+	return d;
 }

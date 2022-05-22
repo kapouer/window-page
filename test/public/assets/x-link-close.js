@@ -25,8 +25,8 @@ class HTMLXLinkElement extends HTMLElement {
 }
 
 window.customElements.define("x-link", HTMLXLinkElement);
-Page.init(function() {
-	if (window.routed) Page.route(function(state) {
+Page.init(() => {
+	if (window.routed) Page.route(state => {
 		return Page.createDoc(document.documentElement.outerHTML);
 	});
 	window.routed = true;
