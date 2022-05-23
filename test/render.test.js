@@ -88,6 +88,12 @@ test.describe("Rendering", () => {
 		await page.isText('div.status', 'squared');
 	});
 
+	test("run route and do not load style or json because of CSP", async ({ page }) => {
+		await idle(page, "route.html?template=csp");
+		await page.isText('div.style', 'not loaded');
+		await page.isText('div.xhr', 'not loaded');
+	});
+
 	test("load stylesheet before remote script when rendering", async ({ page }) => {
 		await idle(page, "route.html?template=order-stylesheets-scripts");
 		await page.isAttr('html', "data-prerender", "true");

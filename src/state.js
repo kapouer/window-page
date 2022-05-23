@@ -1,6 +1,6 @@
-import { Queue, Deferred, debug, queryAll, get, createDoc } from './utils';
+import { Deferred, debug, queryAll, get, createDoc } from './utils';
 import Loc from './loc';
-import * as Wait from './wait';
+import { Queue, DOMQueue, UiQueue, waitStyles, loadNode } from './wait';
 import Diff from 'levenlistdiff';
 
 const INIT = "init";
@@ -16,7 +16,7 @@ const Stages = [INIT, READY, BUILD, PATCH, SETUP, PAINT, HASH, ERROR, CLOSE];
 const NodeEvents = [BUILD, PATCH, SETUP, PAINT, HASH, CLOSE];
 
 const runQueue = new Queue();
-const uiQueue = new Wait.UiQueue();
+const uiQueue = new UiQueue();
 const chainsMap = {};
 
 export default class State extends Loc {
@@ -150,7 +150,7 @@ export default class State extends Loc {
 			}
 		}
 
-		await Wait.dom();
+		await DOMQueue();
 		if (prerendered == null) prerendered = this.#prerender();
 		try {
 			await this.runChain(INIT);
@@ -178,7 +178,7 @@ export default class State extends Loc {
 				try {
 					window.removeEventListener('popstate', refer);
 					window.addEventListener('popstate', this);
-					await Wait.styles(document.head);
+					await waitStyles();
 					if (!refer.stage || !samePathname) {
 						await this.runChain(SETUP);
 					}
@@ -335,80 +335,57 @@ export default class State extends Loc {
 		}
 	}
 
-	async #load(doc) {
+	async #load(ndoc) {
 		debug("Import new document");
-		if (!doc.documentElement || !doc.querySelector) {
-			throw new Error("Router should return a document with a documentElement");
+		if (ndoc.ownerDocument) ndoc = ndoc.ownerDocument;
+		if (!ndoc.documentElement) {
+			throw new Error("Router expects documentElement");
 		}
-		const states = {};
-		const selector = 'script:not([type]),script[type="text/javascript"]';
-		for (const node of queryAll(document, selector)) {
-			const src = node.src;
-			if (src) states[src] = true;
-		}
-
-		const preloader = new Deferred();
-
-		for (const node of queryAll(doc, selector)) {
-			// prevent loading
-			node.setAttribute('type', "none");
-			const src = node.src;
-			if (!src || states[src] === true) continue;
-			const loc = new Loc(src);
-			if (loc.protocol == "data:") continue;
-			// schedule preloading
-			if (loc.sameDomain(this)) states[src] = preloader
-				.then(() => get(src, 400))
-				.then(() => debug("preloaded", src))
-				.catch(err => debug("not preloaded", src, err));
-		}
-
-		async function loadNode(node) {
-			const src = node.src;
-			const state = states[src];
-			const old = state === true;
-			const loader = !old && state;
-			if (loader) await loader;
-			const parent = node.parentNode;
-			let cursor;
-			if (!old) {
-				cursor = document.createTextNode("");
-				parent.insertBefore(cursor, node);
-				parent.removeChild(node);
-			}
-			node.removeAttribute('type');
-			if (old) return;
-			const copy = document.createElement(node.nodeName);
-			for (let i = 0; i < node.attributes.length; i++) {
-				copy.setAttribute(node.attributes[i].name, node.attributes[i].value);
-			}
-			if (node.textContent) copy.textContent = node.textContent;
-			let rp;
-			if (src) {
-				debug("async node loading", src);
-				rp = Wait.node(copy);
-			} else {
-				debug("inline node loading");
-				rp = new Promise(resolve => setTimeout(resolve));
-			}
-			parent.insertBefore(copy, cursor);
-			parent.removeChild(cursor);
-			return rp;
-		}
-
 		const root = document.documentElement;
-		const nroot = document.adoptNode(doc.documentElement);
-		const head = nroot.querySelector('head');
-		const body = nroot.querySelector('body');
+		const nroot = document.adoptNode(ndoc.documentElement);
+		const nhead = nroot.querySelector('head');
+		const nbody = nroot.querySelector('body');
+
+		const selOn = 'script:not([type]),script[type="text/javascript"],script[type="module"],link[rel="stylesheet"]';
+		const selOff = 'link[rel="none"],script[type="none"]';
 
 		this.#updateAttributes(root, nroot);
+		// disable all scripts and styles
+		for (const node of queryAll(nhead, selOn)) {
+			const type = node.nodeName == "SCRIPT" ? 'type' : 'rel';
+			if (node[type]) node.setAttribute('priv-' + type, node[type]);
+			node[type] = 'none';
+		}
+		// previous styles are not removed immediately to avoid fouc
+		const oldstyles = this.mergeHead(nhead, document.head);
 
-		const parallels = Wait.styles(head, document.head);
-		const serials = queryAll(nroot, 'script[type="none"]');
-		const oldstyles = this.mergeHead(head, document.head);
-		preloader.resolve();
-		await parallels;
-		await this.mergeBody(body, document.body);
+		// preload and start styles
+		const parallels = [];
+		const serials = [];
+		for (const node of queryAll(document.head, selOff)) {
+			const isScript = node.nodeName == "SCRIPT";
+			const { src, as, cross } = isScript ? {
+				src: node.getAttribute('src'),
+				as: 'script',
+				cross: node.crossOrigin != null ? 'crossorigin=' + node.crossOrigin : ''
+			} : {
+				src: node.getAttribute('href'),
+				as: 'style',
+				cross: ''
+			};
+			if (src && !src.startsWith('data:')) {
+				// preload when in head
+				node.insertAdjacentHTML('beforebegin',
+					`<link rel="preload" href="${src}" as="${as}" ${cross}>`);
+			}
+			if (!isScript) {
+				parallels.push(loadNode(node));
+			} else {
+				serials.push(node);
+			}
+		}
+		await Promise.all(parallels);
+		await this.mergeBody(nbody, document.body);
 		for (const node of oldstyles) node.remove();
 		// scripts must be run in order
 		for (const node of serials) {

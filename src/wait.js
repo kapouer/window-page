@@ -8,7 +8,7 @@ function readyLsn() {
 	}
 }
 
-export function dom() {
+export function DOMQueue() {
 	if (domReady) return;
 	const d = new Deferred();
 	if (document.readyState == "complete") {
@@ -20,6 +20,49 @@ export function dom() {
 		once(document, 'DOMContentLoaded', readyLsn),
 		once(window, 'load', readyLsn)
 	]);
+}
+
+export class Queue {
+	#list = [];
+	#on = false;
+	done = new Deferred();
+	started = false;
+	stopped = false;
+
+	constructor() {
+		this.count = 0;
+	}
+
+	get length() {
+		return this.#list.length;
+	}
+
+	queue(job) {
+		this.stopped = false;
+		const d = new Deferred();
+		const p = d.then(() => job()).finally(() => {
+			this.#on = false;
+			this.dequeue();
+		});
+		this.#list.push(d);
+		this.dequeue();
+		return p;
+	}
+	dequeue() {
+		this.started = true;
+		if (this.#on) {
+			return;
+		}
+		const d = this.#list.shift();
+		if (d) {
+			this.count++;
+			this.#on = true;
+			d.resolve();
+		} else {
+			this.stopped = true;
+			this.done.resolve();
+		}
+	}
 }
 
 function isDocVisible() {
@@ -55,24 +98,16 @@ export class UiQueue {
 	}
 }
 
-export function styles(head, old) {
-	const knowns = {};
-	let thenFn;
-	const sel = 'link[rel="stylesheet"]';
-	if (old && head != old) {
-		for (const item of queryAll(old, sel)) {
-			knowns[item.href] = true;
-		}
-		thenFn = node;
-	} else {
-		thenFn = sheet;
-	}
+export function waitStyles() {
 	return Promise.all(
-		queryAll(head, sel).filter(item => !knowns[item.href]).map(thenFn)
+		queryAll(
+			document.head,
+			'link[rel="stylesheet"]'
+		).map(node => waitSheet(node))
 	);
 }
 
-export function sheet(link) {
+function waitSheet(link) {
 	let ok = false;
 	try {
 		ok = link.sheet && link.sheet.cssRules;
@@ -81,15 +116,35 @@ export function sheet(link) {
 		ok = true;
 	}
 	if (ok) return;
-	const nlink = link.cloneNode();
-	nlink.media = "unknown";
-	const p = node(nlink);
-	const parent = link.parentNode;
-	parent.insertBefore(nlink, link.nextSibling);
-	return p.then(() => parent.removeChild(nlink));
+	return once(link, ['load', 'error']);
 }
 
-export function node(item) {
-	return once(item, ['load', 'error']);
-}
+export function loadNode(node) {
+	const tag = node.nodeName;
+	const isScript = tag == "SCRIPT";
+	const copy = node.ownerDocument.createElement(tag);
+	for (const attr of node.attributes) {
+		let { name } = attr;
+		if (isScript) {
+			if (name == "type") {
+				continue;
+			} else if (name == "priv-type") {
+				name = "type";
+			}
+		} else if (name == "rel") {
+			continue;
+		} else if (name == "priv-rel") {
+			name = "rel";
+		}
+		copy.setAttribute(name, attr.value);
+	}
 
+	if (isScript && node.textContent && !node.src) {
+		copy.textContent = node.textContent;
+		node.parentNode.replaceChild(copy, node);
+	} else {
+		const p = once(copy, ['load', 'error']);
+		node.parentNode.replaceChild(copy, node);
+		return p;
+	}
+}

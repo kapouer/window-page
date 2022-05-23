@@ -16,49 +16,6 @@ export class Deferred extends Promise {
 	}
 }
 
-export class Queue {
-	#list = [];
-	#on = false;
-	done = new Deferred();
-	started = false;
-	stopped = false;
-
-	constructor() {
-		this.count = 0;
-	}
-
-	get length() {
-		return this.#list.length;
-	}
-
-	queue(job) {
-		this.stopped = false;
-		const d = new Deferred();
-		const p = d.then(() => job()).finally(() => {
-			this.#on = false;
-			this.dequeue();
-		});
-		this.#list.push(d);
-		this.dequeue();
-		return p;
-	}
-	dequeue() {
-		this.started = true;
-		if (this.#on) {
-			return;
-		}
-		const d = this.#list.shift();
-		if (d) {
-			this.count++;
-			this.#on = true;
-			d.resolve();
-		} else {
-			this.stopped = true;
-			this.done.resolve();
-		}
-	}
-}
-
 export function get(url, statusRejects, type) {
 	if (!statusRejects) statusRejects = 400;
 	const d = new Deferred();

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Sample csp page</title>
+	<meta http-equiv="Content-Security-Policy" content="connect-src 'none'; style-src 'none'">
+	<link rel="stylesheet" href="assets/square.css">
+	<script src="window-page.js"></script>
+	<script>
+Page.setup(async state =>  {
+	if (document.body.offsetWidth == 400) {
+		document.querySelector('.style').innerText = "loaded";
+	}
+	try {
+		const res = await Page.get('assets/data.json');
+		const obj = JSON.parse(res.responseText);
+		document.querySelector('.xhr').innerText = obj.test;
+	} catch(err) {
+
+	}
+});
+	</script>
+</head>
+<body>
+	CSP TEST
+	<div class="style">not loaded</div>
+	<div class="xhr">not loaded</div>
+</body>
+</html>

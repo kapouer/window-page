@@ -34,7 +34,15 @@ function load(url) {
 	script.type = "text/javascript";
 	script.src = url;
 	script.async = false;
-	var p = Page.Wait.node(script);
+	const p = new Promise(resolve => {
+		const listener = (e) => {
+			script.removeEventListener('load', listener);
+			script.removeEventListener('error', listener);
+			resolve();
+		};
+		script.addEventListener('load', listener);
+		script.addEventListener('error', listener);
+	});
 	document.head.appendChild(script);
 	return p;
 }
