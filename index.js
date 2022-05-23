@@ -1,10 +1,9 @@
 import { createDoc, get } from './src/utils';
 import Loc from './src/loc';
 import State from './src/state';
-import * as Wait from './src/wait';
 
 const W = {
-	Loc, State, Wait, createDoc, get,
+	Loc, State, createDoc, get,
 	parse(s) {
 		return new Loc(s);
 	},

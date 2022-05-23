@@ -355,7 +355,6 @@ A convenient method only that only replaces current window.history entry:
 By default window.Page also exports those classes:
 
 - State
-- Wait
 - Loc
 
 ### BrowserStack and Browser support
