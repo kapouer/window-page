@@ -1,4 +1,5 @@
-import { Deferred, queryAll, once } from './utils';
+import { Deferred } from "class-deferred";
+import { queryAll, once } from './utils';
 
 let domReady = false;
 function readyLsn() {

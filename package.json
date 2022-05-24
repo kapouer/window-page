@@ -41,6 +41,7 @@
   "devDependencies": {
     "@kapouer/eslint-config": "^1.6.2",
     "@playwright/test": "^1.22.1",
+    "class-deferred": "^1.0.1",
     "express": "^4.18.1",
     "postinstall": "^0.7.4",
     "postinstall-bundle": "^0.7.4"
