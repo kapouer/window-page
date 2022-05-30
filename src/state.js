@@ -171,7 +171,8 @@ export default class State extends Loc {
 			if (!prerendered || !sameQuery) {
 				await this.runChain(PATCH);
 			} else {
-				await this.initChain(PATCH);
+				// empty the chain but let it run
+				this.initChain(PATCH).started = true;
 			}
 			// ui queue forks, so if multiple runs are made
 			// only the first refer is closed, and the last state is setup
@@ -217,6 +218,7 @@ export default class State extends Loc {
 
 	initChain(name) {
 		const chain = this.chains[name] ?? (this.chains[name] = { name });
+		chain.started = false;
 		chain.hold = new Deferred();
 		chain.after = new Queue();
 		// block after
@@ -230,6 +232,7 @@ export default class State extends Loc {
 	runChain(name) {
 		this.stage = name;
 		const chain = this.initChain(name);
+		chain.started = true;
 		debug("run chain", name);
 		this.emit("page" + name);
 		debug("run chain length", name, chain.current.length);
@@ -238,7 +241,7 @@ export default class State extends Loc {
 	}
 
 
-	chain(stage, fn) {
+	async chain(stage, fn) {
 		if (!fn) throw new Error("Missing function or listener");
 		const state = this;
 		const stageMap = chainsMap[stage] ?? (chainsMap[stage] = new Map());
@@ -259,16 +262,17 @@ export default class State extends Loc {
 		} else {
 			debug("already chained", stage, fn);
 		}
-		const chain = this.chains[stage];
-		if (!chain?.current) {
+		const chain = this.chains[stage] ?? this.initChain(stage);
+		if (!chain.started) {
 			debug("chain pending", stage);
 		} else if (chain.current.stopped) {
-			return lfn.fn?.({ detail: state });
+			await lfn.fn?.({ detail: state });
 		} else {
 			debug("chain is running", stage);
 			// not finished
 			chain.current.queue(() => lfn.fn?.({ detail: state }));
 		}
+		return chain.after;
 	}
 
 	finish(fn) {
@@ -312,8 +316,7 @@ export default class State extends Loc {
 			const state = e.detail;
 			const q = state.chains[stage]?.current;
 			q.queue(() => {
-				if (q.stopped) return;
-				return state.#runFn(stage, fn);
+				if (!q.stopped) return state.#runFn(stage, fn);
 			});
 			return q;
 		};
