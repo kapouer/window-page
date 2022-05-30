@@ -405,8 +405,8 @@ export default class State extends Loc {
 		const to = node;
 		const collect = [];
 		const list = Diff(from.children, to.children, child => {
-			const key = child.src || child.href;
-			if (key) return child.nodeName + '_' + key;
+			const url = child.src ?? child.href;
+			if (url) return child.nodeName + '_' + url;
 			else return child.outerHTML;
 		});
 		for (const patch of list) {
