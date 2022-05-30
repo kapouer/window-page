@@ -353,11 +353,6 @@ export default class State extends Loc {
 		const selOn = 'script:not([type]),script[type="text/javascript"],script[type="module"],link[rel="stylesheet"]';
 		const selOff = 'link[rel="none"],script[type="none"]';
 
-		// cleanup to avoid mergeHead issues
-		for (const node of queryAll(document.head, 'link[rel="preload"]')) {
-			node.remove();
-		}
-
 		this.#updateAttributes(root, nroot);
 		// disable all scripts and styles
 		for (const node of queryAll(nhead, selOn)) {
@@ -409,7 +404,8 @@ export default class State extends Loc {
 		const collect = [];
 		const list = Diff(from.children, to.children, child => {
 			const url = child.src ?? child.href;
-			if (url) return child.nodeName + '_' + url;
+			const rel = child.rel == "none" ? "stylesheet" : child.rel;
+			if (url) return `${child.nodeName}_${rel ?? ''}_${url}`;
 			else return child.outerHTML;
 		});
 		for (const patch of list) {
