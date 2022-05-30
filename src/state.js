@@ -363,7 +363,7 @@ export default class State extends Loc {
 			node[type] = 'none';
 		}
 		// previous styles are not removed immediately to avoid fouc
-		const oldstyles = this.mergeHead(nhead, document.head);
+		const oldstyles = this.mergeHead(nhead);
 
 		// preload and start styles
 		const parallels = [];
