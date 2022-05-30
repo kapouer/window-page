@@ -9,7 +9,7 @@ function readyLsn() {
 	}
 }
 
-export function DOMQueue() {
+export function domDeferred() {
 	if (domReady) return;
 	const d = new Deferred();
 	if (document.readyState == "complete") {

@@ -1,7 +1,7 @@
 import { Deferred } from 'class-deferred';
 import { debug, queryAll, get, createDoc } from './utils';
 import Loc from './loc';
-import { Queue, DOMQueue, UiQueue, waitStyles, loadNode } from './wait';
+import { Queue, domDeferred, UiQueue, waitStyles, loadNode } from './wait';
 import Diff from 'levenlistdiff';
 
 const INIT = "init";
@@ -151,7 +151,7 @@ export default class State extends Loc {
 			}
 		}
 
-		await DOMQueue();
+		await domDeferred();
 		if (prerendered == null) prerendered = this.#prerender();
 		try {
 			await this.runChain(INIT);
