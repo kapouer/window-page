@@ -39,9 +39,9 @@ export default class State extends Loc {
 		for (const stage of Stages) {
 			W[stage] = fn => this.chain(stage, fn);
 			W['un' + stage] = fn => this.unchain(stage, fn);
-			W.finish = fn => {
-				if (fn) return this.#queue.then(fn);
-				else return this.#queue;
+			W.finish = (fn) => {
+				if (fn) console.error("Page.finish no longer accepts a parameter");
+				return this.#queue;
 			};
 		}
 		W.route = fn => State.#route = fn;

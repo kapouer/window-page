@@ -113,9 +113,8 @@ current state as argument.
   runs fn right now if the chain is reached, or wait the chain to be run
 - `Page['un'+chainLabel](fn)`
   removes fn from a chain, mostly needed for custom elements.
-- Page.finish(fn?)
-  If fn is given, calls `state.queue.then(fn)`.
-  Returns `state.queue` anyway.
+- Page.finish()
+  Returns the state queue Promise that resolves to `state`.
 
 The fn parameter can be a function or an object with a `<chain>`, or
 a `chain<Chain>` method - which is a handy way to keep the value of `this`.
