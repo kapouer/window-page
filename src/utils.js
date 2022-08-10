@@ -64,9 +64,13 @@ export const debug = (function() {
 	} else {
 		if (debugOn === null) {
 			debugOn = false;
-			const str = window.localStorage?.getItem('debug');
-			if (str !== null) {
-				debugOn = (str || '').toLowerCase().split(' ').indexOf('window-page') >= 0;
+			try {
+				const str = window.localStorage?.getItem('debug');
+				if (str !== null) {
+					debugOn = (str || '').toLowerCase().split(' ').indexOf('window-page') >= 0;
+				}
+			} catch (err) {
+				// pass
 			}
 		}
 		if (!debugOn) {
