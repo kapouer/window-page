@@ -12,7 +12,8 @@
   },
   "scripts": {
     "test": "npm run prepare && npx playwright test",
-    "prepare": "postinstall"
+    "prepare": "postinstall",
+    "local": "serve -S test/public/"
   },
   "prepare": {
     "./index.js": "bundle lib/window-page.js",
