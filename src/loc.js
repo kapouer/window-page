@@ -17,6 +17,8 @@ export default class Loc {
 		}
 		it.query = loc.query ? Object.assign({}, loc.query) : parse(loc.search) || {};
 
+		if (loc instanceof Loc) return;
+
 		if (!it.pathname) {
 			it.pathname = dloc.pathname;
 		} else if (it.pathname[0] != "/") {
