@@ -23,14 +23,20 @@ const chainsMap = {};
 export default class State extends Loc {
 	data = {};
 	ui = {};
-	chains = {};
+	#chains = {};
 	#queue;
 	#bound;
 	static #route;
 
-	constructor(obj) {
+	constructor(obj, { chains, queue, bound } = {}) {
 		super(obj);
-		this.#queue = new Deferred();
+		this.ui = obj?.ui ?? {};
+		this.emitter = obj?.emitter;
+		this.referrer = obj?.referrer;
+		this.data = obj?.data ?? {};
+		this.#chains = chains ?? {};
+		this.#queue = queue ?? new Deferred();
+		this.#bound = bound ?? false;
 	}
 
 	rebind(W) {
@@ -217,7 +223,7 @@ export default class State extends Loc {
 	}
 
 	initChain(name) {
-		const chain = this.chains[name] ?? (this.chains[name] = { name });
+		const chain = this.#chains[name] ?? (this.#chains[name] = { name });
 		chain.started = false;
 		chain.hold = new Deferred();
 		chain.after = new Queue();
@@ -262,7 +268,7 @@ export default class State extends Loc {
 		} else {
 			debug("already chained", stage, fn);
 		}
-		const chain = this.chains[stage] ?? this.initChain(stage);
+		const chain = this.#chains[stage] ?? this.initChain(stage);
 		if (!chain.started) {
 			debug("chain pending", stage);
 		} else if (chain.current.stopped) {
@@ -277,7 +283,7 @@ export default class State extends Loc {
 
 	finish(fn) {
 		const stage = this.stage;
-		const chain = this.chains[stage];
+		const chain = this.#chains[stage];
 		if (!chain) {
 			console.warn("state.finish must be called from chain listener");
 		} else {
@@ -288,7 +294,7 @@ export default class State extends Loc {
 
 	stop() {
 		const stage = this.stage;
-		const chain = this.chains[stage];
+		const chain = this.#chains[stage];
 		if (!chain) {
 			console.warn("state.stop must be called from chain listener");
 		} else {
@@ -314,7 +320,7 @@ export default class State extends Loc {
 	#chainListener(stage, fn) {
 		return (e) => {
 			const state = e.detail;
-			const q = state.chains[stage]?.current;
+			const q = state.#chains[stage]?.current;
 			q.queue(() => {
 				if (!q.stopped) return state.#runFn(stage, fn);
 			});
@@ -325,12 +331,19 @@ export default class State extends Loc {
 	async #runFn(stage, fn) {
 		const n = 'chain' + stage[0].toUpperCase() + stage.slice(1);
 		const meth = fn?.[n] ?? fn?.[stage];
+		// eslint-disable-next-line no-use-before-define
+		const inst = new StagedState(this, {
+			stage,
+			queue: this.#queue,
+			chains: this.#chains,
+			bounds: this.#bound
+		});
 		try {
 			if (meth && typeof meth == "function") {
 				if (stage == CLOSE) this.unchain(stage, fn);
-				return await meth.call(fn, this);
+				return await meth.call(fn, inst);
 			} else if (typeof fn == "function") {
-				return await fn(this);
+				return await fn(inst);
 			} else {
 				console.warn("Missing function");
 			}
@@ -467,11 +480,11 @@ export default class State extends Loc {
 		else if (opts === true) opts = { vary: true };
 		let vary = opts.vary;
 		if (vary == null) {
-			if (this.chains.build?.current?.count) {
+			if (this.#chains.build?.current?.count) {
 				vary = BUILD;
-			} else if (this.chains.patch?.current?.count) {
+			} else if (this.#chains.patch?.current?.count) {
 				vary = PATCH;
-			} else if (this.chains.hash?.current?.count) {
+			} else if (this.#chains.hash?.current?.count) {
 				vary = HASH;
 			}
 			opts.vary = vary;
@@ -484,7 +497,7 @@ export default class State extends Loc {
 	}
 
 	copy() {
-		return new State(new Loc(this));
+		return new State(this);
 	}
 
 	async #defaultRoute() {
@@ -570,5 +583,17 @@ export default class State extends Loc {
 				else document.location.assign(url);
 			}, 50);
 		}
+	}
+}
+
+class StagedState extends State {
+	#stage;
+
+	constructor(state, internals ) {
+		super(state, internals);
+		this.#stage = state.stage;
+	}
+	get stage() {
+		return this.#stage;
 	}
 }
