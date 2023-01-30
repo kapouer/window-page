@@ -252,8 +252,7 @@ export default class State extends Loc {
 		const state = this;
 		const stageMap = chainsMap[stage] ?? (chainsMap[stage] = new Map());
 		const emitter = document.currentScript
-			|| fn.matches?.('script') && fn
-			|| state.emitter;
+			?? (fn.matches?.('script') ? fn : state.emitter);
 		let lfn = stageMap.get(fn);
 		if (!lfn) {
 			lfn = {
