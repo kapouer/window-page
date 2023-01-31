@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html data-prerender="true">
 <head>
 	<title>custom elements</title>
 	<script src="window-page.js"></script>
@@ -15,17 +15,26 @@ function trigger() {
 		}));
 	}, 50);
 }
-Page.patch(function(state) {
-	Page.setup(function(state) {
-		if (state.query.test >= 2) return;
-		trigger();
-	});
-});
 
-Page.setup(function() {
-	// called once
+// Page.patch(function(state) {
+// 	Page.setup(function(state) {
+// TODO this is never called
+// even state.setup(() => {}) (which would be state.chain('setup', fn)) is never called
+// which is weirder
+// 		if (state.query.test >= 2) return;
+// 		trigger();
+// 	});
+// });
+// Page.setup(function () {
+// 	// called once
+// 	trigger();
+// });
+
+Page.paint(function (state) {
+	if (state.query.test >= 2) return;
 	trigger();
 });
+
 	</script>
 	<style>
 	x-link:after {
