@@ -20,11 +20,12 @@ Page.close(checkNums);
 
 var numClicks = 0;
 Page.setup(function(state) {
-	Page.connect({
-		handleClick: function(e, state) {
-			e.target.innerText = ++numClicks;
+	state.myhandler = {
+		handleClick: function (e, state) {
+			e.target.innerText = "handled clicks" + ++numClicks;
 		}
-	}, document);
+	};
+	state.connect(state.myhandler, document.body);
 	if (state.pathname == "/templates/back-build.html")	{
 		setTimeout(function() {
 			state.push({
@@ -35,6 +36,10 @@ Page.setup(function(state) {
 		document.getElementById('secondSetup').textContent = "ok";
 	}
 });
+
+Page.close(state => {
+	state.disconnect(state.myhandler, document.body);
+})
 
 window.simClick = function() {
 	var e = new MouseEvent('click', {bubbles: true, cancelable: true});
@@ -63,5 +68,7 @@ function checkNums(state) {
 <div id="loc"></div>
 <div id="click"></div>
 <div id="secondSetup">ok</div>
+<br>
+<a href="/templates/back-build.html">TRY AGAIN</a>
 </body>
 </html>

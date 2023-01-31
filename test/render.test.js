@@ -123,7 +123,7 @@ test.describe("Rendering", () => {
 		await page.isText('div.build', '2');
 		await page.isText('div.close', '1');
 		await page.isText('div.setup', '2');
-		await page.isText('#click', '1');
+		await page.isText('#click', 'handled clicks1');
 		await page.isText('#secondSetup', 'ok');
 		await page.isAttr('html', "data-prerender", "true");
 	});
