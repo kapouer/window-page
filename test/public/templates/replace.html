@@ -27,6 +27,7 @@ function checkNums(state) {
 }
 
 Page.patch(function(state) {
+	if (state.stage != 'patch') throw new Error("bad stage");
 	if (state.query.toto) document.querySelector('.url').innerHTML = state.toString();
 });
 

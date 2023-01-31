@@ -10,12 +10,13 @@ var nums = {
 	setup: 0
 };
 var reads = {};
-Page.build(checkNums);
-Page.patch(checkNums);
-Page.setup(checkNums);
+Page.build(checkNums.bind('build'));
+Page.patch(checkNums.bind('patch'));
+Page.setup(checkNums.bind('setup'));
 
 function checkNums(state) {
 	var stage = state.stage;
+	if (stage != this) throw new Error(`Expected ${this} and got ${stage}`);
 	var node = document.querySelector('.' + stage);
 	if (!reads[stage]) {
 		reads[stage] = true;
@@ -30,24 +31,31 @@ Page.patch(function(state) {
 	if (once) return once.remove();
 });
 var backCalled = false;
+
+function goBack() {
+	if (!backCalled) {
+		backCalled = true;
+		window.history.back();
+	}
+}
+
 Page.patch(function(state) {
 	if (!backCalled) {
 		document.getElementById('query').innerText = state.query.test;
 		document.getElementById('loc').innerText = Page.format(state);
 	}
 	if (state.query.test == "one") {
-		setTimeout(function() {
-			if (!backCalled) {
-				backCalled = true;
-				window.history.back();
-			}
-		}, 400);
+		if (backCalled) throw new Error("back called twice");
+		setTimeout(goBack, 400);
 	} else if (backCalled) {
 		document.getElementById('back').innerText = Page.format(state);
 	}
 });
 
+let setupPushCalled = false;
 Page.setup(function(state) {
+	if (setupPushCalled) throw new Error("this should be called only once");
+	setupPushCalled = true;
 	state.push({
 		query: {
 			test: "one"
@@ -64,5 +72,7 @@ Page.setup(function(state) {
 <div id="query"></div>
 <div id="loc"></div>
 <div id="back"></div>
+
+<a href="/back-patch.html" style="border:1px solid black; border-radius:2px">RETRY</a>
 </body>
 </html>
