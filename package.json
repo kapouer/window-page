@@ -13,7 +13,7 @@
   "scripts": {
     "test": "npm run prepare && npx playwright test",
     "prepare": "postinstall",
-    "local": "serve -S test/public/"
+    "local": "http-server test/public/"
   },
   "prepare": {
     "./index.js": "bundle lib/window-page.js",
