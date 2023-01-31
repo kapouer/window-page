@@ -43,6 +43,7 @@ function fromParams(params, query, head) {
 
 
 export function parse(str) {
+	if (!str) return {};
 	const params = typeof str == "string" ? new URLSearchParams(str) : str;
 	return fromParams(params, {});
 }
@@ -66,5 +67,6 @@ function toParams(query, params, prefix) {
 }
 
 export function format(query) {
+	if (!query) return '';
 	return toParams(query, new URLSearchParams()).toString();
 }

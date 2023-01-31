@@ -21,25 +21,32 @@ const uiQueue = new UiQueue();
 const chainsMap = {};
 
 export default class State extends Loc {
+	static state = new State();
 	data = {};
-	ui = {};
+	#stage;
+	#queue = new Deferred();
 	#chains = {};
-	#queue;
+	#emitter;
+	#referrer;
 	#bound;
 	static #route;
 
-	constructor(obj, { chains, queue, bound } = {}) {
-		super(obj);
-		this.ui = obj?.ui ?? {};
-		this.emitter = obj?.emitter;
-		this.referrer = obj?.referrer;
-		this.data = obj?.data ?? {};
-		this.#chains = chains ?? {};
-		this.#queue = queue ?? new Deferred();
-		this.#bound = bound ?? false;
+	#clone(state) {
+		this.#emitter = state.#emitter;
+		this.#referrer = state.#referrer;
+		this.#chains = state.#chains;
+		this.#queue = state.#queue;
 	}
 
-	rebind(W) {
+	get stage() {
+		return this.#stage;
+	}
+
+	get referrer() {
+		return this.#referrer;
+	}
+
+	#rebind(W) {
 		if (this.#bound) return W;
 		this.#bound = true;
 		for (const stage of Stages) {
@@ -77,9 +84,8 @@ export default class State extends Loc {
 		if (methods.length) this.chain(SETUP, state => {
 			for (const name of methods) {
 				name[4] = function (e) {
-					let last = state;
-					while (last.follower) last = last.follower;
-					listener[name[1]](e, last);
+					// wrong, it should runFn
+					listener[name[1]](e, State.state);
 				};
 				(name[0] ? window : node).addEventListener(name[2], name[4], name[3]);
 			}
@@ -97,13 +103,19 @@ export default class State extends Loc {
 		}
 	}
 
+	// FIXME refer.setup -> state.setup -> refer.close work all right
+	// however with connect/disconnect it's different:
+	// elem connect sets up listeners in SETUP chain
+	// elem disconnect tears down listeners in CLOSE chain
+	// connect/disconnect must be called explicitely
+
 	disconnect(listener) {
 		for (const name of NodeEvents) {
 			if (listener[name]) {
 				this.unchain(name, listener);
 			}
 		}
-		if (listener.close) listener.close(this);
+		if (listener[CLOSE]) listener[CLOSE](this);
 	}
 
 	#prerender(ok, doc) {
@@ -115,27 +127,17 @@ export default class State extends Loc {
 	}
 
 	run(opts) {
-		this.emitter = document.createElement('div');
+		this.#emitter = document.createElement('div');
 		return runQueue.queue(() => this.#run(opts));
 	}
 
-	async #run(opts) {
-		if (!opts) opts = {};
-		this.rebind(window.Page);
+	async #run(opts = {}) {
+		this.#rebind(window.Page);
+		State.state = this;
 		if (opts.data) Object.assign(this.data, opts.data);
 
-		let refer = this.referrer;
-		if (!refer) {
-			debug("new referrer");
-			this.referrer = refer = this.copy();
-			delete refer.hash;
-		}
-		if (refer == this) {
-			throw new Error("state and referrer should be distinct");
-		}
-
 		let prerendered, samePathname, sameQuery, sameHash;
-		let vary = opts.vary;
+		let { vary } = opts;
 		if (vary === true) {
 			vary = BUILD;
 			prerendered = false;
@@ -143,17 +145,29 @@ export default class State extends Loc {
 		if (vary == BUILD) {
 			sameHash = sameQuery = samePathname = false;
 		} else if (vary == PATCH) {
+			samePathname = true;
 			sameHash = sameQuery = false;
 		} else if (vary == HASH) {
+			samePathname = sameQuery = true;
 			sameHash = false;
 		}
-		if (samePathname == null) samePathname = this.samePathname(refer);
-		if (sameQuery == null) sameQuery = this.sameQuery(refer);
-		if (sameHash == null) sameHash = this.sameHash(refer);
 
-		if (samePathname) {
-			for (const key of ['chains', 'emitter', 'ui', 'data']) {
-				if (refer[key] != null) this[key] = refer[key];
+		let refer = this.#referrer;
+		if (!refer) {
+			debug("new referrer");
+			this.#referrer = refer = new State(this);
+			refer.hash = "";
+			samePathname = sameQuery = true;
+			sameHash = !this.hash;
+		} else if (refer == this) {
+			throw new Error("state and referrer should be distinct");
+		} else {
+			if (samePathname == null) samePathname = this.samePathname(refer);
+			if (sameQuery == null) sameQuery = this.sameQuery(refer);
+			if (sameHash == null) sameHash = this.sameHash(refer);
+			if (samePathname) {
+				this.#clone(refer);
+				Object.assign(this, refer);
 			}
 		}
 
@@ -187,11 +201,11 @@ export default class State extends Loc {
 					window.removeEventListener('popstate', refer);
 					window.addEventListener('popstate', this);
 					await waitStyles();
-					if (!refer.stage || !samePathname) {
+					if (!refer.#stage || !samePathname) {
 						await this.runChain(SETUP);
 					}
 					await this.runChain(PAINT);
-					if (refer.stage && !samePathname) {
+					if (refer.#stage && !samePathname) {
 						// close old state after new state setup to allow transitions
 						await refer.runChain(CLOSE);
 					}
@@ -209,21 +223,8 @@ export default class State extends Loc {
 		return this.#queue;
 	}
 
-	emit(name) {
-		const e = new CustomEvent(name, {
-			view: window,
-			bubbles: true,
-			cancelable: true,
-			detail: this
-		});
-		for (const node of queryAll(document, 'script')) {
-			node.dispatchEvent(e);
-		}
-		if (this.emitter) this.emitter.dispatchEvent(e);
-	}
-
-	initChain(name) {
-		const chain = this.#chains[name] ?? (this.#chains[name] = { name });
+	initChain(stage) {
+		const chain = this.#chains[stage] ?? (this.#chains[stage] = {});
 		chain.started = false;
 		chain.hold = new Deferred();
 		chain.after = new Queue();
@@ -232,16 +233,33 @@ export default class State extends Loc {
 		chain.current = new Queue();
 		// unblock after when current.done is resolved
 		chain.current.done.then(chain.hold.resolve);
+
+		const inst = new State(this);
+		inst.#clone(this);
+		Object.assign(inst, this); // also copy extra properties
+		inst.#stage = stage;
+		chain.state = inst;
 		return chain;
 	}
 
-	runChain(name) {
-		this.stage = name;
-		const chain = this.initChain(name);
+	runChain(stage) {
+		const chain = this.initChain(stage);
 		chain.started = true;
-		debug("run chain", name);
-		this.emit("page" + name);
-		debug("run chain length", name, chain.current.length);
+		this.#stage = stage;
+		debug("run chain", stage);
+
+		const e = new CustomEvent(`page${stage}`, {
+			view: window,
+			bubbles: true,
+			cancelable: true,
+			detail: this
+		});
+		for (const node of queryAll(document, 'script')) {
+			node.dispatchEvent(e);
+		}
+		if (this.#emitter) this.#emitter.dispatchEvent(e);
+
+		debug("run chain length", stage, chain.current.length);
 		if (chain.current.length == 0) chain.hold.resolve();
 		return chain.after.done;
 	}
@@ -252,7 +270,7 @@ export default class State extends Loc {
 		const state = this;
 		const stageMap = chainsMap[stage] ?? (chainsMap[stage] = new Map());
 		const emitter = document.currentScript
-			?? (fn.matches?.('script') ? fn : state.emitter);
+			?? (fn.matches?.('script') ? fn : state.#emitter);
 		let lfn = stageMap.get(fn);
 		if (!lfn) {
 			lfn = {
@@ -281,18 +299,18 @@ export default class State extends Loc {
 	}
 
 	finish(fn) {
-		const stage = this.stage;
+		const stage = this.#stage;
 		const chain = this.#chains[stage];
 		if (!chain) {
 			console.warn("state.finish must be called from chain listener");
 		} else {
-			chain.after.queue(() => this.#runFn(stage, fn));
+			chain.after.queue(() => chain.state.#runFn(fn));
 		}
 		return this;
 	}
 
 	stop() {
-		const stage = this.stage;
+		const stage = this.#stage;
 		const chain = this.#chains[stage];
 		if (!chain) {
 			console.warn("state.stop must be called from chain listener");
@@ -319,30 +337,26 @@ export default class State extends Loc {
 	#chainListener(stage, fn) {
 		return (e) => {
 			const state = e.detail;
-			const q = state.#chains[stage]?.current;
+			const chain = state.#chains[stage];
+			const q = chain.current;
 			q.queue(() => {
-				if (!q.stopped) return state.#runFn(stage, fn);
+				if (!q.stopped) return chain.state.#runFn(fn);
 			});
 			return q;
 		};
 	}
 
-	async #runFn(stage, fn) {
+	async #runFn(fn) {
+		const stage = this.#stage;
 		const n = 'chain' + stage[0].toUpperCase() + stage.slice(1);
 		const meth = fn?.[n] ?? fn?.[stage];
 		// eslint-disable-next-line no-use-before-define
-		const inst = new StagedState(this, {
-			stage,
-			queue: this.#queue,
-			chains: this.#chains,
-			bounds: this.#bound
-		});
 		try {
 			if (meth && typeof meth == "function") {
 				if (stage == CLOSE) this.unchain(stage, fn);
-				return await meth.call(fn, inst);
+				return await meth.call(fn, this);
 			} else if (typeof fn == "function") {
-				return await fn(inst);
+				return await fn(this);
 			} else {
 				console.warn("Missing function");
 			}
@@ -495,13 +509,9 @@ export default class State extends Loc {
 		return this.#historySave('replace');
 	}
 
-	copy() {
-		return new State(this);
-	}
-
 	async #defaultRoute() {
-		const refer = this.referrer;
-		if (!refer.stage) {
+		const refer = this.#referrer;
+		if (!refer.#stage) {
 			debug("Default router starts after navigation");
 			return;
 		}
@@ -522,12 +532,7 @@ export default class State extends Loc {
 		if (e.type == "popstate") {
 			debug("history event from", this.pathname, this.query, "to", e.state && e.state.href || null);
 			const state = this.#stateFrom(e.state) || new State();
-			state.referrer = this;
-			state.run().catch(err => {
-				console.error(err);
-				const url = state.toString();
-				setTimeout(() => document.location.replace(url), 50);
-			});
+			this.#historyMethod('push', state, { pop: true });
 		}
 	}
 
@@ -535,15 +540,15 @@ export default class State extends Loc {
 		return {
 			href: this.toString(),
 			data: this.data,
-			stage: this.stage
+			stage: this.#stage
 		};
 	}
 
 	#stateFrom(from) {
 		if (!from || !from.href) return;
 		const state = new State(from.href);
-		delete from.href;
-		Object.assign(state, from);
+		state.data = from.data;
+		state.#stage = from.stage;
 		return state;
 	}
 
@@ -556,43 +561,16 @@ export default class State extends Loc {
 	}
 
 	async #historyMethod(method, loc, opts) {
-		let refer = this;
-		while (refer.follower) {
-			// a common mistake is to call state.push on an old state
-			// and there is no way this can be legit
-			refer = refer.follower;
-		}
+		const refer = State.state;
 		const copy = new State(loc);
-		copy.referrer = refer;
-		refer.follower = copy;
+		copy.#referrer = refer;
 		if (!copy.sameDomain(refer)) {
 			if (method == "replace") console.info("Cannot replace to a different origin");
 			document.location.assign(copy.toString());
 		}
 		debug("run", method, copy, opts);
-		try {
-			const state = await copy.run(opts);
-			state.#historySave(method);
-			return state;
-		} catch(err) {
-			console.error(err);
-			const url = copy.toString();
-			setTimeout(() => {
-				if (method == "replace") document.location.replace(url);
-				else document.location.assign(url);
-			}, 50);
-		}
-	}
-}
-
-class StagedState extends State {
-	#stage;
-
-	constructor(state, internals ) {
-		super(state, internals);
-		this.#stage = state.stage;
-	}
-	get stage() {
-		return this.#stage;
+		await copy.run(opts);
+		if (!opts?.pop) copy.#historySave(method);
+		return copy;
 	}
 }

@@ -16,9 +16,8 @@ const W = {
 };
 
 if (!window.Page) {
-	const state = new State();
-	window.Page = state.rebind(W);
-	state.run().then(state => {
+	window.Page = W;
+	State.state.run().then(state => {
 		if (!window.history.state) state.save();
 	});
 }

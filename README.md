@@ -146,21 +146,17 @@ discarded otherwise.
 
 ### state
 
-The state extends a Loc instance, in particular it has
+The state is a subclass of Loc, which extends URL class with:
 
-- pathname, query, hash (and hostname, port, protocol if different from document)
+- query object
 - sameDomain, samePathname, sameQuery, sameHash, samePath methods
-- toString() to get a url
+- toString() returns a path when in the same domain
 
-**Important**: do not mutate those properties.
+**Important**: use state.push/replace to mutate url properties.
 The state history methods accept partial objects.
 
 - state.data
-  the data must be JSON-serializable.
-
-- state.ui
-  object that changes when pathname changes.
-  setup-patch-hash state changes share the same `state.ui`.
+  data saved in history - must be JSON-serializable.
 
 - state.referrer
   the previous parsable state.

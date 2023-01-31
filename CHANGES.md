@@ -124,3 +124,10 @@ State inherits from Loc.
 `state.toString()` gives back current url.
 
 Default router can be restored using `Page.route()`.
+
+14.0.0
+------
+
+* Loc inherits from URL.
+* a shallow copy of state is made for each chain, in particular, state.stage is constant in a chain.
+* state.hash is now empty or starts with a '#', to align with URL behavior
