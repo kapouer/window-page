@@ -131,14 +131,14 @@ test.describe("Rendering", () => {
 	test("parse state.hash and run hash chain on click", async ({ page }) => {
 		await idle(page, "templates/hash-click.html#test");
 		await page.isAttr('html', "data-prerender", "true");
-		await page.isText('div.hash', 'test');
-		await page.isText('div.secondhash', 'toto');
+		await page.isText('div.hash', '#test');
+		await page.isText('div.secondhash', '#toto');
 	});
 
 	test("run hash chain on push", async ({ page }) => {
 		await idle(page, "templates/hash-push.html");
 		await page.isAttr('html', "data-prerender", "true");
-		await page.isText('div.hash', 'test');
+		await page.isText('div.hash', '#test');
 	});
 
 	test("support setup twice for same function", async ({ page }) => {

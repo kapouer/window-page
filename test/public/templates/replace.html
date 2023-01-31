@@ -27,7 +27,7 @@ function checkNums(state) {
 }
 
 Page.patch(function(state) {
-	if (state.query.toto) document.querySelector('.url').innerHTML = Page.format(state);
+	if (state.query.toto) document.querySelector('.url').innerHTML = state.toString();
 });
 
 Page.setup(function(state) {
