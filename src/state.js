@@ -84,7 +84,6 @@ export default class State extends Loc {
 		if (methods.length) this.chain(SETUP, state => {
 			for (const name of methods) {
 				name[4] = function (e) {
-					// wrong, it should runFn
 					listener[name[1]](e, State.state);
 				};
 				(name[0] ? window : node).addEventListener(name[2], name[4], name[3]);
@@ -261,7 +260,10 @@ export default class State extends Loc {
 
 		debug("run chain length", stage, chain.current.length);
 		if (chain.current.length == 0) chain.hold.resolve();
-		return chain.after.done;
+		return chain.after.done.then(() => {
+			Object.assign(this, chain.state);
+			return this;
+		});
 	}
 
 
