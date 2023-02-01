@@ -277,10 +277,9 @@ export default class State extends Loc {
 
 	async chain(stage, fn) {
 		if (!fn) throw new Error("Missing function or listener");
-		const state = this;
 		const stageMap = chainsMap[stage] ?? (chainsMap[stage] = new Map());
 		const emitter = document.currentScript
-			?? (fn.matches?.('script') ? fn : state.#emitter);
+			?? (fn.matches?.('script') ? fn : this.#emitter);
 		let lfn = stageMap.get(fn);
 		if (!lfn) {
 			lfn = {
@@ -299,11 +298,11 @@ export default class State extends Loc {
 		if (!chain.started) {
 			debug("chain pending", stage);
 		} else if (chain.current.stopped) {
-			await lfn.fn?.({ detail: state });
+			await lfn.fn?.({ detail: chain.state });
 		} else {
 			debug("chain is running", stage);
 			// not finished
-			chain.current.queue(() => lfn.fn?.({ detail: state }));
+			chain.current.queue(() => lfn.fn?.({ detail: chain.state }));
 		}
 		return chain.after;
 	}
