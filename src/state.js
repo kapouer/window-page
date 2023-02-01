@@ -319,17 +319,6 @@ export default class State extends Loc {
 		return this;
 	}
 
-	stop() {
-		const stage = this.#stage;
-		const chain = this.#chains[stage];
-		if (!chain) {
-			console.warn("state.stop must be called from chain listener");
-		} else {
-			chain.stop = true;
-		}
-		return this;
-	}
-
 	unchain(stage, fn) {
 		const stageMap = chainsMap[stage];
 		const lfn = stageMap?.get(fn);

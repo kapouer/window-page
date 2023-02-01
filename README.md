@@ -130,12 +130,6 @@ To append a function at the end of the current chain, use:
   fn can return a promise.
   To avoid deadlocks, fn must not return calls to state history methods.
 
-To stop further chain processing, use:
-
-- state.stop()
-
-Once stopped a chain cannot be restarted.
-
 Chains are implemented through native DOM emitters and listeners, and the
 emitter is either:
 
