@@ -28,8 +28,31 @@ export default class State extends Loc {
 	#chains = {};
 	#emitter;
 	#referrer;
-	#bound;
 	static #route;
+
+	get Loc() {
+		return Loc;
+	}
+
+	format(loc) {
+		return (new Loc(loc)).toString();
+	}
+
+	parse(str) {
+		return new Loc(str);
+	}
+
+	get State() {
+		return State;
+	}
+
+	get createDoc() {
+		return createDoc;
+	}
+
+	get get() {
+		return get;
+	}
 
 	#clone(state) {
 		this.#emitter = state.#emitter;
@@ -46,21 +69,12 @@ export default class State extends Loc {
 		return this.#referrer;
 	}
 
-	#rebind(W) {
-		if (this.#bound) return W;
-		this.#bound = true;
-		for (const stage of Stages) {
-			W[stage] = fn => this.chain(stage, fn);
-			W['un' + stage] = fn => this.unchain(stage, fn);
-			W.finish = (fn) => {
-				if (fn) console.error("Page.finish no longer accepts a parameter");
-				return this.#queue;
-			};
-		}
-		W.route = fn => State.#route = fn;
-		W.connect = (listener, node) => this.connect(listener, node);
-		W.disconnect = listener => this.disconnect(listener);
-		return W;
+	route(fn) {
+		State.#route = fn;
+	}
+
+	#rebind() {
+		window.Page = this;
 	}
 
 	connect(listener, node) {
@@ -102,12 +116,6 @@ export default class State extends Loc {
 		}
 	}
 
-	// FIXME refer.setup -> state.setup -> refer.close work all right
-	// however with connect/disconnect it's different:
-	// elem connect sets up listeners in SETUP chain
-	// elem disconnect tears down listeners in CLOSE chain
-	// connect/disconnect must be called explicitely
-
 	disconnect(listener) {
 		for (const name of NodeEvents) {
 			if (listener[name]) {
@@ -131,7 +139,7 @@ export default class State extends Loc {
 	}
 
 	async #run(opts = {}) {
-		this.#rebind(window.Page);
+		this.#rebind();
 		State.state = this;
 		if (opts.data) Object.assign(this.data, opts.data);
 
@@ -575,4 +583,19 @@ export default class State extends Loc {
 		if (!opts?.pop) copy.#historySave(method);
 		return copy;
 	}
+}
+
+for (const stage of Stages) {
+	Object.defineProperties(State.prototype, {
+		[stage]: {
+			value: function (fn) {
+				return this.chain(stage, fn);
+			}
+		},
+		[`un${stage}`]: {
+			value: function (fn) {
+				return this.unchain(stage, fn);
+			}
+		}
+	});
 }

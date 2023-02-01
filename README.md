@@ -9,6 +9,8 @@ Works well with:
 - visibility API
 - history API
 
+`Page` is a global object, and is actually the current State instance.
+
 ## Chains
 
 - init, called before anything but after original document is ready
@@ -109,12 +111,10 @@ Page.setup(function(state) {
 For each chain, one can add or remove a listener function that receives the
 current state as argument.
 
-- `Page[chainLabel](fn)`
+- `state[chainLabel](fn)`
   runs fn right now if the chain is reached, or wait the chain to be run
-- `Page['un'+chainLabel](fn)`
+- `state['un'+chainLabel](fn)`
   removes fn from a chain, mostly needed for custom elements.
-- Page.finish()
-  Returns the state queue Promise that resolves to `state`.
 
 The fn parameter can be a function or an object with a `<chain>`, or
 a `chain<Chain>` method - which is a handy way to keep the value of `this`.
@@ -179,7 +179,7 @@ The default `mergeHead` method do DOM diffing to keep existing script and link
 nodes.
 The default `mergeBody` method just replaces `document.body` with the new body.
 
-These methods can be overriden from `Page.init` or `Page.route`.
+These methods can be overriden from `init` listeners or `route` router.
 
 ### Integration with Custom Elements
 
@@ -188,8 +188,6 @@ plugged into Page using:
 
 - state.connect(node)
 - state.disconnect(node)
-
-Both methods are also available directly as `Page.connect`, `Page.disconnect`.
 
 Furthermore, if the object owns methods named `handle${Type}`, they will be
 used as `type` event listeners on that object, receiving arguments `(e, state)`.

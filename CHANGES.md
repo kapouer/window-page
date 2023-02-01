@@ -132,4 +132,4 @@ Default router can be restored using `Page.route()`.
 * a shallow copy of state is made for each chain, in particular, state.stage is constant in a chain, and state url properties cannot be changed between to chains (it can be changed only by a new run, using push/replace).
 * state.hash is now empty or starts with a '#', to align with URL behavior
 * the "hash" chain is now called the "focus" chain - because state[stage] can be called directly instead of through Page[stage]. That doesn't mean "focus" actually focuses an element.
-
+* now Page is actually the current state.
