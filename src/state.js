@@ -141,6 +141,7 @@ export default class State extends Loc {
 	async #run(opts = {}) {
 		this.#rebind();
 		State.state = this;
+		this.#stage = true;
 		if (opts.data) Object.assign(this.data, opts.data);
 
 		let prerendered, samePathname, sameQuery, sameHash;
@@ -252,7 +253,6 @@ export default class State extends Loc {
 	runChain(stage) {
 		const chain = this.initChain(stage);
 		chain.started = true;
-		this.#stage = stage;
 		debug("run chain", stage);
 
 		const e = new CustomEvent(`page${stage}`, {
@@ -309,6 +309,7 @@ export default class State extends Loc {
 
 	finish(fn) {
 		const stage = this.#stage;
+		if (!stage) throw new Error("Use state.finish inside a chain");
 		const chain = this.#chains[stage];
 		if (!chain) {
 			console.warn("state.finish must be called from chain listener");
@@ -509,10 +510,7 @@ export default class State extends Loc {
 
 	async #defaultRoute() {
 		const refer = this.#referrer;
-		if (!refer.#stage) {
-			debug("Default router starts after navigation");
-			return;
-		}
+		if (!refer.#stage) return;
 		const url = this.toString();
 		const client = await get(url, 500, 'text/html');
 		let doc;
