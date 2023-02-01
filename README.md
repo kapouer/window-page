@@ -17,7 +17,7 @@ Works well with:
 - patch, fetch additional data and update document if doc is not patched and query has changed
 - setup, when not prerendering, called once per pathname change (or first view)
 - paint, when not prerendering, called after pathname or query changes (or first view)
-- hash, the location hash has changed, `state.hash` is set.
+- focus, the location hash has changed, `state.hash` is set.
 - close, use it to clean what has been done in setup of referrer
 - error, a fatal error happened during page run, `state.error` is set.
 
@@ -277,7 +277,7 @@ These methods will run chains on new state and return a promise:
 
 Options:
 
-- vary (boolean, or "build", "patch", "hash", default false)
+- vary (boolean, or "build", "patch", "focus", default false)
   Overrides how pathname, query, hash are compared to previous state.
   `true` re-routes the page; and varying on a chain runs the next chains too.
   Example: reload after a form login.
@@ -296,7 +296,7 @@ The chains are run depending on how the url changes:
 
 - pathname: runs `route`, then runs build chain on new state
 - query: runs patch chain on new state
-- hash: runs hash chain on new state
+- hash: runs focus chain on new state
 
 The `close` chain is run on current state, after the new state has finished
 (to allow proper management of page transitions).

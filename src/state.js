@@ -12,9 +12,9 @@ const SETUP = "setup";
 const PAINT = "paint";
 const CLOSE = "close";
 const ERROR = "error";
-const HASH = "hash";
-const Stages = [INIT, READY, BUILD, PATCH, SETUP, PAINT, HASH, ERROR, CLOSE];
-const NodeEvents = [BUILD, PATCH, SETUP, PAINT, HASH, CLOSE];
+const FOCUS = "focus";
+const Stages = [INIT, READY, BUILD, PATCH, SETUP, PAINT, FOCUS, ERROR, CLOSE];
+const NodeEvents = [BUILD, PATCH, SETUP, PAINT, FOCUS, CLOSE];
 
 const runQueue = new Queue();
 const uiQueue = new UiQueue();
@@ -146,7 +146,7 @@ export default class State extends Loc {
 		} else if (vary == PATCH) {
 			samePathname = true;
 			sameHash = sameQuery = false;
-		} else if (vary == HASH) {
+		} else if (vary == FOCUS) {
 			samePathname = sameQuery = true;
 			sameHash = false;
 		}
@@ -157,7 +157,7 @@ export default class State extends Loc {
 			this.#referrer = refer = new State(this);
 			refer.hash = "";
 			samePathname = sameQuery = true;
-			sameHash = !this.hash;
+			sameHash = this.sameHash(refer);
 		} else if (refer == this) {
 			throw new Error("state and referrer should be distinct");
 		} else {
@@ -208,7 +208,7 @@ export default class State extends Loc {
 						// close old state after new state setup to allow transitions
 						await refer.runChain(CLOSE);
 					}
-					if (!sameHash) await this.runChain(HASH);
+					if (!sameHash) await this.runChain(FOCUS);
 				} catch (err) {
 					console.error(err);
 				}
@@ -495,12 +495,12 @@ export default class State extends Loc {
 		else if (opts === true) opts = { vary: true };
 		let vary = opts.vary;
 		if (vary == null) {
-			if (this.#chains.build?.current?.count) {
+			if (this.#chains[BUILD]?.current?.count) {
 				vary = BUILD;
-			} else if (this.#chains.patch?.current?.count) {
+			} else if (this.#chains[PATCH]?.current?.count) {
 				vary = PATCH;
-			} else if (this.#chains.hash?.current?.count) {
-				vary = HASH;
+			} else if (this.#chains[FOCUS]?.current?.count) {
+				vary = FOCUS;
 			}
 			opts.vary = vary;
 		}

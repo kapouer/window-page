@@ -6,13 +6,13 @@
 	<script>
 var nums = {
 	build: 0,
-	hash: 0,
+	focus: 0,
 	setup: 0
 };
 var reads = {};
 Page.build(checkNums);
 Page.setup(checkNums);
-Page.hash(checkNums);
+Page.focus(checkNums);
 
 function checkNums(state) {
 	var stage = state.stage;
@@ -27,8 +27,8 @@ function checkNums(state) {
 Page.setup(state => {
 	console.log("setup event")
 })
-Page.hash(function(state) {
-	console.log("hash event")
+Page.focus(function(state) {
+	console.log("focus event")
 	document.querySelector('#hash').innerHTML = state.hash;
 });
 	</script>
@@ -36,7 +36,7 @@ Page.hash(function(state) {
 <body>
 <div class="build"></div>
 <div class="setup"></div>
-<div class="hash"></div>
+<div class="focus"></div>
 <div id="hash"></div>
 </body>
 </html>
