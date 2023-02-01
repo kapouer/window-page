@@ -116,7 +116,7 @@ test.describe("Two-phase rendering", () => {
 		await idle(page, url);
 		await render(page);
 		await page.isAttr('x-link', 'href',
-			"/custom-elements-patch.html?test=4"
+			"/custom-elements-patch.html?test=1"
 		);
 	});
 });
