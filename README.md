@@ -21,7 +21,7 @@ Works well with:
 - paint, when not prerendering, called after pathname or query changes (or first view)
 - focus, the location hash has changed, `state.hash` is set.
 - close, use it to clean what has been done in setup of referrer
-- error, a fatal error happened during page run, `state.error` is set.
+- catch, a fatal error happened during page run, `state.error` is set.
 
 Between init and ready, when the pathname changes, `state.router` can import
 a new document, see below.
@@ -29,7 +29,7 @@ a new document, see below.
 A run is triggered by navigation (document.location changed in any way, or
 page history methods called, see below).
 
-If the `state.error` object is removed from state during the error chain,
+If the `state.error` object is removed from state during the catch chain,
 the navigation will continue as if the error did not happen.
 
 ## Router
@@ -296,12 +296,6 @@ The `close` chain is run on current state, after the new state has finished
 Chains `init` and `ready` are always run.
 
 Chain `setup` is only run if `document.visibilityState == "visible"`.
-
-Internal errors are caught and replaced by calls to document.location's
-assign or replace methods accordingly.
-
-The error chain can be used to remove `state.error` and continue on with
-normal behavior.
 
 A convenient method only that only replaces current window.history entry:
 

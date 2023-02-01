@@ -11,9 +11,9 @@ const PATCH = "patch";
 const SETUP = "setup";
 const PAINT = "paint";
 const CLOSE = "close";
-const ERROR = "error";
+const CATCH = "catch";
 const FOCUS = "focus";
-const Stages = [INIT, READY, BUILD, PATCH, SETUP, PAINT, FOCUS, ERROR, CLOSE];
+const Stages = [INIT, READY, BUILD, PATCH, SETUP, PAINT, FOCUS, CATCH, CLOSE];
 const NodeEvents = [BUILD, PATCH, SETUP, PAINT, FOCUS, CLOSE];
 
 const runQueue = new Queue();
@@ -30,20 +30,12 @@ export default class State extends Loc {
 	#referrer;
 	static #route;
 
-	get Loc() {
-		return Loc;
-	}
-
 	format(loc) {
 		return (new Loc(loc)).toString();
 	}
 
 	parse(str) {
 		return new Loc(str);
-	}
-
-	get State() {
-		return State;
 	}
 
 	get createDoc() {
@@ -224,8 +216,10 @@ export default class State extends Loc {
 			});
 		} catch(err) {
 			this.error = err;
-			await this.runChain(ERROR);
-			if (this.error) this.#queue.reject(this.error);
+			await this.runChain(CATCH);
+			const error = this.error;
+			this.error = null;
+			if (error) this.#queue.reject(error);
 		}
 		this.#queue.resolve(this);
 		return this.#queue;

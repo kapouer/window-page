@@ -134,4 +134,4 @@ Default router can be restored using `Page.route()`.
 * the "hash" chain is now called the "focus" chain - because state[stage] can be called directly instead of through Page[stage]. That doesn't mean "focus" actually focuses an element.
 * now Page is actually the current state.
 * state.stop no longer exists
-
+* the "error" chain is now called the "catch" chain - same reason, state.error can be modified by listeners in the catch chain, so the rename is to avoid conflict.
