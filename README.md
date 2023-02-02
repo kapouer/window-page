@@ -112,9 +112,11 @@ For each chain, one can add or remove a listener function that receives the
 current state as argument.
 
 - `state[chainLabel](fn)`
-  runs fn right now if the chain is reached, or wait the chain to be run
+  runs optional fn right now if the chain is reached, or wait the chain to be run.
+  returns a promise that resolves to corresponding state.
 - `state['un'+chainLabel](fn)`
   removes fn from a chain, mostly needed for custom elements.
+
 
 The fn parameter can be a function or an object with a `<chain>`, or
 a `chain<Chain>` method - which is a handy way to keep the value of `this`.

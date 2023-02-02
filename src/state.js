@@ -237,6 +237,7 @@ export default class State extends Loc {
 		chain.current.done.then(chain.hold.resolve);
 
 		const inst = new State(this);
+		chain.after.done.then(() => inst);
 		inst.#clone(this);
 		Object.assign(inst, this); // also copy extra properties
 		inst.#stage = stage;
@@ -270,7 +271,8 @@ export default class State extends Loc {
 
 
 	async chain(stage, fn) {
-		if (!fn) throw new Error("Missing function or listener");
+		const chain = this.#chains[stage] ?? this.initChain(stage);
+		if (!fn) return chain.after;
 		const stageMap = chainsMap[stage] ?? (chainsMap[stage] = new Map());
 		const emitter = document.currentScript
 			?? (fn.matches?.('script') ? fn : this.#emitter);
@@ -288,7 +290,6 @@ export default class State extends Loc {
 		} else {
 			debug("already chained", stage, fn);
 		}
-		const chain = this.#chains[stage] ?? this.initChain(stage);
 		if (!chain.started) {
 			debug("chain pending", stage);
 		} else if (chain.current.stopped) {

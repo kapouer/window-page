@@ -135,3 +135,8 @@ Default router can be restored using `Page.route()`.
 * now Page is actually the current state.
 * state.stop no longer exists
 * the "error" chain is now called the "catch" chain - same reason, state.error can be modified by listeners in the catch chain, so the rename is to avoid conflict.
+
+14.1.0
+------
+
+* state[chainLabel] can be called without listener, it will resolve to that state.
