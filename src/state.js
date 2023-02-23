@@ -168,6 +168,7 @@ export default class State extends Loc {
 			if (samePathname) {
 				this.#clone(refer);
 				Object.assign(this, refer);
+				this.#referrer = refer;
 			}
 		}
 
