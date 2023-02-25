@@ -5,6 +5,7 @@ import { Queue, domDeferred, UiQueue, waitStyles, loadNode } from './wait';
 import Diff from 'levenlistdiff';
 
 const INIT = "init";
+const ROUTE = "route";
 const READY = "ready";
 const BUILD = "build";
 const PATCH = "patch";
@@ -13,7 +14,7 @@ const PAINT = "paint";
 const CLOSE = "close";
 const CATCH = "catch";
 const FOCUS = "focus";
-const Stages = [INIT, READY, BUILD, PATCH, SETUP, PAINT, FOCUS, CATCH, CLOSE];
+const Stages = [INIT, ROUTE, READY, BUILD, PATCH, SETUP, PAINT, FOCUS, CATCH, CLOSE];
 const NodeEvents = [BUILD, PATCH, SETUP, PAINT, FOCUS, CLOSE];
 
 const runQueue = new Queue();
@@ -28,7 +29,6 @@ export default class State extends Loc {
 	#chains = {};
 	#emitter;
 	#referrer;
-	static #route;
 
 	format(loc) {
 		return (new Loc(loc)).toString();
@@ -59,10 +59,6 @@ export default class State extends Loc {
 
 	get referrer() {
 		return this.#referrer;
-	}
-
-	route(fn) {
-		State.#route = fn;
 	}
 
 	#rebind() {
@@ -177,10 +173,10 @@ export default class State extends Loc {
 		try {
 			await this.runChain(INIT);
 			if (!samePathname || !prerendered) {
-				const doc = await (State.#route ? State.#route(this) : this.#defaultRoute());
-				if (doc) {
-					if (doc != document) await this.#load(doc);
-					prerendered = this.#prerender();
+				await this.runChain(ROUTE);
+				if (this.doc && this.doc != document) {
+					await this.#load(this.doc);
+					delete this.doc;
 				}
 			}
 			this.#prerender(true);
@@ -502,22 +498,6 @@ export default class State extends Loc {
 
 	save() {
 		return this.#historySave('replace');
-	}
-
-	async #defaultRoute() {
-		const refer = this.#referrer;
-		if (!refer.#stage) return;
-		const url = this.toString();
-		const client = await get(url, 500, 'text/html');
-		let doc;
-		if (client.status >= 200) {
-			doc = createDoc(client.responseText);
-			if (client.status >= 400 && (!doc.body || doc.body.children.length == 0)) {
-				throw new Error(client.statusText);
-			}
-		}
-		if (!doc) throw new Error("Cannot load remote document");
-		return doc;
 	}
 
 	handleEvent(e) {
