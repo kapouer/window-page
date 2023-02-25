@@ -22,6 +22,8 @@ const uiQueue = new UiQueue();
 const chainsMap = {};
 
 export default class State extends Loc {
+	static Stages = Stages;
+	static NodeEvents = NodeEvents;
 	static state = new State();
 	data = {};
 	#stage;
