@@ -9,7 +9,12 @@ Works well with:
 - visibility API
 - history API
 
-`Page` is a global object, and is actually the current State instance.
+`window.Page` is the current State instance.
+
+## Install
+
+This is a nodejs module.
+It natively supports es6 modules, and provides a cjs bundle.
 
 ## Chains
 
@@ -47,32 +52,21 @@ Page.route(async function(state) {
  state.doc = state.parseDoc(data.template);
 });
 
-// merge data into DOM
-Page.build(function(state) {
- matchdom(document.body, state.data);
-});
-
-// fetch additional data depending on state.query values
-Page.patch(function(state) {
- if (state.query.id != null) return fetch('/getdata?id=' + state.query.id)
- .then(function(res) {
-  return res.json();
- }).then(function(data) {
-  matchdom(template, data);
- });
-});
-
-// initialize user interactions, called only once per instantiated document,
-// after route/import/build.
-Page.setup(function(state) {
- // global, static ui elements can be initialized here
- // if a build function adds more dropdowns, it is responsible for initializing
- // them altogether.
- $('.dropdown').dropdown();
- $('#open').on('click', function() {
-  // this might not be latest state, but it's fine since 12.1.0
-  state.push(this.href);
- });
+Page.connect({
+  build(state) {
+    // build page
+  }
+  async patch(state) {
+    if (state.query.id == null) return;
+    const data = await (fetch('/getdata?id=' + state.query.id).json())
+    // do something
+  }
+  handleClick(e) {
+    const link = e.target.closest('a[href]');
+    if (!link) return;
+    e.preventDefault();
+    state.push(link.href);
+  }
 });
 
 ```
@@ -90,7 +84,6 @@ current state as argument.
 - `state['un'+chainLabel](fn)`
   removes fn from a chain, mostly needed for custom elements.
 
-
 The fn parameter can be a function or an object with a `<chain>`, or
 a `chain<Chain>` method - which is a handy way to keep the value of `this`.
 
@@ -104,6 +97,8 @@ To append a function at the end of the current chain, use:
 - state.finish(fn)
   fn can return a promise.
   To avoid deadlocks, fn must not return calls to state history methods.
+
+### details about chains
 
 Chains are implemented through native DOM emitters and listeners, and the
 emitter is either:
@@ -125,7 +120,7 @@ The state is a subclass of Loc, which extends URL class with:
 The state history methods accept partial objects.
 
 - state.data
-  data saved in history - must be JSON-serializable.
+  data is saved in navigator history - must be JSON-serializable.
 
 - state.referrer
   the previous parsable state.
@@ -136,7 +131,9 @@ Page.State: the state's constructor.
 
 ### Document import
 
-When importing a document after route chain, those methods are called:
+When a new document is loaded after route chain, stylesheets are loaded in parallel, and scripts are loaded serially, with parallel preloading.
+
+Those methods are called:
 
 - await state.mergeHead(head, prev)
 - await state.mergeBody(body, prev)
@@ -145,11 +142,9 @@ The default `mergeHead` method do a basic diff to keep existing scripts and link
 nodes.
 The default `mergeBody` method just replaces `document.body` with the new body.
 
-These methods can be overriden by `init` or `route` listeners.
+To manage page transitions, these methods can be overriden by `init` or `route` listeners.
 
 ### Integration with Custom Elements, event handlers
-
-[BUILD, PATCH, SETUP, PAINT, FOCUS, CLOSE];
 
 An object having build, patch, setup, paint, focus, close methods can be
 plugged into Page using:
@@ -176,36 +171,14 @@ connectedCallback() {
   Page.connect(this);
 }
 disconnectedCallback() {
-  // will call close asap, unlike close chain
   Page.disconnect(this);
 }
-patch(state) {
-  var index = state.query.index || 0;
-  if (this.slider.index != index) {
-    this.slider.setIndex(index);
-  }
-}
-setup(state) {
-  this.slider = new Slider(this, {
-    change: function(index) {
-      // since 12.1.0 if this is an old state it's still okay
-      state.push({query: {index: index}});
-    }
-  });
-  state.finish(function() {
-    // do something at the end of the setup chain
-  });
-}
-close() {
-  if (this.slider) this.slider.destroy();
-  delete this.slider;
-}
-handleClick(e, state) {
-  if (e.target.href) state.push(e.target.href);
-}
-handleAllClick(e, state) {
-  // deactivate something activated on click
-}
+patch(state) {}
+setup(state) {}
+close() {}
+captureSubmit(e, state) {}
+handleClick(e, state) {}
+handleAllClick(e, state) {}
 ```
 
 ### Using the event listener on other objects (window, document...)
@@ -225,14 +198,6 @@ handleScroll(e, state) {
   // got click
 }
 ```
-
-### Loading of scripts and stylesheets
-
-When importing a document, scripts (and link imports, though it's deprecated)
-are executed in order, and stylesheets are inserted all at once.
-
-Preloading is done using XHR for same-origin scripts and stylesheets, otherwise
-no preloading is done (due to limitations of cross origin requests).
 
 ### History
 
@@ -263,41 +228,30 @@ A convenient method only that only replaces current window.history entry:
 - state.save()
   useful to save current state.data.
 
-### Tools
+### Loc methods
 
-- Page.get(url, statusRejects)
-  statusRejects defaults to 400.
-  Fetch the url and return a string as promised.
+State inherits from Loc:
 
-- Page.createDoc(str)
-  returns an HTML document from a string.
-
-- Page.parse or new Loc
+- parse(str)
   parses a url into pathname, query object, hash; and protocol, hostname, port
   if not the same domain as the document.
+  returns a Loc instance.
 
-- Page.format or Loc#toString
+- format(loc)
   format a location to a string with only what was defined,
   converts obj.path to pathname, query then stringify query obj if any.
 
-- Loc#sameDomain(b)
+- sameDomain(b)
   compare domains (protocol + hostname + port) of two url or objects.
 
-- Loc#samePathname(b)
+- samePathname(b)
   compare domains and pathname of two url or objects.
 
-- Loc#sameQuery(b)
+- sameQuery(b)
   compare query strings of two url or objects.
 
-- Loc#samePath(b)
+- samePath(b)
   compare domain, pathname, querystring (without hash) of two url or objects.
-
-### Classes
-
-By default window.Page also exports those classes:
-
-- State
-- Loc
 
 ### BrowserStack and Browser support
 
@@ -313,30 +267,12 @@ Tested on:
 - Edge >= 13
 - android browser (on Samsung Galaxy S5)
 
-It might work on IE9, but tests rely on a feature not available there
-(getting a DOM document from XHR request).
-
 [![Build Status](https://travis-ci.org/kapouer/window-page.svg?branch=master)](https://travis-ci.org/kapouer/window-page)
 ![BrowserStack Status](https://www.browserstack.com/automate/badge.svg?badge_key=MndLTXRsN2RKampOTGJEVmVVdmtONnhOTkxDV25KOXdGa0RnNTNWcTJUMD0tLU8xUWJJY0RqK2xpYzNQcUhxUEFIZGc9PQ==--6b7064ec4dca4fb4a26f955db807a43e32f2a2c3)
 
-## Install
+## Debug logs
 
-Manual installation is simple:
-
-```bash
-npm install window-page
-ln -s node_modules/window-page/window-page.js public/js/
-```
-
-then add a script tag in a web page, before the application scripts that
-use the chain methods.
-
-window-page is also a commonjs module, so it can be used with `require`.
-
-## Debug log
-
-Either set `window.debug` to a custom log function, add set local storage:
-`window.localStorage.setItem('debug', 'window-page')`.
+Just enable `debug` level in the console.
 
 ## License
 
