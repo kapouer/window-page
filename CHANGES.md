@@ -140,3 +140,14 @@ Default router can be restored using `Page.route()`.
 ------
 
 * state[chainLabel] can be called without listener, it will resolve to that state.
+
+15.0.0
+------
+
+* route is now a chain.
+  Route listeners need to set `state.doc` to import a document
+
+* There is no default router
+  `Page.route(state => state.defaultRoute())` can be added explicitely.
+
+* State.Stages, Stage.NodeEvents are exported

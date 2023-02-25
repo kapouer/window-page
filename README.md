@@ -13,65 +13,38 @@ Works well with:
 
 ## Chains
 
-- init, called before anything but after original document is ready
-- ready, when imported document or original document is ready
-- build, fetch data and fill document if doc is not built or pathname has changed
-- patch, fetch additional data and update document if doc is not patched and query has changed
-- setup, when not prerendering, called once per pathname change (or first view)
-- paint, when not prerendering, called after pathname or query changes (or first view)
-- focus, the location hash has changed, `state.hash` is set.
-- close, use it to clean what has been done in setup of referrer
-- catch, a fatal error happened during page run, `state.error` is set.
-
-Between init and ready, when the pathname changes, `state.router` can import
-a new document, see below.
+- init: empty document is ready
+- route: pathname changed and document is not prerendered; can set `state.doc`.
+- ready: modified document is ready
+- build: pathname changed and document is not prerendered
+- patch: pathname changed and document is not prerendered, or query changed
+- setup: visible, on first view or pathname changed
+- paint: visible, on first view or pathname or query changed
+- focus: visible, location hash changed; `state.hash` is set.
+- close: visible, after new state reach setup, referrer is closed
+- catch: error was thrown, `state.error` is set.
 
 A run is triggered by navigation (document.location changed in any way, or
 page history methods called, see below).
 
+Several chains are only run when document is visible - i.e. not "hidden".
+This is used to prerender on server, and also prerender on client.
+
+Route listeners can set `state.doc`: an optional document which styles and scripts are imported before `ready` chain.
+
 If the `state.error` object is removed from state during the catch chain,
 the navigation will continue as if the error did not happen.
-
-## Router
-
-State instances have a default router which assumes prerendered web pages:
-
-- it does not run on first page load
-- it does fetch a remote web page, to be imported as new document when pathname
-changes.
-
-It can be overriden using `Page.route(method)`.
-
-A page defining a custom router should use the default router if it is
-prerendered (which happens if the script calling `Page.route` is not in the
-prerendered page).
-
-Basic example:
-
-```js
-Page.route(function(state) {
- return Page.get(state).then(function(str) {
-  return Page.createDoc(str);
- });
-});
-```
 
 ## Usage
 
 ```js
-// get data and document from location
-Page.route(function(state) {
- return fetch(page.pathname + '.json').then(function(res) {
-  return res.json();
- }).then(function(data) {
-  // not mandatory property name, but a good idea to avoid future collisions
-  state.data = data;
-  return fetch(data.template).then(function(res) {
-   return res.text();
-  });
- }).then(function(str) {
-  return Page.parseDoc(str);
- });
+
+Page.route(async function(state) {
+ const res = await fetch(page.pathname + '.json');
+ const data = await res.json();
+ // keep data during navigation
+ state.data = data;
+ state.doc = state.parseDoc(data.template);
 });
 
 // merge data into DOM
@@ -159,27 +132,26 @@ The state history methods accept partial objects.
   If Page is at first run, refers to the same location - without hash.
   Is not related to `document.referrer`.
 
-- state.follower
-  the following state.
-
 Page.State: the state's constructor.
 
 ### Document import
 
-When importing a document, two methods (that can return a promise) are called:
+When importing a document after route chain, those methods are called:
 
-- state.mergeHead(head, prev)
-- state.mergeBody(body, prev)
+- await state.mergeHead(head, prev)
+- await state.mergeBody(body, prev)
 
-The default `mergeHead` method do DOM diffing to keep existing script and link
+The default `mergeHead` method do a basic diff to keep existing scripts and links
 nodes.
 The default `mergeBody` method just replaces `document.body` with the new body.
 
-These methods can be overriden from `init` listeners or `route` router.
+These methods can be overriden by `init` or `route` listeners.
 
-### Integration with Custom Elements
+### Integration with Custom Elements, event handlers
 
-An object having `build`, `patch`, `setup`, `close` methods can be
+[BUILD, PATCH, SETUP, PAINT, FOCUS, CLOSE];
+
+An object having build, patch, setup, paint, focus, close methods can be
 plugged into Page using:
 
 - state.connect(node)
@@ -285,19 +257,6 @@ Options:
   used or not.
   `opts.vary` can be set, in which case it is passed as is to `replace`.
   Example: does not call `setup` then `close` unless BUILD chain is not empty.
-
-The chains are run depending on how the url changes:
-
-- pathname: runs `route`, then runs build chain on new state
-- query: runs patch chain on new state
-- hash: runs focus chain on new state
-
-The `close` chain is run on current state, after the new state has finished
-(to allow proper management of page transitions).
-
-Chains `init` and `ready` are always run.
-
-Chain `setup` is only run if `document.visibilityState == "visible"`.
 
 A convenient method only that only replaces current window.history entry:
 
