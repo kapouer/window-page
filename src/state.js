@@ -152,7 +152,7 @@ export default class State extends Loc {
 
 		let refer = this.#referrer;
 		if (!refer) {
-			debug("new referrer");
+			console.debug("new referrer");
 			this.#referrer = refer = new State(this);
 			refer.hash = "";
 			samePathname = sameQuery = true;
@@ -182,7 +182,7 @@ export default class State extends Loc {
 				}
 			}
 			this.#prerender(true);
-			debug("prerendered", prerendered);
+			console.debug("prerendered", prerendered);
 			await this.runChain(READY);
 			if (!prerendered || !samePathname) {
 				await this.runChain(BUILD);
@@ -250,7 +250,7 @@ export default class State extends Loc {
 	runChain(stage) {
 		const chain = this.initChain(stage);
 		chain.started = true;
-		debug("run chain", stage);
+		console.debug("run chain", stage);
 
 		const e = new CustomEvent(`page${stage}`, {
 			view: window,
@@ -263,7 +263,7 @@ export default class State extends Loc {
 		}
 		if (this.#emitter) this.#emitter.dispatchEvent(e);
 
-		debug("run chain length", stage, chain.current.length);
+		console.debug("run chain length", stage, chain.current.length);
 		if (chain.current.length == 0) chain.hold.resolve();
 		return chain.done;
 	}
@@ -287,14 +287,14 @@ export default class State extends Loc {
 			lfn.emitters.add(emitter);
 			emitter.addEventListener('page' + stage, lfn.fn);
 		} else {
-			debug("already chained", stage, fn);
+			console.debug("already chained", stage, fn);
 		}
 		if (!chain.started) {
-			debug("chain pending", stage);
+			console.debug("chain pending", stage);
 		} else if (chain.current.stopped) {
 			await lfn.fn?.({ detail: chain.state });
 		} else {
-			debug("chain is running", stage);
+			console.debug("chain is running", stage);
 			// not finished
 			chain.current.queue(() => lfn.fn?.({ detail: chain.state }));
 		}
@@ -359,7 +359,7 @@ export default class State extends Loc {
 	}
 
 	async #load(ndoc) {
-		debug("Import new document");
+		console.debug("Import new document");
 		if (ndoc.ownerDocument) ndoc = ndoc.ownerDocument;
 		if (!ndoc.documentElement) {
 			throw new Error("Router expects documentElement");
@@ -481,7 +481,7 @@ export default class State extends Loc {
 	}
 
 	reload(opts) {
-		debug("reload");
+		console.debug("reload");
 		if (!opts) opts = {};
 		else if (opts === true) opts = { vary: true };
 		let vary = opts.vary;
@@ -504,7 +504,7 @@ export default class State extends Loc {
 
 	handleEvent(e) {
 		if (e.type == "popstate") {
-			debug("history event from", this.pathname, this.query, "to", e.state && e.state.href || null);
+			console.debug("history event from", this.pathname, this.query, "to", e.state && e.state.href || null);
 			const state = this.#stateFrom(e.state) || new State();
 			this.#historyMethod('push', state, { pop: true });
 		}
@@ -529,7 +529,7 @@ export default class State extends Loc {
 	#historySave(method) {
 		if (!window.history) return false;
 		const to = this.#stateTo();
-		debug("history", method, to);
+		console.debug("history", method, to);
 		window.history[method + 'State'](to, document.title, to.href);
 		return true;
 	}
@@ -542,7 +542,7 @@ export default class State extends Loc {
 			if (method == "replace") console.info("Cannot replace to a different origin");
 			document.location.assign(copy.toString());
 		}
-		debug("run", method, copy, opts);
+		console.debug("run", method, copy, opts);
 		await copy.run(opts);
 		if (!opts?.pop) copy.#historySave(method);
 		return copy;
