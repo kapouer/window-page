@@ -47,7 +47,7 @@ export class Queue {
 	}
 
 	get length() {
-		return this.#list.length;
+		return this.#list.length + this.#on ? 1 : 0;
 	}
 
 	queue(job) {
