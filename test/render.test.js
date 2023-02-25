@@ -167,17 +167,8 @@ test.describe("Rendering", () => {
 			return window.test1 + window.test2;
 		});
 		expect(str.replace(/[\n\t]+/g, '')).toBe(`
-		<html lang="en" data-prerender="true"><head>
-			<title>first</title>
-			<script src="/spa.js"></script>
-		</head>
-		<body>first
-		</body></html>
-		<html lang="fr" data-removed="true" data-prerender="true"><head>
-			<title>two</title>
-			<script src="/spa.js"></script>
-		</head>
-		<body>two
+		<html lang="en" data-prerender="true"><body>first</body></html>
+		<html lang="fr" data-removed="true" data-prerender="true"><body>two
 		</body></html>`.replace(/[\n\t]+/g, ''));
 	});
 
@@ -197,6 +188,7 @@ test.describe("Rendering", () => {
 	});
 
 	test("reload current document and not run inline scripts handlers during import", async ({ page }) => {
+		// FIXME flaky test
 		await idle(page, "templates/reload-setup.html");
 		await page.isAttr('html', "data-setup", "2");
 		await page.isAttr('html', "data-close", "1");
