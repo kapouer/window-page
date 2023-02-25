@@ -115,8 +115,8 @@ export default class State extends Loc {
 		if (listener[CLOSE]) listener[CLOSE](this);
 	}
 
-	#prerender(ok, doc) {
-		const root = (doc || document).documentElement;
+	#prerender(ok) {
+		const root = document.documentElement;
 		if (ok === undefined) ok = root.dataset.prerender == 'true';
 		else if (ok === true) root.setAttribute('data-prerender', 'true');
 		else if (ok === false) root.removeAttribute('data-prerender');
