@@ -1,5 +1,4 @@
 import { Deferred } from 'class-deferred';
-import { debug, queryAll, get, createDoc } from './utils';
 import Loc from './loc';
 import { Queue, domDeferred, UiQueue, waitStyles, loadNode } from './wait';
 import Diff from 'levenlistdiff';
@@ -38,14 +37,6 @@ export default class State extends Loc {
 
 	parse(str) {
 		return new Loc(str);
-	}
-
-	get createDoc() {
-		return createDoc;
-	}
-
-	get get() {
-		return get;
 	}
 
 	#clone(state) {
@@ -258,7 +249,7 @@ export default class State extends Loc {
 			cancelable: true,
 			detail: this
 		});
-		for (const node of queryAll(document, 'script')) {
+		for (const node of document.querySelectorAll('script')) {
 			node.dispatchEvent(e);
 		}
 		if (this.#emitter) this.#emitter.dispatchEvent(e);
@@ -374,7 +365,7 @@ export default class State extends Loc {
 
 		this.#updateAttributes(root, nroot);
 		// disable all scripts and styles
-		for (const node of queryAll(nhead, selOn)) {
+		for (const node of nhead.querySelectorAll(selOn)) {
 			const type = node.nodeName == "SCRIPT" ? 'type' : 'rel';
 			if (node[type]) node.setAttribute('priv-' + type, node[type]);
 			node[type] = 'none';
@@ -385,7 +376,7 @@ export default class State extends Loc {
 		// preload and start styles
 		const parallels = [];
 		const serials = [];
-		for (const node of queryAll(document.head, selOff)) {
+		for (const node of document.head.querySelectorAll(selOff)) {
 			const isScript = node.nodeName == "SCRIPT";
 			const { src, as, cross } = isScript ? {
 				src: node.getAttribute('src'),

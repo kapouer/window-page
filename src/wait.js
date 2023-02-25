@@ -1,5 +1,4 @@
 import { Deferred } from "class-deferred";
-import { queryAll, once } from './utils';
 
 let domReady = false;
 function readyLsn() {
@@ -7,6 +6,19 @@ function readyLsn() {
 		domReady = true;
 		return true;
 	}
+}
+
+function once(emitter, events, filter) {
+	if (!Array.isArray(events)) events = [events];
+	const d = new Deferred();
+	const listener = (e) => {
+		if (!filter || filter(e)) {
+			for (const event of events) emitter.removeEventListener(event, listener);
+			d.resolve();
+		}
+	};
+	for (const event of events) emitter.addEventListener(event, listener);
+	return d;
 }
 
 export function domDeferred() {
@@ -101,10 +113,8 @@ export class UiQueue {
 
 export function waitStyles() {
 	return Promise.all(
-		queryAll(
-			document.head,
-			'link[rel="stylesheet"]'
-		).map(node => waitSheet(node))
+		Array.from(document.head.querySelectorAll('link[rel="stylesheet"]'))
+			.map(node => waitSheet(node))
 	);
 }
 
