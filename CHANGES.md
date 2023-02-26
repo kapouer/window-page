@@ -147,6 +147,8 @@ Default router can be restored using `Page.route()`.
 * route is now a chain.
   Route listeners need to set `state.doc` to import a document
 
+* after route and before ready chain, `state.doc` is set.
+
 * init chain is removed. Use route or ready instead.
 
 * There is no default router

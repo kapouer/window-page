@@ -34,7 +34,8 @@ page history methods called, see below).
 Several chains are only run when document is visible - i.e. not "hidden".
 This is used to prerender on server, and also prerender on client.
 
-Route listeners can set `state.doc`: an optional document which styles and scripts are imported before `ready` chain.
+Route listeners can set `state.doc`: an optional document which styles and scripts are imported after `route` chain.
+The `ready` chain always has `state.doc = document`.
 
 If the `state.error` object is removed from state during the catch chain,
 the navigation will continue as if the error did not happen.
