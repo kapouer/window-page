@@ -167,8 +167,8 @@ export default class State extends Loc {
 				await this.runChain(ROUTE);
 				if (this.doc && this.doc != document) {
 					await this.#load(this.doc);
-					delete this.doc;
 				}
+				this.doc = document;
 			}
 			this.#prerender(true);
 			console.debug("prerendered", prerendered);
