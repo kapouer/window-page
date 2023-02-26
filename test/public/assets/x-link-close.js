@@ -25,14 +25,13 @@ class HTMLXLinkElement extends HTMLElement {
 }
 
 window.customElements.define("x-link", HTMLXLinkElement);
-Page.init(() => {
-	Page.route(state => {
-		if (window.routed) {
-			state.doc = Page.createDoc(document.documentElement.outerHTML);
-		} else {
-			state.doc = document;
-			window.routed = true;
-		}
-	});
+
+Page.route(state => {
+	if (window.routed) {
+		state.doc = Page.createDoc(document.documentElement.outerHTML);
+	} else {
+		state.doc = document;
+		window.routed = true;
+	}
 });
 

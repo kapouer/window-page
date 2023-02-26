@@ -25,11 +25,11 @@ test.describe("Two-phase rendering", () => {
 		const url = "/build.html";
 		await idle(page, url);
 		await page.isAttr('html', 'data-prerender', 'true');
-		await page.isText('div.init', '1');
+		await page.isText('div.ready', '1');
 		await page.isText('div.build', '1');
 		await page.isText('div.setup', '');
 		await render(page);
-		await page.isText('div.init', '2');
+		await page.isText('div.ready', '2');
 		await page.isText('div.build', '1');
 		await page.isText('div.setup', '1');
 	});

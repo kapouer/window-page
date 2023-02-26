@@ -147,7 +147,9 @@ Default router can be restored using `Page.route()`.
 * route is now a chain.
   Route listeners need to set `state.doc` to import a document
 
+* init chain is removed. Use route or ready instead.
+
 * There is no default router
-  `Page.route(state => state.defaultRoute())` can be added explicitely.
+  See `test/public/tools.js` for examples.
 
 * State.Stages, Stage.NodeEvents are exported

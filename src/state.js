@@ -3,7 +3,6 @@ import Loc from './loc';
 import { Queue, domDeferred, UiQueue, waitStyles, loadNode } from './wait';
 import Diff from 'levenlistdiff';
 
-const INIT = "init";
 const ROUTE = "route";
 const READY = "ready";
 const BUILD = "build";
@@ -13,7 +12,7 @@ const PAINT = "paint";
 const CLOSE = "close";
 const CATCH = "catch";
 const FOCUS = "focus";
-const Stages = [INIT, ROUTE, READY, BUILD, PATCH, SETUP, PAINT, FOCUS, CATCH, CLOSE];
+const Stages = [ROUTE, READY, BUILD, PATCH, SETUP, PAINT, FOCUS, CATCH, CLOSE];
 const NodeEvents = [BUILD, PATCH, SETUP, PAINT, FOCUS, CLOSE];
 
 const runQueue = new Queue();
@@ -164,7 +163,6 @@ export default class State extends Loc {
 		await domDeferred();
 		if (prerendered == null) prerendered = this.#prerender();
 		try {
-			await this.runChain(INIT);
 			if (!samePathname || !prerendered) {
 				await this.runChain(ROUTE);
 				if (this.doc && this.doc != document) {

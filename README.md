@@ -18,9 +18,8 @@ It natively supports es6 modules, and provides a cjs bundle.
 
 ## Chains
 
-- init: empty document is ready
 - route: pathname changed and document is not prerendered; can set `state.doc`.
-- ready: modified document is ready
+- ready: document is ready
 - build: pathname changed and document is not prerendered
 - patch: pathname changed and document is not prerendered, or query changed
 - setup: visible, on first view or pathname changed
@@ -142,7 +141,7 @@ The default `mergeHead` method do a basic diff to keep existing scripts and link
 nodes.
 The default `mergeBody` method just replaces `document.body` with the new body.
 
-To manage page transitions, these methods can be overriden by `init` or `route` listeners.
+To manage page transitions, these methods can be overriden by `route` listeners.
 
 ### Integration with Custom Elements, event handlers
 
