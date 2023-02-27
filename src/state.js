@@ -532,8 +532,9 @@ export default class State extends Loc {
 			document.location.assign(copy.toString());
 		}
 		console.debug("run", method, copy, opts);
-		await copy.run(opts);
-		if (!opts?.pop) copy.#historySave(method);
+		copy.run(opts).then(() => {
+			if (!opts?.pop) copy.#historySave(method);
+		});
 		return copy;
 	}
 }
