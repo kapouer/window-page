@@ -188,7 +188,6 @@ test.describe("Rendering", () => {
 	});
 
 	test("reload current document and not run inline scripts handlers during import", async ({ page }) => {
-		// FIXME flaky test
 		await idle(page, "templates/reload-setup.html");
 		await page.isAttr('html', "data-setup", "2");
 		await page.isAttr('html', "data-close", "1");
