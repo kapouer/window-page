@@ -1,4 +1,5 @@
-module.exports = function (settings) {
+module.exports = function (trackerOpts) {
+	const { debug } = trackerOpts;
 
 	class Track {
 		native = {};
@@ -12,6 +13,7 @@ module.exports = function (settings) {
 		#tracks = [];
 		#sources = new Set();
 		#count = 0;
+		#idles = 0;
 		#resolve;
 
 		constructor(contexts = [window]) {
@@ -28,9 +30,35 @@ module.exports = function (settings) {
 				this.#handleTimeout(track);
 				this.#handleReady(track);
 				this.#handleFetch(track);
+				this.#handleResponse(track);
 				this.#handleXHR(track);
 				this.#handleNodes(track);
+				this.#handlePromises(track);
 			}
+		}
+
+		#wrapCb({ native, context }, fn) {
+			if (typeof fn != "function") return fn;
+			const it = this;
+			return (...args) => {
+				const id = it.creates('p');
+				try {
+					return fn(...args);
+				} finally {
+					native.queueMicrotask.call(context, () => it.completes(id));
+				}
+			};
+		}
+
+		#handlePromises({ native, context }) {
+			const it = this;
+			native.then = context.Promise.prototype.then;
+			context.Promise.prototype.then = function (res, rej) {
+				return native.then.call(this,
+					it.#wrapCb({ native, context }, res),
+					it.#wrapCb({ native, context }, rej)
+				);
+			};
 		}
 
 		#handleNode(node) {
@@ -76,21 +104,17 @@ module.exports = function (settings) {
 
 		#handleXHR({ native, context }) {
 			const it = this;
+			const events = ["abort", "error", "load"];
 			native.XMLHttpRequest = context.XMLHttpRequest;
 			context.XMLHttpRequest = class XMLHttpRequest extends native.XMLHttpRequest {
 				#id;
-				#to;
 				#done;
 				constructor() {
 					super();
 					this.#done = () => {
-						if (this.#to != null) {
-							native.clearTimeout.call(context, this.#to);
-							this.#to = null;
+						for (const ev of events) {
+							this.removeEventListener(ev, this.#done);
 						}
-						this.removeEventListener('abort', this.#done);
-						this.removeEventListener('error', this.#done);
-						this.removeEventListener('load', this.#done);
 						it.completes(this.#id);
 					};
 				}
@@ -101,13 +125,16 @@ module.exports = function (settings) {
 					return 'XMLHttpRequest';
 				}
 				send(...args) {
-					const ret = super.send(...args);
-					this.addEventListener('abort', this.#done);
-					this.addEventListener('error', this.#done);
-					this.addEventListener('load', this.#done);
-					this.#to = native.setTimeout.call(context, this.#done, settings.stall);
+					for (const ev of events) {
+						this.addEventListener(ev, this.#done);
+					}
 					this.#id = it.creates('xhr');
-					return ret;
+					try {
+						return super.send(...args);
+					} catch (err) {
+						it.completes(this.#id);
+						throw err;
+					}
 				}
 			};
 		}
@@ -117,14 +144,26 @@ module.exports = function (settings) {
 			native.fetch = context.fetch;
 			context.fetch = function fetch(...args) {
 				const id = it.creates('fetch');
-				try {
-					const r = native.fetch.apply(context, args);
-					r.finally(() => it.completes(id));
-					return r;
-				} catch (err) {
-					it.completes(id);
-				}
+				return native.fetch.apply(context, args).finally(() => {
+					native.queueMicrotask.call(context, () => {
+						it.completes(id);
+					});
+				});
 			};
+		}
+
+		#handleResponse({ native, context }) {
+			const it = this;
+			for (const meth of ['json', 'text', 'blob', 'formData', 'arrayBuffer']) {
+				const key = meth + 'Res';
+				native[key] = context.Response.prototype[meth];
+				context.Response.prototype[meth] = function () {
+					const id = it.creates(meth);
+					return native[key].call(this).finally(() => {
+						it.completes(id);
+					});
+				};
+			}
 		}
 
 		#handleReady({ native, context }) {
@@ -142,7 +181,7 @@ module.exports = function (settings) {
 				async handleEvent(e) {
 					try {
 						if (this.fn.handleEvent) await this.fn.handleEvent(e);
-						else await this.fn(e);
+						else if (typeof this.fn == "function") await this.fn(e);
 					} finally {
 						it.completes(this.id);
 						this.id = null;
@@ -150,7 +189,8 @@ module.exports = function (settings) {
 				}
 			}
 			doc.addEventListener = function (name, fn, cap) {
-				if (name != "DOMContentLoaded") {
+				const ft = typeof fn;
+				if (name != "DOMContentLoaded" || !fn || !["object", "function"].includes(ft)) {
 					return native.addEventListener.call(doc, name, fn, cap);
 				}
 				const eMap = cap ? native.captures : native.bubbles;
@@ -160,7 +200,8 @@ module.exports = function (settings) {
 				return native.addEventListener.call(doc, name, watch, cap);
 			};
 			doc.removeEventListener = function (name, fn, cap) {
-				if (name != "DOMContentLoaded") {
+				const ft = typeof fn;
+				if (name != "DOMContentLoaded" || !fn || !["object", "function"].includes(ft)) {
 					return native.removeEventListener.call(doc, name, fn, cap);
 				}
 				const eMap = cap ? native.captures : native.bubbles;
@@ -175,6 +216,9 @@ module.exports = function (settings) {
 			const it = this;
 			native.queueMicrotask = context.queueMicrotask;
 			context.queueMicrotask = function (fn) {
+				if (typeof fn != "function") {
+					return native.queueMicrotask.call(context, fn);
+				}
 				const id = it.creates('task');
 				native.queueMicrotask.call(context, () => {
 					try {
@@ -190,6 +234,9 @@ module.exports = function (settings) {
 			const it = this;
 			native.setTimeout = context.setTimeout;
 			context.setTimeout = function (fn, to) {
+				if (typeof fn != "function") {
+					return native.setTimeout.call(context, fn, to);
+				}
 				const id = 'to' + native.setTimeout.call(context, () => {
 					try {
 						fn.call(this);
@@ -212,6 +259,9 @@ module.exports = function (settings) {
 			const it = this;
 			native.requestAnimationFrame = context.requestAnimationFrame;
 			context.requestAnimationFrame = function (fn) {
+				if (typeof fn != "function") {
+					return native.requestAnimationFrame.call(context, fn);
+				}
 				const id = 'raf' + native.requestAnimationFrame.call(context, () => {
 					try {
 						fn.call(this);
@@ -233,49 +283,55 @@ module.exports = function (settings) {
 
 		waits(id) {
 			if (id == null) return;
-			this.#sources.add(id);
+			this.#sources?.add(id);
 			return id;
 		}
 		creates(prefix) {
 			if (prefix == null) return;
 			const id = `${prefix}${this.#count++}`;
-			this.#sources.add(id);
+			debug?.("creates", id);
+			this.#sources?.add(id);
 			return id;
 		}
 
 		completes(id) {
 			if (id == null) return;
+			debug?.("completes", id);
+			if (this.#tracks == null) {
+				debug?.("destroyed");
+				return;
+			}
 			const { context, native } = this.#tracks[0];
-			native.setTimeout.call(context, () => {
-				native.queueMicrotask.call(context, () => {
-					this.#sources.delete(id);
-					if (this.#sources.size === 0) {
-						this.#resolve("idle");
-					}
-				});
-			});
+			// run after all microtasks
+			native.setTimeout.call(context, () => this.#done(id));
 		}
 
-		destroy() {
+		#done(id) {
+			this.#sources?.delete(id);
+			if (this.#sources?.size === 0) {
+				if (!debug) this.#destroy();
+				debug?.("idle", this.#idles++);
+				this.#resolve("idle");
+			}
+		}
+
+		#destroy() {
 			for (const { native, context } of this.#tracks) {
 				for (const [name, prim] of Object.entries(native)) {
 					context[name] = prim;
 				}
 			}
-			this.#tracks = [];
-			this.#sources = [];
+			this.#tracks = null;
+			this.#sources = null;
 		}
 	}
-
-	// https://playwright.dev/docs/api/class-page#page-route
-	delete window.navigator.serviceWorker;
 
 	const tracker = new AsyncTracker();
 
 	// tracker must at least wait for this
 	document.addEventListener('DOMContentLoaded', () => { });
 
-	Object.defineProperty(window, settings.id, {
+	Object.defineProperty(window, trackerOpts.id, {
 		enumerable: false,
 		configurable: false,
 		writable: false,
