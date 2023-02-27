@@ -523,7 +523,7 @@ export default class State extends Loc {
 		return true;
 	}
 
-	async #historyMethod(method, loc, opts) {
+	#historyMethod(method, loc, opts) {
 		const refer = State.state;
 		const copy = new State(loc);
 		copy.#referrer = refer;
