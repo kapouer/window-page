@@ -1,6 +1,6 @@
 {
   "name": "window-page",
-  "version": "14.1.2",
+  "version": "15.0.0",
   "description": "Route, setup, and build web pages",
   "main": "lib/window-page.js",
   "module": "index.js",
