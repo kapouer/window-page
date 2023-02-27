@@ -201,7 +201,7 @@ handleScroll(e, state) {
 
 ### History
 
-These methods will run chains on new state and return a promise:
+These methods will run chains on new state and return immediately the new state:
 
 - state.push(location or url, opts)
 - state.replace(location or url, opts)

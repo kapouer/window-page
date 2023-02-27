@@ -155,3 +155,8 @@ Default router can be restored using `Page.route()`.
   See `test/public/tools.js` for examples.
 
 * State.Stages, Stage.NodeEvents are exported
+
+15.1.0
+------
+
+* state.push and replace return immediately
