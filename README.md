@@ -96,7 +96,8 @@ To append a function at the end of the current chain, use:
 
 - state.finish(fn)
   fn can return a promise.
-  To avoid deadlocks, fn must not return calls to state history methods.
+
+Avoid making a chain wait its own end, or it will deadlock.
 
 ### details about chains
 
