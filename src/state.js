@@ -245,7 +245,7 @@ export default class State extends Loc {
 			cancelable: true,
 			detail: this
 		});
-		for (const node of document.querySelectorAll('script')) {
+		for (const node of document.head.querySelectorAll('script')) {
 			node.dispatchEvent(e);
 		}
 		if (this.#emitter) this.#emitter.dispatchEvent(e);
@@ -259,8 +259,12 @@ export default class State extends Loc {
 		const chain = this.#chains[stage] ?? this.initChain(stage);
 		if (!fn) return chain.done;
 		const stageMap = chainsMap[stage] ?? (chainsMap[stage] = new Map());
-		const emitter = document.currentScript
-			?? (fn.matches?.('script') ? fn : this.#emitter);
+
+		let curem = document.currentScript;
+		if (curem?.parentNode?.nodeName == "HEAD") {
+			if (fn.parentNode && fn.parentNode.nodeName != "HEAD") curem = null;
+		}
+		const emitter = curem ?? this.#emitter;
 		let lfn = stageMap.get(fn);
 		if (!lfn) {
 			lfn = {

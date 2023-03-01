@@ -160,3 +160,8 @@ Default router can be restored using `Page.route()`.
 ------
 
 * state.push and replace return immediately
+
+15.2.0
+------
+
+* More explicit emitter handling for functions, objects, dom nodes.

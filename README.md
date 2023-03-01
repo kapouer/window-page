@@ -99,15 +99,16 @@ To append a function at the end of the current chain, use:
 
 Avoid making a chain wait its own end, or it will deadlock.
 
-### details about chains
+### listeners and navigation
 
 Chains are implemented through native DOM emitters and listeners, and the
-emitter is either:
+emitter is either a script node in `document.head`, or a state-bound, out of tree, DOM node.
 
-- `document.currentScript` when it exists and when the registered listener is a function. It has the advantage of recycling listeners when the corresponding node changes, for examples when loading a new document.
-- `state.emitter`, in all other cases, which is bound to a specific state.
-Note that `state.emitter` is kept when the referrer has same pathname, and
-discarded otherwise.
+The script node can be `document.currentScript` when defined, unless the listener is a DOM node that is not itself a script node in document head.
+
+Otherwise it is `state.emitter`. That emitter is shared between two successive states having the same pathname, and distinct otherwise.
+
+These behaviors ensure that during navigation, a common script keeps its listeners registered, and other listeners will only be triggered during the life of the state that allowed them to be registered.
 
 ### state
 
