@@ -91,6 +91,7 @@ export default class State extends Loc {
 				if (close) return close.apply(listener, Array.from(arguments));
 			};
 		})(listener[CLOSE]);
+
 		for (const name of NodeEvents) {
 			if (listener[name]) this.chain(name, listener);
 		}
@@ -149,9 +150,17 @@ export default class State extends Loc {
 		} else if (refer == this) {
 			throw new Error("state and referrer should be distinct");
 		} else {
-			if (samePathname == null) samePathname = this.samePathname(refer);
-			if (sameQuery == null) sameQuery = this.sameQuery(refer);
-			if (sameHash == null) sameHash = this.sameHash(refer);
+			if (samePathname == null) {
+				samePathname = this.samePathname(refer);
+			}
+			if (sameQuery == null) {
+				if (samePathname) sameQuery = this.sameQuery(refer);
+				else sameQuery = false;
+			}
+			if (sameHash == null) {
+				if (sameQuery) sameHash = this.sameHash(refer);
+				else sameHash = false;
+			}
 			if (samePathname) {
 				this.#clone(refer);
 				Object.assign(this, refer);
