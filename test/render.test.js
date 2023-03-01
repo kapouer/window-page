@@ -167,8 +167,8 @@ test.describe("Rendering", () => {
 			return window.test1 + window.test2;
 		});
 		expect(str.replace(/[\n\t]+/g, '')).toBe(`
-		<html lang="en" data-prerender="true"><body>first</body></html>
-		<html lang="fr" data-removed="true" data-prerender="true"><body>two
+		<html lang="en" data-prerender="true" data-patches="3"><body>first</body></html>
+		<html lang="fr" data-removed="true" data-prerender="true" data-patches="2"><body>two
 		</body></html>`.replace(/[\n\t]+/g, ''));
 	});
 

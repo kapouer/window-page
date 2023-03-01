@@ -8,7 +8,7 @@ Page.setup((state) => {
 		if (state.referrer.pathname != "/anything.html") {
 			setTimeout(() => {
 				state.push('/anything.html');
-			}, 100);
+			}, 50);
 		} else {
 			window.test1 = getSome(document);
 		}
@@ -16,7 +16,11 @@ Page.setup((state) => {
 		setTimeout(() => {
 			window.test2 = getSome(document);
 			window.history.back();
-		}, 100);
+		}, 50);
 	}
 });
 
+Page.patch(state => {
+	window.patches ??= 0;
+	document.documentElement.dataset.patches = ++window.patches;
+});
