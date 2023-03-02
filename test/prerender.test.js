@@ -31,6 +31,11 @@ test.describe("Prerendering", () => {
 		await page.isText('div.setup', '');
 	});
 
+	test("run build with async", async ({ page }) => {
+		await idle(page, "script-async.html");
+		await page.isAttr('body', "data-path", "/script-async.html");
+	});
+
 	test("run build and patch but not setup", async ({ page }) => {
 		await idle(page, "patch.html");
 		await page.isText('div.build', '1');
