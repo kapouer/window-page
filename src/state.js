@@ -219,9 +219,8 @@ export default class State extends Loc {
 	}
 
 	initChain(stage) {
-		let chain = this.#chains[stage];
-		if (chain) return chain;
-		chain = this.#chains[stage] = {};
+		const chain = this.#chains[stage] ??= {};
+		if (chain.started != null) return chain;
 		chain.started = false;
 		chain.hold = new Deferred();
 		chain.after = new Queue();
@@ -230,21 +229,20 @@ export default class State extends Loc {
 		chain.current = new Queue();
 		// unblock after when current.done is resolved
 		chain.current.done.then(chain.hold.resolve);
-
-		const inst = new State(this);
 		chain.done = chain.after.done.then(() => {
 			Object.assign(this, chain.state);
 			return this;
 		});
-		inst.#clone(this);
-		Object.assign(inst, this); // also copy extra properties
-		inst.#stage = stage;
-		chain.state = inst;
 		return chain;
 	}
 
 	runChain(stage) {
 		const chain = this.initChain(stage);
+		const inst = chain.state = new State(this);
+		inst.#clone(this);
+		inst.#stage = stage;
+		Object.assign(inst, this); // also copy extra properties
+
 		chain.started = true;
 
 		const e = new CustomEvent(`page${stage}`, {
@@ -264,7 +262,7 @@ export default class State extends Loc {
 
 
 	async chain(stage, fn) {
-		const chain = this.#chains[stage] ?? this.initChain(stage);
+		const chain = this.initChain(stage);
 		if (!fn) return chain.done;
 		const stageMap = chainsMap[stage] ?? (chainsMap[stage] = new Map());
 
