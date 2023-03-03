@@ -184,9 +184,6 @@ export default class State extends Loc {
 			}
 			if (!prerendered || !sameQuery) {
 				await this.runChain(PATCH);
-			} else {
-				// empty the chain but let it run
-				this.initChain(PATCH).started = true;
 			}
 			// ui queue forks, so if multiple runs are made
 			// only the first refer is closed, and the last state is setup
