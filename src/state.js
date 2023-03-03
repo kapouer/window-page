@@ -123,6 +123,8 @@ export default class State extends Loc {
 		this.#stage = true;
 		if (opts.data) Object.assign(this.data, opts.data);
 
+		for (const name of Stages) this.initChain(name);
+
 		let prerendered, samePathname, sameQuery, sameHash;
 		let { vary } = opts;
 		if (vary === true) {
@@ -216,8 +218,7 @@ export default class State extends Loc {
 	}
 
 	initChain(stage) {
-		const chain = this.#chains[stage] ??= {};
-		if (chain.started != null) return chain;
+		const chain = this.#chains[stage] = {};
 		chain.started = false;
 		chain.hold = new Deferred();
 		chain.after = new Queue();
@@ -234,7 +235,7 @@ export default class State extends Loc {
 	}
 
 	runChain(stage) {
-		const chain = this.initChain(stage);
+		const chain = this.#chains[stage] ?? this.initChain(stage);
 		const inst = chain.state = new State(this);
 		inst.#clone(this);
 		inst.#stage = stage;
@@ -259,7 +260,7 @@ export default class State extends Loc {
 
 
 	async chain(stage, fn) {
-		const chain = this.initChain(stage);
+		const chain = this.#chains[stage];
 		if (!fn) return chain.done;
 		const stageMap = chainsMap[stage] ?? (chainsMap[stage] = new Map());
 
