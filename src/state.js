@@ -219,7 +219,9 @@ export default class State extends Loc {
 	}
 
 	initChain(stage) {
-		const chain = this.#chains[stage] ?? (this.#chains[stage] = {});
+		let chain = this.#chains[stage];
+		if (chain) return chain;
+		chain = this.#chains[stage] = {};
 		chain.started = false;
 		chain.hold = new Deferred();
 		chain.after = new Queue();
