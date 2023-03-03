@@ -99,6 +99,12 @@ To append a function at the end of the current chain, use:
 
 Avoid making a chain wait its own end, or it will deadlock.
 
+To run a custom chain:
+
+- state.runChain(stage)
+
+Note that custom chains do not propagate properties added to state to other chains.
+
 ### listeners and navigation
 
 Chains are implemented through native DOM emitters and listeners, and the
