@@ -25,7 +25,6 @@ export default class State extends Loc {
 	static state = new State();
 	data = {};
 	#stage;
-	#queue = new Deferred();
 	#chains = {};
 	#emitter;
 	#referrer;
@@ -42,7 +41,6 @@ export default class State extends Loc {
 		this.#emitter = state.#emitter;
 		this.#referrer = state.#referrer;
 		this.#chains = state.#chains;
-		this.#queue = state.#queue;
 	}
 
 	get stage() {
@@ -213,12 +211,11 @@ export default class State extends Loc {
 		} catch(err) {
 			this.error = err;
 			await this.runChain(CATCH);
-			const error = this.error;
+			const { error } = this;
 			this.error = null;
-			if (error) this.#queue.reject(error);
+			if (error) throw error;
 		}
-		this.#queue.resolve(this);
-		return this.#queue;
+		return this;
 	}
 
 	initChain(stage) {
