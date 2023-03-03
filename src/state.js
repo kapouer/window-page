@@ -52,7 +52,7 @@ export default class State extends Loc {
 	}
 
 	#rebind() {
-		window.Page = this;
+		State.state = window.Page = this;
 	}
 
 	connect(listener, node) {
@@ -119,7 +119,7 @@ export default class State extends Loc {
 
 	async #run(opts = {}) {
 		this.#rebind();
-		State.state = this;
+
 		this.#stage = true;
 		if (opts.data) Object.assign(this.data, opts.data);
 
