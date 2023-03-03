@@ -165,3 +165,9 @@ Default router can be restored using `Page.route()`.
 ------
 
 * More explicit emitter handling for functions, objects, dom nodes.
+
+15.3.0
+------
+
+* Fix initialization of chains
+* Do not allow patch chain to run through when not eligible
