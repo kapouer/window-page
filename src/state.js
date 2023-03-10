@@ -27,6 +27,7 @@ export default class State extends Loc {
 	#stage;
 	#chains = {};
 	#emitter;
+	#emitters;
 	#referrer;
 
 	constructor(loc) {
@@ -170,6 +171,7 @@ export default class State extends Loc {
 				this.#referrer = refer;
 			}
 		}
+		refer.#emitters = new Set(document.head.querySelectorAll('script'));
 
 		await domDeferred();
 		if (prerendered == null) prerendered = this.#prerender();
@@ -256,7 +258,7 @@ export default class State extends Loc {
 			cancelable: true,
 			detail: this
 		});
-		for (const node of document.head.querySelectorAll('script')) {
+		for (const node of (this.#emitters ?? document.head.querySelectorAll('script'))) {
 			node.dispatchEvent(e);
 		}
 		if (this.#emitter) this.#emitter.dispatchEvent(e);
@@ -276,6 +278,7 @@ export default class State extends Loc {
 			if (fn.parentNode && fn.parentNode.nodeName != "HEAD") curem = null;
 		}
 		const emitter = curem ?? this.#emitter;
+
 		let lfn = stageMap.get(fn);
 		if (!lfn) {
 			lfn = {

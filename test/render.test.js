@@ -232,7 +232,8 @@ test.describe("Rendering", () => {
 	test("navigate to other url and close script-bound listener of previous page", async ({ page }) => {
 		await idle(page, "setup-close.html");
 		await page.isAttr('html', "data-setup", "setup2");
-		await page.isAttr('html', "data-close", "close");
+		await page.isAttr('html', "data-close", "close1");
+		await page.isAttr('html', "data-patch", "2");
 	});
 
 });
