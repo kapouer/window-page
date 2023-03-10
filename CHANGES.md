@@ -171,3 +171,8 @@ Default router can be restored using `Page.route()`.
 
 * Fix initialization of chains
 * Do not allow patch chain to run through when not eligible
+
+15.4.0
+------
+
+* Fix referrer chains emitters
