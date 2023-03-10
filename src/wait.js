@@ -14,7 +14,7 @@ function once(emitter, events, filter) {
 	const listener = (e) => {
 		if (!filter || filter(e)) {
 			for (const event of events) emitter.removeEventListener(event, listener);
-			d.resolve();
+			d.resolve(emitter);
 		}
 	};
 	for (const event of events) emitter.addEventListener(event, listener);
@@ -153,6 +153,7 @@ export function loadNode(node) {
 	if (isScript && node.textContent && !node.src) {
 		copy.textContent = node.textContent;
 		node.parentNode.replaceChild(copy, node);
+		return Promise.resolve(copy);
 	} else {
 		const p = once(copy, ['load', 'error']);
 		node.parentNode.replaceChild(copy, node);
