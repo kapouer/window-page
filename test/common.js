@@ -79,6 +79,7 @@ exports.idle = async function (page, url) {
 		waitUntil: "networkidle"
 	});
 	await page.evaluate(id => window[id], fnid);
+	await new Promise(resolve => setTimeout(resolve, 100));
 };
 
 exports.render = async function (page) {
