@@ -166,9 +166,9 @@ export default class State extends Loc {
 				else sameHash = false;
 			}
 			if (samePathname) {
-				this.#clone(refer);
-				Object.assign(this, refer);
+				this.#emitter = refer.#emitter;
 				this.#referrer = refer;
+				Object.assign(this, refer);
 			}
 		}
 		refer.#emitters = new Set(document.head.querySelectorAll('script'));
