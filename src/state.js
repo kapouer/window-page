@@ -79,26 +79,36 @@ export default class State extends Loc {
 				methods.push([all, name, key.slice(7).toLowerCase(), true]);
 			}
 		}
-		if (methods.length) this.chain(SETUP, state => {
-			for (const name of methods) {
-				name[4] = function (e) {
-					listener[name[1]](e, State.state);
-				};
-				(name[0] ? window : node).addEventListener(name[2], name[4], name[3]);
-			}
-		});
-		listener[CLOSE] = (function (close) {
-			return function () {
+		let isConnected = false;
+
+		listener[SETUP] = (function (fn) {
+			return function (state) {
+				if (isConnected) return;
+				isConnected = true;
+				for (const name of methods) {
+					name[4] = function (e) {
+						listener[name[1]](e, State.state);
+					};
+					(name[0] ? window : node).addEventListener(name[2], name[4], name[3]);
+				}
+				if (fn) return fn.call(listener, state);
+			};
+		})(listener[SETUP]);
+
+		listener[CLOSE] = (function (fn) {
+			return function (state) {
+				if (!isConnected) return;
 				for (const name of methods) {
 					(name[0] ? window : node).removeEventListener(name[2], name[4], name[3]);
 				}
-				if (close) return close.apply(listener, Array.from(arguments));
+				if (fn) return fn.call(listener, state);
 			};
 		})(listener[CLOSE]);
 
 		for (const name of NodeEvents) {
 			if (listener[name]) this.chain(name, listener);
 		}
+		if (listener[SETUP]) this.chain(PAINT, state => listener[SETUP](state));
 	}
 
 	disconnect(listener) {
@@ -107,7 +117,7 @@ export default class State extends Loc {
 				this.unchain(name, listener);
 			}
 		}
-		if (listener[CLOSE]) listener[CLOSE](this);
+		if (listener[CLOSE]) this.chain(PAINT, state => listener[CLOSE](state));
 	}
 
 	#prerender(ok) {
@@ -192,8 +202,6 @@ export default class State extends Loc {
 			if (!prerendered || !sameQuery) {
 				await this.runChain(PATCH);
 			}
-			// ui queue forks, so if multiple runs are made
-			// only the first refer is closed, and the last state is setup
 			uiQueue.run(async () => {
 				try {
 					window.removeEventListener('popstate', refer);
@@ -204,7 +212,6 @@ export default class State extends Loc {
 					}
 					await this.runChain(PAINT);
 					if (refer.#stage && !samePathname) {
-						// close old state after new state setup to allow transitions
 						await refer.runChain(CLOSE);
 					}
 					if (!sameHash) await this.runChain(FOCUS);
@@ -243,7 +250,7 @@ export default class State extends Loc {
 		return this.#chains[stage] ?? this.#initChain(stage);
 	}
 
-	runChain(stage) {
+	#startChain(stage) {
 		const chain = this.#getChain(stage);
 		const inst = chain.state = new State(this);
 		inst.#clone(this);
@@ -251,7 +258,11 @@ export default class State extends Loc {
 		Object.assign(inst, this); // also copy extra properties
 
 		chain.started = true;
+		return chain;
+	}
 
+	runChain(stage) {
+		const chain = this.#startChain(stage);
 		const e = new CustomEvent(`page${stage}`, {
 			view: window,
 			bubbles: true,
@@ -262,7 +273,6 @@ export default class State extends Loc {
 			node.dispatchEvent(e);
 		}
 		if (this.#emitter) this.#emitter.dispatchEvent(e);
-
 		if (chain.current.length == 0) chain.hold.resolve();
 		return chain.done;
 	}
@@ -347,7 +357,6 @@ export default class State extends Loc {
 		// eslint-disable-next-line no-use-before-define
 		try {
 			if (meth && typeof meth == "function") {
-				if (stage == CLOSE) this.unchain(stage, fn);
 				return await meth.call(fn, this);
 			} else if (typeof fn == "function") {
 				return await fn(this);
