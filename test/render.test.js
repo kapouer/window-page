@@ -204,9 +204,10 @@ test.describe("Rendering", () => {
 		await page.isAttr('html', "data-clicks", "2");
 	});
 
-	test("connect custom element and not run chains if element is disconnected at once", async ({ page }) => {
+	test("connect and disconnect custom element", async ({ page }) => {
 		await idle(page, "templates/custom-elements-disconnect.html");
-		await page.isAttr('body', "data-setup", "0");
+		await page.isAttr('body', "data-setup", "1");
+		await page.isAttr('body', "data-close", "1");
 	});
 
 	test("wait for external stylesheet to be loaded", async ({ page }) => {
