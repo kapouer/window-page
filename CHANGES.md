@@ -176,3 +176,12 @@ Default router can be restored using `Page.route()`.
 ------
 
 * Fix referrer chains emitters
+
+16.0.0
+------
+
+Fixes that break previous behaviors:
+
+* connect must call setup once even if element is added during patch,
+  and on same pathname, but not if uiQueue is not run.
+* disconnect must call close once, same thing.
