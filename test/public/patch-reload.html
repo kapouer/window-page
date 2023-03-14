@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Sample patch reload finish page</title>
+	<script src="window-page.js"></script>
+	<script>
+var reads = {};
+Page.patch(state => {
+	if (!document.body.dataset.test) {
+		document.body.dataset.test = "a";
+	} else if (document.body.dataset.test == "c") {
+		document.body.dataset.test = "d";
+	}
+	state.finish(() => {
+		if (document.body.dataset.test == "b") {
+			document.body.dataset.test = "c";
+		} else if (document.body.dataset.test == "e") {
+			document.body.dataset.test = "f";
+		}
+	});
+});
+Page.patch(state => {
+	if (document.body.dataset.test == "a") {
+		document.body.dataset.test = "b";
+	} else if (document.body.dataset.test == "d") {
+		document.body.dataset.test = "e";
+	}
+});
+
+Page.setup(state => {
+	setTimeout(() => {
+		state.reload({ vary: 'patch' });
+	}, 50);
+});
+
+	</script>
+</head>
+<body></body>
+</html>

@@ -40,6 +40,12 @@ test.describe("Rendering", () => {
 		await page.isText('div.setup', '1');
 	});
 
+	test("run patch reload vary patch and state finish", async ({ page }) => {
+		await idle(page, "patch-reload.html");
+		await page.isAttr('html', "data-prerender", "true");
+		await page.isAttr('body', "data-test", "f");
+	});
+
 	test("state.push using latest state and not old one", async ({ page }) => {
 		await idle(page, "oldstate.html?param=1");
 		await page.isAttr('body', "data-patch", "1");
