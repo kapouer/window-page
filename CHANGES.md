@@ -185,3 +185,8 @@ Fixes that break previous behaviors:
 * connect must call setup once even if element is added during patch,
   and on same pathname, but not if uiQueue is not run.
 * disconnect must call close once, same thing.
+
+16.1.0
+------
+
+* state.referrer is now null on first state
