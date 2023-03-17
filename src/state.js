@@ -155,12 +155,10 @@ export default class State extends Loc {
 			sameHash = false;
 		}
 
-		let refer = this.#referrer;
+		const refer = this.#referrer;
 		if (!refer) {
-			this.#referrer = refer = new State(this);
-			refer.hash = "";
 			samePathname = sameQuery = true;
-			sameHash = this.sameHash(refer);
+			sameHash = this.hash == '';
 		} else if (refer == this) {
 			throw new Error("state and referrer should be distinct");
 		} else {
@@ -177,11 +175,12 @@ export default class State extends Loc {
 			}
 			if (samePathname) {
 				this.#emitter = refer.#emitter;
-				this.#referrer = refer;
 				Object.assign(this, refer);
 			}
 		}
-		refer.#emitters = new Set(document.head.querySelectorAll('script'));
+		if (refer) {
+			refer.#emitters = new Set(document.head.querySelectorAll('script'));
+		}
 
 		await domDeferred();
 		if (prerendered == null) prerendered = this.#prerender();
@@ -204,14 +203,14 @@ export default class State extends Loc {
 			}
 			uiQueue.run(async () => {
 				try {
-					window.removeEventListener('popstate', refer);
+					if (refer) window.removeEventListener('popstate', refer);
 					window.addEventListener('popstate', this);
 					await waitStyles();
-					if (!refer.#stage || !samePathname) {
+					if (!refer || !samePathname) {
 						await this.runChain(SETUP);
 					}
 					await this.runChain(PAINT);
-					if (refer.#stage && !samePathname) {
+					if (refer && !samePathname) {
 						await refer.runChain(CLOSE);
 					}
 					if (!sameHash) await this.runChain(FOCUS);

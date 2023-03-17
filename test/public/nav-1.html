@@ -8,13 +8,13 @@
 	<script>
 Page.setup(function(state) {
 	setTimeout(function() {
-		if (state.referrer.pathname == "/nav-2.html") {
+		if (state.referrer?.pathname == "/nav-2.html") {
 			//console.log("arrived at nav-1 from nav-2 OK");
-		} else if (state.referrer.pathname == state.pathname && state.pathname == "/nav-1.html") {
+		} else if (!state.referrer && state.pathname == "/nav-1.html") {
 			//console.log("going to nav2");
 			state.push({pathname: '/nav-2.html'});
 		} else {
-			console.error("bad referrer", state.referrer.pathname, "at", state.pathname, "really nav-1");
+			console.error("bad referrer", state.referrer?.pathname, "at", state.pathname, "really nav-1");
 		}
 	}, 50);
 });

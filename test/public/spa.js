@@ -5,7 +5,7 @@ Page.setup((state) => {
 		return node.outerHTML;
 	}
 	if (state.pathname == "/templates/route-spa.html") {
-		if (state.referrer.pathname != "/anything.html") {
+		if (state.referrer?.pathname != "/anything.html") {
 			setTimeout(() => {
 				state.push('/anything.html');
 			}, 50);
