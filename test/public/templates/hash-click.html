@@ -10,7 +10,7 @@ Page.setup(function(state) {
 		document.getElementById('link').click();
 	}, 100);
 });
-Page.focus(function(state) {
+Page.fragment(function(state) {
 	document.querySelector('.secondhash').innerHTML = state.hash;
 });
 	</script>

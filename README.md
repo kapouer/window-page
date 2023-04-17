@@ -24,7 +24,7 @@ It natively supports es6 modules, and provides a cjs bundle.
 - patch: pathname changed and document is not prerendered, or query changed
 - setup: visible, on first view or pathname changed
 - paint: visible, on first view or pathname or query changed
-- focus: visible, location hash changed; `state.hash` is set.
+- fragment: visible, location hash changed; `state.hash` is set.
 - close: visible, after new state reach setup, referrer is closed
 - catch: error was thrown, `state.error` is set.
 
@@ -153,7 +153,7 @@ To manage page transitions, these methods can be overriden by `route` listeners.
 
 ### Integration with Custom Elements, event handlers
 
-An object having build, patch, setup, paint, focus, close methods can be
+An object having build, patch, setup, paint, fragment, close methods can be
 plugged into Page using:
 
 - state.connect(node)
@@ -215,7 +215,7 @@ These methods will run chains on new state and return immediately the new state:
 
 Options:
 
-- vary (boolean, or "build", "patch", "focus", default false)
+- vary (boolean, or "build", "patch", "fragment", default false)
   Overrides how pathname, query, hash are compared to previous state.
   `true` re-routes the page; and varying on a chain runs the next chains too.
   Example: reload after a form login.

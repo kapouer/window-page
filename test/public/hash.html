@@ -6,13 +6,13 @@
 	<script>
 var nums = {
 	build: 0,
-	focus: 0,
+	fragment: 0,
 	setup: 0
 };
 var reads = {};
 Page.build(checkNums);
 Page.setup(checkNums);
-Page.focus(checkNums);
+Page.fragment(checkNums);
 
 function checkNums(state) {
 	var stage = state.stage;
@@ -27,8 +27,8 @@ function checkNums(state) {
 Page.setup(state => {
 	console.log("setup event")
 })
-Page.focus(function(state) {
-	console.log("focus event")
+Page.fragment(function(state) {
+	console.log("fragment event")
 	document.querySelector('#hash').innerHTML = state.hash;
 });
 	</script>
@@ -36,7 +36,7 @@ Page.focus(function(state) {
 <body>
 <div class="build"></div>
 <div class="setup"></div>
-<div class="focus"></div>
+<div class="fragment"></div>
 <div id="hash"></div>
 </body>
 </html>

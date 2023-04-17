@@ -190,3 +190,8 @@ Fixes that break previous behaviors:
 ------
 
 * state.referrer is now null on first state
+
+17.0.0
+------
+
+* the `focus` chain is renamed `fragment` to avoid method collision with custom elements.

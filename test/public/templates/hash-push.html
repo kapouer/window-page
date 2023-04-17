@@ -9,7 +9,7 @@ Page.setup(function(state) {
 		state.push({hash: 'test'});
 	}, 100);
 });
-Page.focus(function(state) {
+Page.fragment(function(state) {
 	document.querySelector('.hash').innerHTML = state.hash;
 });
 	</script>

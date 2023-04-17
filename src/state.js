@@ -11,9 +11,9 @@ const SETUP = "setup";
 const PAINT = "paint";
 const CLOSE = "close";
 const CATCH = "catch";
-const FOCUS = "focus";
-const Stages = [ROUTE, READY, BUILD, PATCH, SETUP, PAINT, FOCUS, CATCH, CLOSE];
-const NodeEvents = [BUILD, PATCH, SETUP, PAINT, FOCUS, CLOSE];
+const FRAGMENT = "fragment";
+const Stages = [ROUTE, READY, BUILD, PATCH, SETUP, PAINT, FRAGMENT, CATCH, CLOSE];
+const NodeEvents = [BUILD, PATCH, SETUP, PAINT, FRAGMENT, CLOSE];
 
 const runQueue = new Queue();
 const uiQueue = new UiQueue();
@@ -150,7 +150,7 @@ export default class State extends Loc {
 		} else if (vary == PATCH) {
 			samePathname = true;
 			sameHash = sameQuery = false;
-		} else if (vary == FOCUS) {
+		} else if (vary == FRAGMENT) {
 			samePathname = sameQuery = true;
 			sameHash = false;
 		}
@@ -213,7 +213,7 @@ export default class State extends Loc {
 					if (refer && !samePathname) {
 						await refer.runChain(CLOSE);
 					}
-					if (!sameHash) await this.runChain(FOCUS);
+					if (!sameHash) await this.runChain(FRAGMENT);
 				} catch (err) {
 					console.error(err);
 				}
@@ -497,8 +497,8 @@ export default class State extends Loc {
 				vary = BUILD;
 			} else if (this.#chains[PATCH]?.current?.count) {
 				vary = PATCH;
-			} else if (this.#chains[FOCUS]?.current?.count) {
-				vary = FOCUS;
+			} else if (this.#chains[FRAGMENT]?.current?.count) {
+				vary = FRAGMENT;
 			}
 			opts.vary = vary;
 		}
