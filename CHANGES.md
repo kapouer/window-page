@@ -195,3 +195,9 @@ Fixes that break previous behaviors:
 ------
 
 * the `focus` chain is renamed `fragment` to avoid method collision with custom elements.
+
+18.0.0
+------
+
+Referrer properties are no longer copied to the new state.
+This behavior wasn't documented, and is safer to implement on the user side.
