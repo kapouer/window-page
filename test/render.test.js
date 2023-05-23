@@ -218,7 +218,7 @@ test.describe("Rendering", () => {
 	test("patch then setup then patch with same state.data, then build with new state.data", async ({ page }) => {
 		await idle(page, "templates/data.html");
 		await page.isAttr('body', "data-build", "-1-1");
-		await page.isAttr('body', "data-patch", "-1-2-1");
+		await page.isAttr('body', "data-patch", "-1-1-2");
 	});
 
 	test("wait for patch chain to finish, load remote script during patch, run a patch in that script before the chain finished", async ({ page }) => {

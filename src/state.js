@@ -175,7 +175,6 @@ export default class State extends Loc {
 			}
 			if (samePathname) {
 				this.#emitter = refer.#emitter;
-				Object.assign(this, refer);
 			}
 		}
 		if (refer) {
