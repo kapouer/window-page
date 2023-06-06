@@ -187,7 +187,7 @@ export default class State extends Loc {
 			if (!samePathname || !prerendered) {
 				await this.runChain(ROUTE);
 				if (this.doc && this.doc != document) {
-					await this.#load();
+					await this.#load(this.doc);
 					prerendered = this.#prerender();
 				}
 				this.doc = document;
@@ -366,8 +366,8 @@ export default class State extends Loc {
 		}
 	}
 
-	async #load() {
-		const ndoc = this.doc?.ownerDocument ?? this.doc;
+	async #load(ndoc) {
+		if (ndoc.ownerDocument) ndoc = ndoc.ownerDocument;
 		if (!ndoc.documentElement) {
 			throw new Error("Router expects documentElement");
 		}
