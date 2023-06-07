@@ -511,7 +511,7 @@ export default class State extends Loc {
 	handleEvent(e) {
 		if (e.type == "popstate") {
 			const state = this.#stateFrom(e.state) || new State();
-			this.#historyMethod('push', state, { pop: true });
+			this.#historyMethod('push', state, { pop: true, state: true });
 		}
 	}
 
@@ -540,7 +540,7 @@ export default class State extends Loc {
 
 	#historyMethod(method, loc, opts) {
 		const refer = State.state;
-		const copy = new State(loc);
+		const copy = opts?.state ? loc : new State(loc);
 		copy.#referrer = refer;
 		if (!copy.sameDomain(refer)) {
 			if (method == "replace") console.info("Cannot replace to a different origin");
