@@ -87,7 +87,7 @@ export default class State extends Loc {
 				isConnected = true;
 				for (const name of methods) {
 					name[4] = function (e) {
-						listener[name[1]](e, State.state);
+						listener[name[1]](e, e.detail ?? State.state);
 					};
 					(name[0] ? window : node).addEventListener(name[2], name[4], name[3]);
 				}
@@ -118,6 +118,14 @@ export default class State extends Loc {
 			}
 		}
 		if (listener[CLOSE]) this.chain(PAINT, state => listener[CLOSE](state));
+	}
+
+	dispatch(target, name) {
+		target.dispatchEvent(new CustomEvent(name, {
+			detail: this,
+			bubbles: true,
+			cancelable: true
+		}));
 	}
 
 	#prerender(ok) {
