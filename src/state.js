@@ -87,7 +87,7 @@ export default class State extends Loc {
 				isConnected = true;
 				for (const name of methods) {
 					name[4] = function (e) {
-						listener[name[1]](e, e.detail ?? State.state);
+						listener[name[1]](e, e.detail instanceof State ? e.detail : State.state);
 					};
 					(name[0] ? window : node).addEventListener(name[2], name[4], name[3]);
 				}
@@ -270,7 +270,6 @@ export default class State extends Loc {
 	runChain(stage) {
 		const chain = this.#startChain(stage);
 		const e = new CustomEvent(`page${stage}`, {
-			view: window,
 			bubbles: true,
 			cancelable: true,
 			detail: this

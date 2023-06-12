@@ -188,6 +188,10 @@ handleClick(e, state) {}
 handleAllClick(e, state) {}
 ```
 
+### Emitting events with correct state
+
+Use `state.dispatch(target, name)` to make sure the connected handlers get the right state parameter.
+
 ### Using the event listener on other objects (window, document...)
 
 - state.connect(listener, emitter)
