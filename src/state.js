@@ -47,6 +47,7 @@ export default class State extends Loc {
 		this.#emitter = state.#emitter;
 		this.#referrer = state.#referrer;
 		this.#chains = state.#chains;
+		this.#stage = state.#stage;
 	}
 
 	get stage() {
@@ -81,13 +82,14 @@ export default class State extends Loc {
 		}
 		let isConnected = false;
 
-		listener[SETUP] = (function (fn) {
-			return function (state) {
+		listener[SETUP] = (fn => {
+			return state => {
 				if (isConnected) return;
 				isConnected = true;
 				for (const name of methods) {
-					name[4] = function (e) {
-						listener[name[1]](e, e.detail instanceof State ? e.detail : State.state);
+					name[4] = e => {
+						const chain = State.state.#chains[State.state.#stage];
+						listener[name[1]](e, chain.state);
 					};
 					(name[0] ? window : node).addEventListener(name[2], name[4], name[3]);
 				}
@@ -122,7 +124,6 @@ export default class State extends Loc {
 
 	dispatch(target, name) {
 		target.dispatchEvent(new CustomEvent(name, {
-			detail: this,
 			bubbles: true,
 			cancelable: true
 		}));
@@ -259,8 +260,8 @@ export default class State extends Loc {
 	#startChain(stage) {
 		const chain = this.#getChain(stage);
 		const inst = chain.state = new State(this);
+		this.#stage = stage;
 		inst.#clone(this);
-		inst.#stage = stage;
 		Object.assign(inst, this); // also copy extra properties
 
 		chain.started = true;
@@ -272,7 +273,7 @@ export default class State extends Loc {
 		const e = new CustomEvent(`page${stage}`, {
 			bubbles: true,
 			cancelable: true,
-			detail: this
+			detail: chain
 		});
 		for (const node of (this.#emitters ?? document.head.querySelectorAll('script'))) {
 			node.dispatchEvent(e);
@@ -297,7 +298,7 @@ export default class State extends Loc {
 		let lfn = stageMap.get(fn);
 		if (!lfn) {
 			lfn = {
-				fn: this.#chainListener(stage, fn),
+				fn: this.#chainListener(fn),
 				emitters: new Set()
 			};
 			stageMap.set(fn, lfn);
@@ -309,10 +310,10 @@ export default class State extends Loc {
 		if (!chain.started) {
 			// pass
 		} else if (chain.current.stopped) {
-			await lfn.fn?.({ detail: chain.state });
+			await lfn.fn?.({ detail: chain });
 		} else {
 			// not finished
-			chain.current.queue(() => lfn.fn?.({ detail: chain.state }));
+			chain.current.queue(() => lfn.fn?.({ detail: chain }));
 		}
 		return chain.done;
 	}
@@ -343,10 +344,9 @@ export default class State extends Loc {
 		lfn.fn = null;
 	}
 
-	#chainListener(stage, fn) {
+	#chainListener(fn) {
 		return (e) => {
-			const state = e.detail;
-			const chain = state.#chains[stage];
+			const chain = e.detail;
 			const q = chain.current;
 			q.queue(() => {
 				if (!q.stopped) return chain.state.#runFn(fn);
