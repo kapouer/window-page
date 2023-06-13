@@ -201,3 +201,8 @@ Fixes that break previous behaviors:
 
 Referrer properties are no longer copied to the new state.
 This behavior wasn't documented, and is safer to implement on the user side.
+
+18.2.0
+------
+
+Revert change in 18.1.0. Be more careful about the state received by listeners.

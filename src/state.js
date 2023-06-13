@@ -122,13 +122,6 @@ export default class State extends Loc {
 		if (listener[CLOSE]) this.chain(PAINT, state => listener[CLOSE](state));
 	}
 
-	dispatch(target, name) {
-		target.dispatchEvent(new CustomEvent(name, {
-			bubbles: true,
-			cancelable: true
-		}));
-	}
-
 	#prerender(ok) {
 		const root = document.documentElement;
 		if (ok === undefined) ok = root.dataset.prerender == 'true';

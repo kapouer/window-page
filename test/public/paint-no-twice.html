@@ -32,7 +32,7 @@
 				const { test } = state.query;
 				delete state.query.test;
 				state.finish(() => {
-					if (test) state.dispatch(this, 'click');
+					if (test) this.dispatchEvent(new Event('click'));
 				});
 			}
 		}
