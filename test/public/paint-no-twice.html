@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Paint no twice regression</title>
+	<script src="window-page.js"></script>
+	<script>
+	class HTMLXLinkElement extends HTMLElement {
+			get href() {
+				return this.getAttribute('href');
+			}
+			set href(val) {
+				this.setAttribute('href', val);
+			}
+			connectedCallback() {
+				Page.connect(this);
+			}
+			disconnectedCallback() {
+				Page.disconnect(this);
+			}
+			handleClick(e, state) {
+				document.documentElement.dataset.test = state.query.test;
+				state.push("?", {vary: 'patch'});
+			}
+			patch(state) {
+				this.href = Page.format({
+					query: {
+						test: (parseInt(state.query.test) || 0) + 1
+					}
+				});
+			}
+			paint(state) {
+				const { test } = state.query;
+				delete state.query.test;
+				state.finish(() => {
+					if (test) state.dispatch(this, 'click');
+				});
+			}
+		}
+
+		window.customElements.define("x-link", HTMLXLinkElement);
+	</script>
+	<script>
+		const nums = {
+			paint: 0,
+			patch: 0,
+			setup: 0
+		};
+		const reads = {};
+		Page.patch(checkNums);
+		Page.paint(checkNums);
+		Page.setup(checkNums);
+
+		function checkNums(state) {
+			const { stage } = state;
+			const node = document.querySelector('.' + stage);
+			if (!reads[stage]) {
+				reads[stage] = true;
+				const int = parseInt(node.innerHTML);
+				if (!isNaN(int)) nums[stage] = int;
+			}
+			node.innerHTML = ++nums[stage];
+		}
+	</script>
+</head>
+
+<body>
+	<div class="patch"></div>
+	<div class="paint"></div>
+	<div class="setup"></div>
+	<x-link href="?test=1">test</x-link>
+</body>
+
+</html>

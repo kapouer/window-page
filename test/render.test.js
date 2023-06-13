@@ -243,5 +243,10 @@ test.describe("Rendering", () => {
 		await page.isAttr('html', "data-patch", "2");
 	});
 
+	test("paint vary patch should not run paint twice", async ({ page }) => {
+		await idle(page, "paint-no-twice.html?test=1");
+		await page.isAttr('html', "data-test", "undefined");
+	});
+
 });
 
