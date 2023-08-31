@@ -359,7 +359,7 @@ export default class State extends Loc {
 			} else if (typeof fn == "function") {
 				return await fn(this);
 			} else {
-				console.warn("Missing function");
+				console.warn(stage, "function not found in", fn);
 			}
 		} catch (err) {
 			console.error("Page." + stage, err);
