@@ -110,7 +110,10 @@ export default class State extends Loc {
 		for (const name of NodeEvents) {
 			if (listener[name]) this.chain(name, listener);
 		}
-		if (listener[SETUP]) this.chain(PAINT, state => listener[SETUP](state));
+		if (listener[SETUP]) {
+			// run setup once on connect only if ui is running
+			this.chain(PAINT, state => listener[SETUP](state));
+		}
 	}
 
 	disconnect(listener) {
@@ -119,7 +122,10 @@ export default class State extends Loc {
 				this.unchain(name, listener);
 			}
 		}
-		if (listener[CLOSE]) this.chain(PAINT, state => listener[CLOSE](state));
+		if (listener[CLOSE]) {
+			// run close once on disconnect only if ui is running
+			this.chain(PAINT, state => listener[CLOSE](state));
+		}
 	}
 
 	#prerender(ok) {
