@@ -89,7 +89,7 @@ test.describe("Two-phase rendering", () => {
 		await page.isText('div.setup', '2');
 		await page.isText('div.close', '1');
 		await page.isText('div.orders',
-			"setup,setup2,setup21-true,setup,setup2,setup21-false,finally,close"
+			"setup,setup2,setup21-true,close,setup,setup2,setup21-false,finally"
 		);
 	});
 
