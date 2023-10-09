@@ -25,7 +25,12 @@ Page.setup(function(state) {
 	document.body.dataset.setup = 0;
 	document.body.dataset.close = 0;
 	document.body.insertAdjacentHTML('beforeEnd', '<x-setup></x-setup>');
-	document.body.firstElementChild.remove();
+	// this calls node.setup()
+	// which chains to setup, which is running (cause of Page.setup)
+	// so node.setup is delayed, so remove unchains node.setup before it is even called
+	state.finish(() => {
+		document.body.firstElementChild.remove();
+	});
 });
 
 	</script>
