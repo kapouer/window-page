@@ -100,6 +100,7 @@ export default class State extends Loc {
 		listener[CLOSE] = (function (fn) {
 			return function (state) {
 				if (!isConnected) return;
+				isConnected = false;
 				for (const name of methods) {
 					(name[0] ? window : node).removeEventListener(name[2], name[4], name[3]);
 				}
@@ -209,13 +210,13 @@ export default class State extends Loc {
 					if (refer) window.removeEventListener('popstate', refer);
 					window.addEventListener('popstate', this);
 					await waitStyles();
+					if (refer && !samePathname) {
+						await refer.runChain(CLOSE);
+					}
 					if (!refer || !samePathname) {
 						await this.runChain(SETUP);
 					}
 					await this.runChain(PAINT);
-					if (refer && !samePathname) {
-						await refer.runChain(CLOSE);
-					}
 					if (!sameHash) await this.runChain(FRAGMENT);
 				} catch (err) {
 					console.error(err);
