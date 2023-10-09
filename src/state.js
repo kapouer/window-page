@@ -243,7 +243,9 @@ export default class State extends Loc {
 		chain.after.queue(() => chain.hold);
 		chain.current = new Queue();
 		// unblock after when current.done is resolved
-		chain.current.done.then(chain.hold.resolve);
+		chain.current.done.then(() => {
+			chain.hold.resolve();
+		});
 		chain.done = chain.after.done.then(() => {
 			Object.assign(this, chain.state);
 			return this;
@@ -311,7 +313,9 @@ export default class State extends Loc {
 			await lfn.fn?.({ detail: chain });
 		} else {
 			// not finished
-			chain.current.queue(() => lfn.fn?.({ detail: chain }));
+			chain.current.queue(() => {
+				return lfn.fn?.({ detail: chain });
+			});
 		}
 		return chain.done;
 	}
