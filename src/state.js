@@ -170,6 +170,8 @@ export default class State extends Loc {
 
 		await domDeferred();
 		let prerendered = this.#prerender();
+		// prerendered == referrer with same pathname/query
+		// not prerendered == no referrer
 		if (prerendered && !refer) {
 			samePathname = true;
 			// assumes full prerendering
