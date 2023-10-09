@@ -7,8 +7,9 @@ const ROUTE = "route";
 const READY = "ready";
 const BUILD = "build";
 const PATCH = "patch";
-const SETUP = "setup";
-const PAINT = "paint";
+const SETUP = "setup"; // uibuild
+const NOSETUP = "nosetup"; // uipatch
+const PAINT = "paint"; // uiready
 const CLOSE = "close";
 const CATCH = "catch";
 const FRAGMENT = "fragment";
@@ -18,6 +19,7 @@ const NodeEvents = [BUILD, PATCH, SETUP, PAINT, FRAGMENT, CLOSE];
 const runQueue = new Queue();
 const uiQueue = new UiQueue();
 const chainsMap = {};
+const connects = new Map();
 
 export default class State extends Loc {
 	static Stages = Stages;
@@ -75,45 +77,28 @@ export default class State extends Loc {
 				all = true;
 			}
 			if (key.startsWith('handle') && key != 'handleEvent') {
-				methods.push([all, name, key.slice(6).toLowerCase(), false]);
+				methods.push([all ? window : node, name, key.slice(6).toLowerCase(), false]);
 			} else if (name.startsWith('capture') && name != 'captureEvent') {
-				methods.push([all, name, key.slice(7).toLowerCase(), true]);
+				methods.push([all ? window : node, name, key.slice(7).toLowerCase(), true]);
 			}
 		}
-		let isConnected = false;
 
-		listener[SETUP] = (fn => {
-			return state => {
-				if (isConnected) return;
-				isConnected = true;
-				for (const name of methods) {
-					name[4] = e => {
-						const chain = State.state.#chains[State.state.#stage];
-						listener[name[1]](e, chain.state);
-					};
-					(name[0] ? window : node).addEventListener(name[2], name[4], name[3]);
-				}
-				if (fn) return fn.call(listener, state);
+		for (const name of methods) {
+			name[4] = e => {
+				const chain = State.state.#chains[State.state.#stage];
+				listener[name[1]](e, chain.state);
 			};
-		})(listener[SETUP]);
-
-		listener[CLOSE] = (function (fn) {
-			return function (state) {
-				if (!isConnected) return;
-				isConnected = false;
-				for (const name of methods) {
-					(name[0] ? window : node).removeEventListener(name[2], name[4], name[3]);
-				}
-				if (fn) return fn.call(listener, state);
-			};
-		})(listener[CLOSE]);
+			name[0].addEventListener(name[2], name[4], name[3]);
+		}
+		connects.set(listener, methods);
 
 		for (const name of NodeEvents) {
 			if (listener[name]) this.chain(name, listener);
 		}
+
 		if (listener[SETUP]) {
-			// run setup once on connect only if ui is running
-			this.chain(PAINT, state => listener[SETUP](state));
+			// ensure we run setup once on connect
+			this.chain(NOSETUP, state => listener[SETUP](state));
 		}
 	}
 
@@ -123,8 +108,16 @@ export default class State extends Loc {
 				this.unchain(name, listener);
 			}
 		}
+		const methods = connects.get(listener);
+		if (methods) {
+			for (const name of methods) {
+				name[0].removeEventListener(name[2], name[4], name[3]);
+			}
+			connects.delete(listener);
+		}
+
 		if (listener[CLOSE]) {
-			// run close once on disconnect only if ui is running
+			// ensure we run close once on disconnect
 			this.chain(PAINT, state => listener[CLOSE](state));
 		}
 	}
@@ -201,6 +194,7 @@ export default class State extends Loc {
 			}
 			this.#prerender(true);
 			await this.runChain(READY);
+
 			if (!prerendered || !samePathname) {
 				await this.runChain(BUILD);
 			}
@@ -217,6 +211,8 @@ export default class State extends Loc {
 					}
 					if (!refer || !samePathname) {
 						await this.runChain(SETUP);
+					} else {
+						await this.runChain(NOSETUP);
 					}
 					await this.runChain(PAINT);
 					if (!sameHash) await this.runChain(FRAGMENT);
