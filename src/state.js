@@ -147,50 +147,46 @@ export default class State extends Loc {
 		this.#stage = true;
 		if (opts.data) Object.assign(this.data, opts.data);
 
-		let prerendered, samePathname, sameQuery, sameHash;
-		let { vary } = opts;
-		if (vary === true) {
-			vary = BUILD;
-			prerendered = false;
-		}
-		if (vary == BUILD) {
-			sameHash = sameQuery = samePathname = false;
-		} else if (vary == PATCH) {
-			samePathname = true;
-			sameHash = sameQuery = false;
-		} else if (vary == FRAGMENT) {
-			samePathname = sameQuery = true;
-			sameHash = false;
-		}
+		let samePathname = false;
+		let sameQuery = false;
+		let sameHash = false;
 
 		const refer = this.#referrer;
-		if (!refer) {
-			samePathname = sameQuery = true;
-			sameHash = this.hash == '';
-		} else if (refer == this) {
+		if (refer == this) {
 			throw new Error("state and referrer should be distinct");
+		}
+		if (!refer) {
+			sameHash = this.hash == '';
 		} else {
-			if (samePathname == null) {
-				samePathname = this.samePathname(refer);
-			}
-			if (sameQuery == null) {
-				if (samePathname) sameQuery = this.sameQuery(refer);
-				else sameQuery = false;
-			}
-			if (sameHash == null) {
-				if (sameQuery) sameHash = this.sameHash(refer);
-				else sameHash = false;
-			}
+			samePathname = this.samePathname(refer);
 			if (samePathname) {
+				sameQuery = this.sameQuery(refer);
 				this.#emitter = refer.#emitter;
 			}
-		}
-		if (refer) {
+			if (sameQuery) sameHash = this.sameHash(refer);
 			refer.#emitters = new Set(document.head.querySelectorAll('script'));
 		}
 
 		await domDeferred();
-		if (prerendered == null) prerendered = this.#prerender();
+		let prerendered = this.#prerender();
+		if (prerendered && !refer) {
+			samePathname = true;
+			// assumes full prerendering
+			sameQuery = true;
+		}
+
+		let { vary } = opts;
+		if (vary === true) {
+			vary = BUILD;
+		}
+		if (vary == BUILD) {
+			prerendered = sameHash = sameQuery = samePathname = false;
+		} else if (vary == PATCH) {
+			sameHash = sameQuery = false;
+		} else if (vary == FRAGMENT) {
+			sameHash = false;
+		}
+
 		try {
 			if (!samePathname || !prerendered) {
 				await this.runChain(ROUTE);
