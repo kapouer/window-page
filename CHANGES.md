@@ -206,3 +206,10 @@ This behavior wasn't documented, and is safer to implement on the user side.
 ------
 
 Revert change in 18.1.0. Be more careful about the state received by listeners.
+
+19.0.0
+------
+
+Breaking change: always close referrer before setup current state.
+
+Fix double calls for connected elements and stop monkey-patching their methods.
