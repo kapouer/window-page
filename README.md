@@ -25,7 +25,7 @@ It natively supports es6 modules, and provides a cjs bundle.
 - setup: visible, on first view or pathname changed
 - paint: visible, on first view or pathname or query changed
 - fragment: visible, location hash changed; `state.hash` is set.
-- close: visible, after new state reach setup, referrer is closed
+- close: visible, referrer closed when pathname changed, before new state is setup
 - catch: error was thrown, `state.error` is set.
 
 A run is triggered by navigation (document.location changed in any way, or
