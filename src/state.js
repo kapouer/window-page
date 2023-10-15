@@ -290,27 +290,34 @@ export default class State extends Loc {
 			if (fn.parentNode && fn.parentNode.nodeName != "HEAD") curem = null;
 		}
 		const emitter = curem ?? this.#emitter;
-
 		let lfn = stageMap.get(fn);
 		if (!lfn) {
 			lfn = {
-				fn: this.#chainListener(fn),
+				fn,
+				run(e) {
+					const chain = e.detail;
+					const q = chain.current;
+					if (lfn.fn) q.queue(() => {
+						if (!q.stopped && lfn.fn) return chain.state.#runFn(lfn.fn);
+					});
+					return q;
+				},
 				emitters: new Set()
 			};
 			stageMap.set(fn, lfn);
 		}
 		if (!lfn.emitters.has(emitter)) {
 			lfn.emitters.add(emitter);
-			emitter.addEventListener('page' + stage, lfn.fn);
+			emitter.addEventListener('page' + stage, lfn.run);
 		}
 		if (!chain.started) {
 			// pass
 		} else if (chain.current.stopped) {
-			await lfn.fn?.({ detail: chain });
+			await lfn.run({ detail: chain });
 		} else {
 			// not finished
 			chain.current.queue(() => {
-				return lfn.fn?.({ detail: chain });
+				return lfn.run({ detail: chain });
 			});
 		}
 		return chain.done;
@@ -336,21 +343,10 @@ export default class State extends Loc {
 		// the task in queue is not removed
 		// yet the function is no longer called from the task
 		for (const emitter of lfn.emitters) {
-			emitter.removeEventListener('page' + stage, lfn.fn);
+			emitter.removeEventListener('page' + stage, lfn.run);
 		}
 		// chain might have queued lfn.fn call
 		lfn.fn = null;
-	}
-
-	#chainListener(fn) {
-		return (e) => {
-			const chain = e.detail;
-			const q = chain.current;
-			q.queue(() => {
-				if (!q.stopped) return chain.state.#runFn(fn);
-			});
-			return q;
-		};
 	}
 
 	async #runFn(fn) {
