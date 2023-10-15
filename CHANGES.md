@@ -213,3 +213,8 @@ Revert change in 18.1.0. Be more careful about the state received by listeners.
 Breaking change: always close referrer before setup current state.
 
 Fix double calls for connected elements and stop monkey-patching their methods.
+
+19.0.1
+------
+
+Really fix double calls for connected elements.
