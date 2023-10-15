@@ -7,9 +7,8 @@ const ROUTE = "route";
 const READY = "ready";
 const BUILD = "build";
 const PATCH = "patch";
-const SETUP = "setup"; // uibuild
-const NOSETUP = "nosetup"; // uipatch
-const PAINT = "paint"; // uiready
+const SETUP = "setup";
+const PAINT = "paint";
 const CLOSE = "close";
 const CATCH = "catch";
 const FRAGMENT = "fragment";
@@ -95,11 +94,6 @@ export default class State extends Loc {
 		for (const name of NodeEvents) {
 			if (listener[name]) this.chain(name, listener);
 		}
-
-		if (listener[SETUP]) {
-			// ensure we run setup once on connect
-			this.chain(NOSETUP, state => listener[SETUP](state));
-		}
 	}
 
 	disconnect(listener) {
@@ -117,8 +111,12 @@ export default class State extends Loc {
 		}
 
 		if (listener[CLOSE]) {
-			// ensure we run close once on disconnect
-			this.chain(PAINT, state => listener[CLOSE](state));
+			// if setup, run close once
+			const prox = state => {
+				this.unchain(SETUP, prox);
+				return listener[CLOSE](state);
+			};
+			this.chain(SETUP, prox);
 		}
 	}
 
@@ -212,7 +210,7 @@ export default class State extends Loc {
 					if (!refer || !samePathname) {
 						await this.runChain(SETUP);
 					} else {
-						await this.runChain(NOSETUP);
+						await this.runChain(SETUP, true);
 					}
 					await this.runChain(PAINT);
 					if (!sameHash) await this.runChain(FRAGMENT);
@@ -264,17 +262,19 @@ export default class State extends Loc {
 		return chain;
 	}
 
-	runChain(stage) {
+	runChain(stage, future) {
 		const chain = this.#startChain(stage);
-		const e = new CustomEvent(`page${stage}`, {
-			bubbles: true,
-			cancelable: true,
-			detail: chain
-		});
-		for (const node of (this.#emitters ?? document.head.querySelectorAll('script'))) {
-			node.dispatchEvent(e);
+		if (!future) {
+			const e = new CustomEvent(`page${stage}`, {
+				bubbles: true,
+				cancelable: true,
+				detail: chain
+			});
+			for (const node of (this.#emitters ?? document.head.querySelectorAll('script'))) {
+				node.dispatchEvent(e);
+			}
+			if (this.#emitter) this.#emitter.dispatchEvent(e);
 		}
-		if (this.#emitter) this.#emitter.dispatchEvent(e);
 		if (chain.current.length == 0) chain.hold.resolve();
 		return chain.done;
 	}
