@@ -101,7 +101,7 @@ Avoid making a chain wait its own end, or it will deadlock.
 
 To run a custom chain:
 
-- state.runChain(stage)
+- state.copy().runChain(stage)
 
 Note that custom chains do not propagate properties added to state to other chains.
 
@@ -123,6 +123,8 @@ The state is a subclass of Loc, which extends URL class with:
 - query object
 - sameDomain, samePathname, sameQuery, sameHash, samePath methods
 - toString() returns a path when in the same domain
+- copy() to copy a state and most of its private/public properties
+  useful for working with another stage of a state.
 
 **Important**: use state.push/replace to mutate url properties.
 The state history methods accept partial objects.

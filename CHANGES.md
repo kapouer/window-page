@@ -218,3 +218,8 @@ Fix double calls for connected elements and stop monkey-patching their methods.
 ------
 
 Really fix double calls for connected elements.
+
+19.1.0
+------
+
+Expose copy() method

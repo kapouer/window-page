@@ -44,11 +44,14 @@ export default class State extends Loc {
 		return new Loc(str);
 	}
 
-	#clone(state) {
-		this.#emitter = state.#emitter;
-		this.#referrer = state.#referrer;
-		this.#chains = state.#chains;
-		this.#stage = state.#stage;
+	copy() {
+		const inst = new State(this);
+		inst.#emitter = this.#emitter;
+		inst.#referrer = this.#referrer;
+		inst.#chains = this.#chains;
+		inst.#stage = this.#stage;
+		Object.assign(inst, this); // also copy extra properties
+		return inst;
 	}
 
 	get stage() {
@@ -253,11 +256,8 @@ export default class State extends Loc {
 
 	#startChain(stage) {
 		const chain = this.#getChain(stage);
-		const inst = chain.state = new State(this);
 		this.#stage = stage;
-		inst.#clone(this);
-		Object.assign(inst, this); // also copy extra properties
-
+		chain.state = this.copy();
 		chain.started = true;
 		return chain;
 	}
