@@ -546,10 +546,11 @@ export default class State extends Loc {
 		if (!copy.sameDomain(refer)) {
 			if (method == "replace") console.info("Cannot replace to a different origin");
 			document.location.assign(copy.toString());
+		} else {
+			copy.run(opts).then(() => {
+				if (!opts?.pop) copy.#historySave(method);
+			});
 		}
-		copy.run(opts).then(() => {
-			if (!opts?.pop) copy.#historySave(method);
-		});
 		return copy;
 	}
 }
