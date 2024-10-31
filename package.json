@@ -16,8 +16,8 @@
     "local": "http-server test/public/"
   },
   "prepare": {
-    "./index.js": "bundle lib/window-page.js",
-    "./src/query.js": "bundle --format=cjs lib/query.js"
+    "index.js": "bundle lib/window-page.js",
+    "src/query.js": "bundle --format=cjs lib/query.js"
   },
   "files": [
     "lib/window-page.js",
