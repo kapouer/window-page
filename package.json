@@ -2,25 +2,15 @@
   "name": "window-page",
   "version": "19.1.1",
   "description": "Route, setup, and build web pages",
-  "main": "lib/window-page.js",
   "module": "index.js",
   "exports": {
-    ".": {
-      "import": "./index.js",
-      "require": "./lib/window-page.js"
-    }
+    ".": "./index.js"
   },
   "scripts": {
-    "test": "npm run prepare && npx playwright test",
-    "prepare": "postinstall",
+    "test": "npx playwright test",
     "local": "http-server test/public/"
   },
-  "prepare": {
-    "index.js": "bundle lib/window-page.js",
-    "src/query.js": "bundle --format=cjs lib/query.js"
-  },
   "files": [
-    "lib/window-page.js",
     "index.js",
     "src/*.js"
   ],
@@ -44,8 +34,6 @@
     "@playwright/test": "^1.48.2",
     "class-deferred": "^1.0.1",
     "express": "^4.21.1",
-    "postinstall": "^0.11.0",
-    "postinstall-bundle": "^0.9.4"
   },
   "eslintConfig": {
     "extends": "@kapouer/eslint-config",
