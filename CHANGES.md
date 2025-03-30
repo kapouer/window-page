@@ -223,3 +223,8 @@ Really fix double calls for connected elements.
 ------
 
 Expose copy() method
+
+20.0.0
+------
+
+Switch to pure esm now that nodejs supports it.
