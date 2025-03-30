@@ -31,9 +31,9 @@
   },
   "devDependencies": {
     "@kapouer/eslint-config": "^2.0.0",
-    "@playwright/test": "^1.48.2",
+    "@playwright/test": "^1.51.1",
     "class-deferred": "^1.0.1",
-    "express": "^4.21.1",
+    "express": "^4.21.2"
   },
   "eslintConfig": {
     "extends": "@kapouer/eslint-config",
