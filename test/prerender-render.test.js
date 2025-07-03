@@ -71,6 +71,7 @@ test.describe("Two-phase rendering", () => {
 		await render(page);
 		await page.isText('div.build', '1');
 		await page.isText('div.setup', '1');
+		await page.isText('div.fragment', '1');
 		await page.isText('#hash', '#test');
 	});
 
