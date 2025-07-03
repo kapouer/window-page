@@ -70,6 +70,10 @@ exports.idle = async function (page, url) {
 		}, { selector, attr });
 		expect(txt).toBe(str);
 	};
+	page.on('console', msg => console.error(msg.text()));
+	page.on('pageerror', exception => {
+		console.error(`Uncaught exception: "${exception}"`);
+	});
 	const fnid = 'signal_' + randomUUID();
 	await page.addInitScript(tracker, {
 		id: fnid,
