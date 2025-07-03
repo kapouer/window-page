@@ -36,9 +36,6 @@
   },
   "eslintConfig": {
     "extends": "@kapouer/eslint-config",
-    "ignorePatterns": [
-      "lib/*"
-    ],
     "overrides": [
       {
         "files": [
