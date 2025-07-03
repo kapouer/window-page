@@ -7,7 +7,7 @@
     ".": "./index.js"
   },
   "scripts": {
-    "test": "npx playwright test",
+    "test": "esbuild --bundle index.js --outfile=test/public/window-page.js;npx playwright test",
     "local": "http-server test/public/"
   },
   "files": [
