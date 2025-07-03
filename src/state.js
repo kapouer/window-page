@@ -1,4 +1,3 @@
-import { Deferred } from 'class-deferred';
 import Loc from './loc';
 import { Queue, domDeferred, UiQueue, waitStyles, loadNode } from './wait';
 import Diff from 'levenlistdiff';
@@ -234,10 +233,10 @@ export default class State extends Loc {
 	#initChain(stage) {
 		const chain = this.#chains[stage] = {};
 		chain.started = false;
-		chain.hold = new Deferred();
+		chain.hold = Promise.withResolvers();
 		chain.after = new Queue();
 		// block after
-		chain.after.queue(() => chain.hold);
+		chain.after.queue(() => chain.hold.promise);
 		chain.current = new Queue();
 		// unblock after when current.done is resolved
 		chain.current.done.then(() => {

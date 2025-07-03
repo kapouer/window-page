@@ -1,5 +1,3 @@
-import { Deferred } from "class-deferred";
-
 let domReady = false;
 function readyLsn() {
 	if (!domReady) {
@@ -10,7 +8,7 @@ function readyLsn() {
 
 function once(emitter, events, filter) {
 	if (!Array.isArray(events)) events = [events];
-	const d = new Deferred();
+	const d = Promise.withResolvers();
 	const listener = (e) => {
 		if (!filter || filter(e)) {
 			for (const event of events) emitter.removeEventListener(event, listener);
@@ -18,16 +16,16 @@ function once(emitter, events, filter) {
 		}
 	};
 	for (const event of events) emitter.addEventListener(event, listener);
-	return d;
+	return d.promise;
 }
 
 export function domDeferred() {
 	if (domReady) return;
-	const d = new Deferred();
+	const d = Promise.withResolvers();
 	if (document.readyState == "complete") {
 		domReady = true;
 		setTimeout(d.resolve);
-		return d;
+		return d.promise;
 	}
 	return Promise.race([
 		once(document, 'DOMContentLoaded', readyLsn),
@@ -38,12 +36,16 @@ export function domDeferred() {
 export class Queue {
 	#list = [];
 	#on = false;
-	done = new Deferred();
+	#resolve;
+	done;
 	started = false;
 	stopped = false;
 
 	constructor() {
 		this.count = 0;
+		const { promise, resolve } = Promise.withResolvers();
+		this.done = promise;
+		this.#resolve = resolve;
 	}
 
 	get length() {
@@ -52,8 +54,8 @@ export class Queue {
 
 	queue(job) {
 		this.stopped = false;
-		const d = new Deferred();
-		const p = d.then(() => job()).finally(() => {
+		const d = Promise.withResolvers();
+		const p = d.promise.then(() => job()).finally(() => {
 			this.#on = false;
 			this.dequeue();
 		});
@@ -73,7 +75,7 @@ export class Queue {
 			d.resolve();
 		} else {
 			this.stopped = true;
-			this.done.resolve();
+			this.#resolve();
 		}
 	}
 }
@@ -84,10 +86,10 @@ function isDocVisible() {
 
 export class UiQueue {
 	// run last job when doc is visible, then run all jobs
-	#d = new Deferred();
+	#d = Promise.withResolvers();
 	#job;
 	constructor() {
-		this.#d.then(() => {
+		this.#d.promise.then(() => {
 			this.#d = null;
 			const job = this.#job;
 			if (job) {

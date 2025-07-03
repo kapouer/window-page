@@ -228,3 +228,8 @@ Expose copy() method
 ------
 
 Switch to pure esm now that nodejs supports it.
+
+21.0.0
+------
+
+Use Promise.withResolvers. Make sure a polyfill is available.
