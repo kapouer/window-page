@@ -328,8 +328,12 @@ export default class State extends Loc {
 		const chain = this.#chains[stage];
 		if (!chain) {
 			console.warn("state.finish must be called from chain listener");
-		} else {
+		} else if (fn) {
 			chain.after.queue(() => chain.state.#runFn(fn));
+		} else {
+			const fn = Promise.withResolvers();
+			chain.after.queue(() => chain.state.#runFn(fn.resolve));
+			return fn.promise;
 		}
 		return this;
 	}
