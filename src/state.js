@@ -96,6 +96,7 @@ export default class State extends Loc {
 		for (const name of NodeEvents) {
 			if (listener[name]) this.chain(name, listener);
 		}
+		if (listener[READY]) console.info("listener method", READY, "is ignored", listener);
 	}
 
 	disconnect(listener) {
