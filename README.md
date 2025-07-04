@@ -13,8 +13,11 @@ Works well with:
 
 ## Install
 
-This is a nodejs module.
-It natively supports es6 modules, and provides a cjs bundle.
+```js
+import 'window-page';
+```
+
+And use a bundler to with static or dynamic polyfills.
 
 ## Chains
 
@@ -95,7 +98,7 @@ to the promise chain.
 To append a function at the end of the current chain, use:
 
 - state.finish(fn)
-  fn can return a promise.
+  fn is optional, defaults to a promise (returned) that is resolved at the end.
 
 Avoid making a chain wait its own end, or it will deadlock.
 
@@ -261,23 +264,6 @@ State inherits from Loc:
 
 - samePath(b)
   compare domain, pathname, querystring (without hash) of two url or objects.
-
-### BrowserStack and Browser support
-
-This project runs its tests on multiple desktop and mobile browsers using [travis BrowserStack addon](https://docs.travis-ci.com/user/browserstack/), sponsored by [BrowserStack](browserstack.com).
-
-[![Browser Stack Logo](https://cloud.githubusercontent.com/assets/131406/22254315/87f2c136-e254-11e6-9a25-587b2247cc30.png)](https://www.browserstack.com/)
-
-Tested on:
-
-- latest versions of Chrome, Firefox, Safari
-- iPhone >= 5
-- IE >= 10 (with URL and Promise polyfills)
-- Edge >= 13
-- android browser (on Samsung Galaxy S5)
-
-[![Build Status](https://travis-ci.org/kapouer/window-page.svg?branch=master)](https://travis-ci.org/kapouer/window-page)
-![BrowserStack Status](https://www.browserstack.com/automate/badge.svg?badge_key=MndLTXRsN2RKampOTGJEVmVVdmtONnhOTkxDV25KOXdGa0RnNTNWcTJUMD0tLU8xUWJJY0RqK2xpYzNQcUhxUEFIZGc9PQ==--6b7064ec4dca4fb4a26f955db807a43e32f2a2c3)
 
 ## Debug logs
 

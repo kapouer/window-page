@@ -233,3 +233,6 @@ Switch to pure esm now that nodejs supports it.
 ------
 
 Use Promise.withResolvers. Make sure a polyfill is available.
+
+state.finish(fn?) returns a promise when no fn is given.
+
