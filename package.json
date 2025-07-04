@@ -1,6 +1,6 @@
 {
   "name": "window-page",
-  "version": "20.0.0",
+  "version": "21.0.0",
   "description": "Route, setup, and build web pages",
   "module": "index.js",
   "exports": {
